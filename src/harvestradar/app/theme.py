@@ -138,8 +138,9 @@ iframe {{ color-scheme: dark; }}
 /* invisible click targets laid over HTML cards */
 [class*="st-key-pick_"] {{ margin-top: -104px; height: 88px; margin-bottom: 10px; position: relative; z-index: 3; }}
 [class*="st-key-pick_"] button {{ width:100%; height:88px; opacity:0; cursor:pointer; }}
-[class*="st-key-pickn_"] {{ margin-top: -112px; height: 96px; margin-bottom: 0; position: relative; z-index: 3; }}
-[class*="st-key-pickn_"] button {{ width:100%; height:96px; opacity:0; cursor:pointer; }}
+[class*="st-key-pickn_"] {{ margin-top: -120px; height: 104px; margin-bottom: 0; position: relative; z-index: 3; }}
+[class*="st-key-pickn_"] button {{ width:100%; height:104px; opacity:0; cursor:pointer; }}
+.st-key-glass_note {{ gap: 14px !important; padding: 20px 24px !important; }}
 [class*="st-key-pick"] button:focus-visible {{ opacity:1; background:transparent !important;
   border:2px solid {t['signal']} !important; color:transparent !important; }}
 

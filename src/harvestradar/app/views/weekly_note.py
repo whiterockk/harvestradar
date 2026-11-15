@@ -68,7 +68,7 @@ def render() -> None:
                        'DETERMINISTIC-TEMPLATE</span></div>' if r.model == "deterministic-template" else "")
                 bg = "background:rgba(255,181,71,.08);border-color:rgba(255,181,71,.6);" if active else ""
                 st.markdown(
-                    f'<div class="hr-glass" style="height:96px;padding:12px 16px;display:flex;gap:14px;{bg}">'
+                    f'<div class="hr-glass" style="height:104px;padding:12px 16px;display:flex;gap:14px;{bg}">'
                     f'<span style="border-radius:10px;overflow:hidden;display:inline-flex;flex:none;height:40px">'
                     f'{C.mark_on_signal(40)}</span><div style="flex:1;min-width:0">'
                     f'<div style="display:flex;justify-content:space-between"><span style="font-weight:600;font-size:16px">'
@@ -87,7 +87,7 @@ def render() -> None:
     with right:
         with st.container(key="glass_note"):
             st.markdown(
-                f'<div style="display:flex;gap:16px;align-items:center;margin-bottom:6px">'
+                f'<div style="display:flex;gap:16px;align-items:center;margin-bottom:18px;min-height:64px">'
                 f'<span style="border-radius:12px;overflow:hidden;display:inline-flex;flex:none">{C.mark_on_signal(52)}</span>'
                 f'<div><div style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:30px;line-height:1.15">'
                 f'{H.escape(row.title)}</div><div style="font-size:16px;color:{T["muted"]}">HarvestRadar Weekly &middot; '
@@ -102,7 +102,7 @@ def render() -> None:
             st.markdown(body_html(row.template, p), unsafe_allow_html=True)
             checks = (C.badge("Numbers checked", bool(row.numbers_ok)) + C.badge("Context checked", bool(row.context_ok))
                       + C.badge("Claims checked", bool(row.claims_ok)))
-            who = ("Deterministic template, the model failed the checks" if row.model == "deterministic-template"
+            who = ("Deterministic template" if row.model == "deterministic-template"
                    else f"Written by {m['llm']['display_name']}, local")
             st.markdown(f'<div style="display:flex;flex-wrap:wrap;align-items:center">{checks}'
                         f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]};margin-left:6px">{who} '
