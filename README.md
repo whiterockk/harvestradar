@@ -7,8 +7,9 @@
 HarvestRadar measures heat, rain and soil moisture in the provinces that grow most of the world's maize,
 arabica coffee and cocoa, during the few weeks that decide each harvest. A gradient-boosting model turns them
 into an expected production gap per country, and the world gap becomes a **harvest-risk index** (`risk_z`):
-zero is a normal season, above +2 is rare. Every Friday a small open model from Hugging Face, running
-locally, writes a plain-English note in which every figure is inserted by software, with its source.
+zero is a normal season, above +2 is rare. Every working day a small open model from Hugging Face, running
+locally, writes a plain-English note in which every figure is inserted by software, with its source. The app
+also translates the expected supply gap into the price move it has historically come with.
 
 ![Stress map](docs/img/stress_map.png)
 
@@ -30,9 +31,9 @@ that leaves localhost. `make screenshots` captures every page at 1920 x 1080 (de
 | Page | What it shows | Data |
 |---|---|---|
 | Stress map | Live ticker, producing regions on a NASA Blue Marble base (Equal Earth), dekad scrubber with play, hotspot rings, top 5 regions by stress x share of world supply, El Nino context, Friday note status | `stress_<crop>.parquet`, `regions_<crop>.geojson`, `risk_index.parquet`, `oni.parquet`, `notes.parquet` |
-| Commodity | Harvest-risk index, supply vs trend, futures price, index vs price over 64 weeks with the critical windows of the main producer, who drives this week, SHAP by country | `risk_index.parquet`, `prices_<crop>.parquet`, `shap_latest.parquet`, `config/commodities.yaml` |
+| Commodity | Harvest-risk index, expected world supply vs normal, futures price, what it means for the price (implied move and range), index vs price over 64 weeks with the critical windows of the main producer, which countries drive today's reading, which weather drives each country's forecast (SHAP) | `risk_index.parquet`, `prices_<crop>.parquet`, `shap_latest.parquet`, `config/commodities.yaml` |
 | Replay | US drought 2012, Brazil frost 2021, cocoa 2023-2024: dekad stress film strip, first crossing of +2, index path, price | `events.json`, `stress_<crop>.parquet` |
-| Weekly note | Inbox, the note with figure pills, the three checks, the data given to the model, **Download as email** | `notes.parquet` |
+| Daily note | Inbox of the last five working days, the note with figure pills, the three checks, the data given to the model, **Download as email** | `notes.parquet` |
 | Method | Pipeline in four steps, out-of-sample evaluation, the honest record, credits | `model_eval.json`, `events.json`, `backtest.json` |
 
 URL state for filming: `?page=commodity&crop=maize&date=2026-11-13&dekad=2012-06-10&episode=us_drought_2012`,
@@ -45,8 +46,8 @@ open the data panel of the note.
 make data      # FAOSTAT, NOAA ONI, futures (yfinance), regions, NASA POWER (about 2,000 grid cells)
 make features  # region and country series, dekad stress, weekly country-season features
 make train     # rolling-origin LightGBM vintages, baselines, evaluation, SHAP
-make index     # risk index, episodes, backtest
-make notes     # weekly notes (needs: pip install -r requirements-llm.lock, downloads Qwen2.5-1.5B once)
+make index     # risk index (weekly history and every working day), episodes, backtest, price reaction
+make notes     # daily notes (needs: pip install -r requirements-llm.lock, downloads Qwen2.5-1.5B once)
 make export    # writes data/demo (< 50 MB)
 make email     # writes reports/notes/<week>_<crop>.eml and .html
 ```
@@ -69,7 +70,7 @@ LightGBM (3 crops, one model)     -> rolling-origin vintages: year V trained on 
                                    -> expected anomaly per country, 10-90 % band, SHAP
 World index                        -> dP = sum(share x anomaly); risk_z = -(dP - mean) / sd, where mean and sd
                                       come from the same model re-forecasting the same weeks of the past 15 years
-Weekly note                        -> Qwen2.5-1.5B writes with slots, software inserts sourced figures,
+Daily note                         -> Qwen2.5-1.5B writes with slots, software inserts sourced figures,
                                       numbers / context / claims checks, deterministic template fallback
 ```
 

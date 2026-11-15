@@ -38,6 +38,7 @@ def main() -> None:
     meta = data.meta()
     today = data.today()
     out: dict = {"asOf": today.strftime("%Y-%m-%d"), "weekLabel": f"{today.day} {today:%b %Y}".upper(),
+                 "priceImpact": data.jsonfile("price_impact.json"),
                  "meta": {"cells": meta["cells"], "climBase": meta["climatology_base"], "llm": meta["llm"]},
                  "crops": {}, "glyphs": {k: C._svg(f"glyph_{k}") for k in ("maize", "arabica", "cocoa")},
                  "marks": {"small": C.mark(30), "signal": C.mark_on_signal(40)}}
@@ -45,6 +46,8 @@ def main() -> None:
     for key, c in meta["commodities"].items():
         rs = data.risk_series(key)
         rs = rs[rs.date >= "2001-01-01"]
+        rd = data.risk_daily()
+        rd = rd[(rd.commodity == key) & (rd.date >= today - pd.Timedelta(weeks=66))].dropna(subset=["risk_z"])
         latest = data.latest_risk(key)
         px = data.prices(key)
         wk = px.set_index("date")["close"].resample("W-FRI").last().dropna()
@@ -74,6 +77,7 @@ def main() -> None:
             "latest": {"z": r(latest["risk_z"]), "dp": r(latest["delta_prod_pct"], 2),
                        "lo": r(latest["delta_prod_lo_pct"], 2), "hi": r(latest["delta_prod_hi_pct"], 2),
                        "date": latest["date"].strftime("%Y-%m-%d"), "contributors": latest["contributors"]},
+            "riskRecent": {"d": rd.date.dt.strftime("%Y-%m-%d").tolist(), "z": [r(x) for x in rd.risk_z]},
             "pricesWeekly": {"d": [d.strftime("%Y-%m-%d") for d in wk.index], "c": [r(x, 2) for x in wk]},
             "pricesRecent": {"d": d_recent.date.dt.strftime("%Y-%m-%d").tolist(), "c": [r(x, 2) for x in d_recent.close]},
             "lastPrice": {"date": px.date.iloc[-1].strftime("%Y-%m-%d"), "close": r(px.close.iloc[-1], 2)},
@@ -81,11 +85,13 @@ def main() -> None:
             "shap": shap,
             "map": {"regions": regs, "borders": borders, "frames": frames,
                     "start": len(frames) - 1, "dekad": dk.strftime("%Y-%m-%d"),
-                    "top5": [{"rank": i + 1, "name": t.adm1_name, "iso": t.country_iso3,
+                    "top5": [{"rank": i + 1, "name": t.adm1_name, "iso": t.country_name,
                               "frac": max(0.0, float(t.score) / best), "hot": bool(i == 0 and t.stress >= 2)}
                              for i, t in enumerate(top5.itertuples())]},
         }
     o = data.oni_latest(today)
+    o["strength"] = data.oni_strength(o["value"])
+    o["period"] = o["label"].replace("-", " to ").title().replace(" To ", " to ")
     out["oni"] = o
     # episodes
     events = data.jsonfile("events.json")
@@ -106,7 +112,9 @@ def main() -> None:
     # notes
     n = data.notes()
     notes = []
-    for row in n.sort_values(["week", "commodity"], ascending=[False, True]).to_dict("records"):
+    order = {"maize": 0, "coffee": 1, "cocoa": 2}
+    n = n.assign(o=n.commodity.map(order)).sort_values(["week", "o"], ascending=[False, True]).drop(columns="o")
+    for row in n.to_dict("records"):
         p = json.loads(row["payload"])
         logo = base64.b64encode((ROOT / "src/harvestradar/app/static/brand/mark_on_signal_96.png").read_bytes()).decode()
         email = render_note_email(row, logo_src="data:image/png;base64," + logo)

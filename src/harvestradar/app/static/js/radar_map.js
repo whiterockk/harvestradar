@@ -106,7 +106,7 @@
         p.setAttribute("fill-opacity", (0.35 + 0.65 * Math.min(1, Math.abs(v) / 2)).toFixed(3));
       });
       drawRings(f.hotspots || []);
-      if (label) label.textContent = cfg.labelPrefix + " · " + (cfg.labelWord || "DEKAD") + " " + f.label;
+      if (label) label.textContent = cfg.labelPrefix + " · " + (cfg.labelWord ? cfg.labelWord + " " : "") + f.label;
       ticks.querySelectorAll(".tick").forEach((t, k) => t.classList.toggle("on", k <= idx));
       ticks.querySelectorAll(".tick").forEach((t, k) => t.classList.toggle("now", k === idx));
       thumbs.forEach(([fi, card]) => card.classList.toggle("active", fi === idx));

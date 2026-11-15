@@ -62,7 +62,7 @@ def note_row(payload):
                 "weeks ago. Expected world supply is {SUPPLY} against trend.\n\n"
                 "The largest contributions come from {DRIVER1} ({DRIVER1_CONTRIB}) and {DRIVER2} ({DRIVER2_CONTRIB}). "
                 "The most stressed producing region is {REGION1} ({REGION1_STRESS}).\n\n"
-                "Futures settled at {PRICE}, {PRICE_CHANGE} over four weeks. Climate context: the El Nino reading "
+                "Futures settled at {PRICE}, {PRICE_CHANGE} over four weeks. Climate context: the El Niño reading "
                 "is {ONI} ({ONI_PERIOD}), shown as background only.")
     return {"commodity": "maize", "week": pd.Timestamp("2026-11-13"), "title": payload["title"], "template": template,
             "markdown": "", "numbers_ok": True, "context_ok": True, "claims_ok": True, "model": "Qwen/Qwen2.5-1.5B-Instruct",

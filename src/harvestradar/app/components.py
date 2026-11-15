@@ -42,8 +42,7 @@ def brand() -> str:
 
 
 def status(week_label: str) -> str:
-    return (f'<div class="hr-status"><span class="hr-dot"></span><span>LIVE &middot; WEEK OF {E(week_label.upper())}'
-            f' &middot; OFFLINE</span></div>')
+    return f'<div class="hr-status"><span class="hr-dot"></span><span>DATA AS OF {E(week_label.upper())}</span></div>'
 
 
 def _smooth_path(xs: np.ndarray, ys: np.ndarray) -> str:
@@ -95,7 +94,7 @@ def ticker_card(display: str, glyph_kind: str, value: str, series: list[float], 
     g = "hr-glow" if glow else ""
     return (f'<div class="hr-glass" style="height:88px;padding:14px 20px;display:flex;align-items:center;gap:16px;{border}">'
             f'{glyph(glyph_kind, 26, T["frost_2"])}'
-            f'<div style="flex:1;min-width:0"><div class="hr-caps" style="white-space:nowrap">{E(display)} &middot; RISK_Z</div>'
+            f'<div style="flex:1;min-width:0"><div class="hr-caps" style="white-space:nowrap">{E(display)} &middot; RISK INDEX</div>'
             f'<div class="hr-mono {g}" style="font-size:32px;line-height:40px;color:{T["signal"]};font-weight:500">{E(value)}</div></div>'
             f'{sparkline(series, spark_w, 46)}</div>')
 
@@ -134,7 +133,7 @@ def ranking_rows(rows: list[dict], glyph_kind: str) -> str:
             f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]}">{r["rank"]:02d}</span>'
             f'{glyph(glyph_kind, 18, T["frost_2"])}'
             f'<span style="font-size:16px;color:{T["frost"]};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{E(r["name"])}</span>'
-            f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]}">{E(r["iso"])}</span>'
+            f'<span style="font-size:14px;color:{T["muted"]}">{E(r["iso"])}</span>'
             f'<span></span><span></span>'
             f'<div style="grid-column:3 / span 2;height:4px;border-radius:3px;background:{T["line"]}">'
             f'<div style="width:{max(3, 100 * r["frac"]):.0f}%;height:4px;border-radius:3px;'
@@ -143,13 +142,13 @@ def ranking_rows(rows: list[dict], glyph_kind: str) -> str:
     return "".join(out)
 
 
-def climate_card(value: str, period: str, series: list[float], source: str) -> str:
-    return (f'<div class="hr-glass" style="height:176px;padding:18px 20px">'
-            f'<div class="hr-caps">CLIMATE DRIVER &middot; CONTEXT</div>'
-            f'<div style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:22px;margin-top:8px;color:{T["frost"]}">El Niño</div>'
+def climate_card(value: str, period: str, series: list[float], source: str, strength: str = "El Niño") -> str:
+    return (f'<div class="hr-glass" style="height:196px;padding:18px 20px">'
+            f'<div class="hr-caps">EL NIÑO &middot; BACKGROUND</div>'
+            f'<div style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:22px;margin-top:8px;color:{T["frost"]}">{E(strength[:1].upper() + strength[1:])}</div>'
             f'<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">'
-            f'<div><span class="hr-mono" style="font-size:30px;color:{T["signal"]}">{E(value)}</span>'
-            f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]};margin-left:10px;letter-spacing:.08em">{E(period)}</span></div>'
+            f'<div><span class="hr-mono" style="font-size:30px;color:{T["signal"]}">{E(value)} &deg;C</span>'
+            f'<div style="font-size:14px;color:{T["muted"]};margin-top:2px">Pacific sea temperature vs normal, {E(period)}</div></div>'
             f'{sparkline(series, 200, 48)}</div>'
             f'<div class="hr-source" style="margin-top:6px">{source}</div></div>')
 
@@ -158,7 +157,7 @@ def note_ready(passed: int, total: int, label: str) -> str:
     return (f'<div class="hr-glass" style="height:88px;padding:16px 20px;display:flex;align-items:center;gap:16px">'
             f'<span style="flex:none;border-radius:10px;overflow:hidden;display:inline-flex">{mark_on_signal(40)}</span>'
             f'<div><div style="font-size:17px;color:{T["frost"]};font-weight:500">{E(label)}</div>'
-            f'<div class="hr-mono" style="font-size:13px;color:{T["muted"]}">{passed}/{total} checks passed</div></div>'
+            f'<div style="font-size:14px;color:{T["muted"]}">{passed} of {total} checks passed</div></div>'
             f'<div style="margin-left:auto" class="hr-mono"><span style="font-size:13px;color:{T["signal"]}">OPEN &rarr;</span></div></div>')
 
 

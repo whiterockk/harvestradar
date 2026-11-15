@@ -49,8 +49,8 @@ def _body_html(template: str, payload: dict) -> str:
             if s is None:
                 out.append(H.escape(m.group(0)))
             elif s["kind"] == "figure":
-                fig, rest = split_figure(s["text"])
-                out.append(_pill(fig, m.group(1)) + H.escape(rest))
+                pre, fig, rest = split_figure(s["text"])
+                out.append(H.escape(pre) + (_pill(fig, m.group(1)) if fig else "") + H.escape(rest))
             else:
                 out.append(f'<span style="color:{C["frost"]};font-weight:600;">{H.escape(s["text"])}</span>')
             last = m.end()
@@ -77,7 +77,7 @@ def render_note_email(note_row: dict | pd.Series, risk_rows: pd.DataFrame | None
         f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{C["console"]};'
         f'border:1px solid {C["line_strong"]};border-radius:12px;"><tr><td style="padding:12px 14px;">'
         f'<div style="font-family:{MONO};font-size:13px;letter-spacing:2px;color:{C["muted"]};">'
-        f'{H.escape(r["display"])} &middot; RISK_Z</div>'
+        f'{H.escape(r["display"])} &middot; RISK INDEX</div>'
         f'<div data-fig="READING_{k.upper()}" style="font-family:{MONO};font-size:28px;line-height:36px;'
         f'color:{C["signal"]};font-variant-numeric:tabular-nums;">{H.escape(r["text"])}</div>'
         f'</td></tr></table></td>' for k, r in p.get("readings", {}).items())
@@ -87,9 +87,9 @@ def render_note_email(note_row: dict | pd.Series, risk_rows: pd.DataFrame | None
         f'{"&#10003;" if row.get(k) else "&#10005;"} {label}</span>' for k, label in CHECKS)
     model = row.get("model", "")
     tp = int(row.get("template_paragraphs", 0) or 0)
-    who = ("Deterministic template" if model == "deterministic-template"
-           else f"Written by {H.escape(p.get('model_display', model.split('/')[-1]))}, local"
-           + (f", {tp} of 3 paragraphs from the template" if tp else ""))
+    who = ("Written from the fixed template" if model == "deterministic-template"
+           else f"Written by a small AI model running locally ({H.escape(p.get('model_display', model.split('/')[-1]))})"
+           + (f"; {tp} of 3 paragraphs from the fixed template" if tp else ""))
     sources = "".join(
         f'<tr><td style="padding:6px 0;border-top:1px solid {C["line"]};font-family:{MONO};font-size:13px;'
         f'color:{C["signal"]};white-space:nowrap;" data-fig="{k}">{H.escape(s["text"])}</td>'
@@ -111,13 +111,13 @@ background:{C["console"]};border:1px solid {C["line_strong"]};border-radius:18px
  <table role="presentation" cellpadding="0" cellspacing="0"><tr>
   <td style="padding-right:14px;"><img src="{logo_src}" width="48" height="48" alt="HarvestRadar" style="display:block;border-radius:11px;"></td>
   <td><div style="font-family:{DISPLAY};font-size:22px;line-height:28px;font-weight:700;color:{C["frost"]};">{title}</div>
-  <div style="font-family:{SANS};font-size:14px;color:{C["muted"]};">HarvestRadar Weekly &middot; week of {_week_label(week)}</div></td>
+  <div style="font-family:{SANS};font-size:14px;color:{C["muted"]};">HarvestRadar Daily &middot; {_week_label(week)}</div></td>
  </tr></table>
 </td></tr>
 <tr><td style="padding:16px 23px 8px 23px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>{readings}</tr></table></td></tr>
 <tr><td style="padding:16px 28px 4px 28px;">{_body_html(row["template"], p)}</td></tr>
 <tr><td style="padding:0 28px 6px 28px;">{checks}</td></tr>
-<tr><td style="padding:0 28px 18px 28px;font-family:{MONO};font-size:13px;color:{C["muted"]};">{who} &middot; figures inserted by software</td></tr>
+<tr><td style="padding:0 28px 18px 28px;font-family:{MONO};font-size:13px;color:{C["muted"]};">{who}. Every figure is inserted by the software, with its source.</td></tr>
 <tr><td style="padding:0 28px 20px 28px;">
  <div style="font-family:{MONO};font-size:13px;letter-spacing:2px;color:{C["muted"]};padding-bottom:6px;">SOURCES OF EVERY FIGURE</div>
  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{sources}</table>
@@ -131,8 +131,8 @@ background:{C["console"]};border:1px solid {C["line_strong"]};border-radius:18px
 def render_text(note_row: dict | pd.Series) -> str:
     row = dict(note_row)
     p = json.loads(row["payload"])
-    lines = [row.get("title") or p["title"], f"HarvestRadar Weekly, week of {_week_label(p['week'])}", ""]
-    lines += [f"{r['display']} RISK_Z {r['text']}" for r in p.get("readings", {}).values()]
+    lines = [row.get("title") or p["title"], f"HarvestRadar Daily, {_week_label(p['week'])}", ""]
+    lines += [f"{r['display']} risk index {r['text']}" for r in p.get("readings", {}).values()]
     lines += ["", fill(row["template"], p), ""]
     lines += ["Checks: " + ", ".join(f"{label} {'passed' if row.get(k) else 'FAILED'}" for k, label in CHECKS)]
     lines += ["", "Sources:"]
@@ -148,9 +148,9 @@ def write_eml(html: str, subject: str, week: str, commodity: str = "note", text:
     out_dir.mkdir(parents=True, exist_ok=True)
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = "HarvestRadar Weekly <weekly@harvestradar.invalid>"
+    msg["From"] = "HarvestRadar Daily <daily@harvestradar.invalid>"
     msg["To"] = "undisclosed-recipients:;"
-    sent = dt.datetime.fromisoformat(f"{week}T07:00:00+00:00")  # Friday 07:00, deterministic
+    sent = dt.datetime.fromisoformat(f"{week}T07:00:00+00:00")  # 07:00 on the note's day, deterministic
     msg["Date"] = format_datetime(sent)
     msg["Message-ID"] = f"<{week}.{commodity}@harvestradar.invalid>"
     msg.set_content(text or re.sub(r"<[^>]+>", " ", html))

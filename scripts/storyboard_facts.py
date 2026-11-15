@@ -75,7 +75,12 @@ def main() -> None:
             f"{c['label']} {c['main_country_name']}: " + ", ".join(f"{w['stage']} {w['start']} to {w['end']}"
                                                                  for w in c['windows'][c['main_country']])
             for c in cm.values())),
-        ("F18", "Weekly note labels", "; ".join(f"{r.commodity}: \"{r.title}\" ({r.model}, "
+        ("F17", "What it means for the price", "; ".join(
+            f"{cm[k]['label']}: " + (f"{v['implied_pct']:+.1f}% expected (range {v['low_pct']:+.1f}% to {v['high_pct']:+.1f}%), "
+                                    f"{-v['slope_pct_per_pct']:+.1f}% price per 1% of world supply missing, {v['years'][0]}-{v['years'][1]}"
+                                    if v["reliable"] else "no reliable link, no estimate")
+            for k, v in json.loads((DEMO / "price_impact.json").read_text())["commodities"].items())),
+        ("F18", "Daily note labels", "; ".join(f"{r.commodity}: \"{r.title}\" ({r.model}, "
                                                f"{int(r.template_paragraphs)} of 3 paragraphs from the template, "
                                                f"checks {int(r.numbers_ok) + int(r.context_ok) + int(r.claims_ok)}/3)"
                                                for r in nm.itertuples())),

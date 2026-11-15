@@ -166,7 +166,6 @@ def map_html(cfg: dict, height: int, mode: str = "world") -> str:
     return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>{font_faces('/app/static/fonts')}{css}</style></head>
 <body><div class="radar {mode}" tabindex="0" aria-label="{cfg.get('ariaLabel', 'Map')}">
 <div class="map-stage"></div>
-<div class="corner c-tl"></div><div class="corner c-tr"></div><div class="corner c-bl"></div><div class="corner c-br"></div>
 <div class="map-label"></div>
 <div class="legend"><div class="sw">{legend}</div><div class="lg"><span>{cfg.get('legendLow', 'lower stress')}</span>
 <span>{cfg.get('legendHigh', 'higher stress')}</span></div></div>

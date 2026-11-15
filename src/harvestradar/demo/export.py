@@ -34,6 +34,8 @@ def export_demo(cfg: Settings) -> None:
     start = pd.Timestamp(cfg.index_start)
     risk = pd.read_parquet(PROCESSED / "risk_index.parquet")
     risk.to_parquet(DEMO / "risk_index.parquet", index=False)
+    daily = pd.read_parquet(PROCESSED / "risk_index_daily.parquet")
+    daily.drop(columns=["contributors_all"]).to_parquet(DEMO / "risk_index_daily.parquet", index=False)
     preds = pd.read_parquet(PROCESSED / "predictions_weekly.parquet")
     preds = preds[preds.as_of >= start].rename(columns={"as_of": "date"})
     preds[["commodity", "country_iso3", "season", "date", "pred_anom", "pred_lo", "pred_hi", "window_open",
@@ -42,7 +44,7 @@ def export_demo(cfg: Settings) -> None:
     shutil.copy(PROCESSED / "oni.parquet", DEMO / "oni.parquet")
     if (PROCESSED / "notes.parquet").exists():
         shutil.copy(PROCESSED / "notes.parquet", DEMO / "notes.parquet")
-    for name in ["events.json", "model_eval.json", "backtest.json"]:
+    for name in ["events.json", "model_eval.json", "backtest.json", "price_impact.json"]:
         shutil.copy(PROCESSED / name, DEMO / name)
     summary = json.loads((PROCESSED / "regions_summary.json").read_text())
     meta = {"as_of": cfg.as_of_end.isoformat(), "index_start": cfg.index_start.isoformat(),

@@ -196,6 +196,65 @@ def build_index(cfg: Settings) -> None:
         print(f"[events] {k}: first above +2 {e['first_above_2']}, peak {e['peak_risk_z']} on {e['peak_date']}")
 
 
+def build_daily(cfg: Settings) -> None:
+    """Index every working day from `dates.daily_start`: features as of each day, predictions from the stored
+    vintage of that year, standardised with the same model climatology. Then the price reaction."""
+    import joblib
+
+    from harvestradar.features.aggregate import to_country_season
+    from harvestradar.signal.price_impact import implied_move, price_flexibility
+    from harvestradar.signal.risk_index import build_risk_index
+
+    oni = pd.read_parquet(PROCESSED / "oni.parquet")
+    targets = pd.read_parquet(PROCESSED / "targets.parquet")
+    fao = pd.read_parquet(PROCESSED / "fao_qcl.parquet")
+    days = list(pd.bdate_range(cfg.dates["daily_start"], cfg.as_of_end).date)
+    t = targets[["commodity", "country_iso3", "season", "yield_anom", "available_at"]]
+    feats = []
+    for key in cfg.commodities:
+        cd = pd.read_parquet(INTERIM / f"country_daily_{key}.parquet")
+        feats.append(to_country_season(cfg, key, cd, days, oni, targets))
+    f = pd.concat(feats, ignore_index=True)
+    f = f.merge(t.rename(columns={"available_at": "target_available_at"}), on=["commodity", "country_iso3", "season"],
+                how="left")
+    parts = []
+    for y, g in f.groupby(f.as_of.dt.year):
+        model = joblib.load(MODELS_STORE / f"yield_model_{y}.joblib")
+        parts.append(pd.concat([g, model.predict(g).assign(vintage=y)], axis=1))
+    preds = pd.concat(parts, ignore_index=True)
+    preds.to_parquet(PROCESSED / "predictions_daily.parquet", index=False)
+    clim = pd.read_parquet(PROCESSED / "model_climatology.parquet")
+    risk = build_risk_index(cfg, preds, targets, fao, clim)
+    risk.to_parquet(PROCESSED / "risk_index_daily.parquet", index=False)
+    # price reaction implied by the expected supply gap (descriptive, small sample)
+    prices = {k: pd.read_parquet(PROCESSED / f"prices_{k}.parquet") for k in cfg.commodities}
+    flex = price_flexibility(cfg, targets, prices)
+    events = json.loads((PROCESSED / "events.json").read_text())
+    weekly = pd.read_parquet(PROCESSED / "risk_index.parquet")
+    out = {"method": "price change of the average futures price over the marketing year, regressed on the realised "
+                     "world supply gap of that year (FAOSTAT), 2002 onwards; applied to the model's expected gap",
+           "commodities": {}, "episodes": {}}
+    for key, fx in flex.items():
+        last = risk[risk.commodity == key].dropna(subset=["risk_z"]).iloc[-1]
+        out["commodities"][key] = {**fx, "date": last.date.strftime("%Y-%m-%d"),
+                                   "delta_prod_pct": round(float(last.delta_prod_pct), 2),
+                                   "reliable": fx["p_value"] < 0.10, **implied_move(fx, float(last.delta_prod_pct))}
+    for name, ev in events.items():
+        key, fx = ev["commodity"], flex.get(ev["commodity"])
+        day = ev.get("first_above_2") or ev.get("peak_date")
+        row = weekly[(weekly.commodity == key) & (weekly.date == pd.Timestamp(day))]
+        if fx is None or row.empty:
+            continue
+        dp = float(row.delta_prod_pct.iloc[0])
+        out["episodes"][name] = {"date": day, "delta_prod_pct": round(dp, 2), "reliable": fx["p_value"] < 0.10,
+                                 **implied_move(fx, dp), "actual_pct": ev.get("price_change_pct"),
+                                 "actual_window": [ev.get("price_from_date"), ev.get("price_to_date")]}
+    (PROCESSED / "price_impact.json").write_text(json.dumps(out, indent=2))
+    last = risk[risk.date == risk.date.max()][["commodity", "risk_z", "delta_prod_pct"]]
+    print("[daily] latest:", last.round(3).to_dict("records"))
+    print("[price] now:", {k: (v["implied_pct"], v["reliable"]) for k, v in out["commodities"].items()})
+
+
 def run_all(cfg: Settings, skip_download: bool = False, deterministic_notes: bool = False) -> None:
     from harvestradar.demo.export import export_demo
     from harvestradar.report.email_note import export_week
@@ -219,6 +278,7 @@ def run_all(cfg: Settings, skip_download: bool = False, deterministic_notes: boo
     build_features(cfg)
     train_models(cfg)
     build_index(cfg)
+    build_daily(cfg)
     build_notes(cfg, deterministic=deterministic_notes)
     export_demo(cfg)
     export_week("latest", REPORTS / "notes")

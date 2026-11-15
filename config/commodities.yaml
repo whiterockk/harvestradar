@@ -9,8 +9,8 @@ maize:
   spam_crop: MAIZ
   fao_item: 56
   tickers: {cbot: "ZC=F"}
-  price_label: "CBOT PRICE"
-  price_name: "CBOT corn"
+  price_label: "CORN FUTURES, CHICAGO"
+  price_name: "Corn futures (CBOT, Chicago)"
   price_unit: "US cents per bushel"
   coverage: 0.90
   weight_mode: production
@@ -38,8 +38,8 @@ coffee:
   spam_crop: COFF               # MapSPAM 2020 code for arabica (RCOF is robusta)
   fao_item: 656
   tickers: {ice_us: "KC=F"}
-  price_label: "ICE ARABICA"
-  price_name: "ICE arabica coffee"
+  price_label: "ARABICA FUTURES, NEW YORK"
+  price_name: "Arabica coffee futures (ICE, New York)"
   price_unit: "US cents per pound"
   coverage: 0.90
   # The spec suggests export weights for coffee. USDA PSD exports do not split arabica from robusta,
@@ -67,8 +67,8 @@ cocoa:
   spam_crop: COCO
   fao_item: 661
   tickers: {ice_us: "CC=F"}
-  price_label: "ICE COCOA"
-  price_name: "ICE cocoa"
+  price_label: "COCOA FUTURES, NEW YORK"
+  price_name: "Cocoa futures (ICE, New York)"
   price_unit: "US dollars per tonne"
   coverage: 0.90
   weight_mode: production

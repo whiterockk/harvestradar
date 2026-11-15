@@ -101,7 +101,7 @@ def render() -> None:
     with head_r:
         chips = []
         if ev.get("model_trained_on_seasons_up_to"):
-            chips.append(C.chip(f"MODEL TRAINED ON SEASONS UP TO {ev['model_trained_on_seasons_up_to']}", True))
+            chips.append(C.chip(f"THE MODEL ONLY KNEW HARVESTS UP TO {ev['model_trained_on_seasons_up_to']}", True))
         st.markdown(f'<div style="text-align:right">{"".join(chips)}</div>', unsafe_allow_html=True)
     left, right = st.columns([0.64, 0.36])
     regs, vb, _, _ = episode_layers(key, focus)
@@ -122,48 +122,63 @@ def render() -> None:
     playing = st.session_state.get("q_play") == "1"
     cfg = {"viewBox": vb, "base": maps.base_layer(), "regions": regs, "frames": frames, "start": start_i,
            "strip": strip, "ringRadius": vb[2] / 40, "labelPrefix": f"EPISODE REPLAY · {ev['label'].upper()} "
-           f"· {m['display']}", "labelWord": "DEKAD", "rangeLabel": f"{dates[0]:%b %Y} · {dates[-1]:%b %Y}".upper(),
+           f"· {m['display']}", "labelWord": "", "rangeLabel": f"{dates[0]:%b %Y} · {dates[-1]:%b %Y}".upper(),
            "capture": st.session_state.capture, "autoplay": playing,
            "ariaLabel": f"Episode replay {ev['label']}", "borderWidth": 0.8}
     with left:
         st.iframe(maps.map_html(cfg, MAP_H, "episode"), height=MAP_H)
-        st.markdown(f'<div class="hr-source">dekad stress vs {data.meta()["climatology_base"][0]}-'
-                    f'{data.meta()["climatology_base"][1]} &middot; NASA POWER, stress_{key}.parquet &middot; '
-                    f'arrow keys step one dekad, space plays</div>', unsafe_allow_html=True)
+        base = data.meta()["climatology_base"]
+        st.markdown(f'<div class="hr-source">Stress every 10 days, compared with {base[0]}-{base[1]}. Press play, '
+                    f'or use the arrow keys to step.</div>', unsafe_allow_html=True)
     with right:
+        def long(d):
+            t = pd.Timestamp(d)
+            return f"{t.day} {t:%B %Y}"
         if ev.get("first_above_2"):
-            big, cap = ev["first_above_2"], ev.get("lead_text", "")
+            big, cap = long(ev["first_above_2"]), ev.get("lead_text", "")
             if ev.get("verdict") == "late":
-                cap = f"after the price peak of {ev.get('price_max_date')}: late"
-            title = "RISK_Z FIRST ABOVE +2"
+                cap = f"after the price had already peaked on {long(ev.get('price_max_date'))}: too late"
+            title = "INDEX FIRST ABOVE +2"
             border = "border-color:rgba(255,181,71,.75);box-shadow:0 0 30px rgba(255,181,71,.15), 0 20px 60px rgba(0,0,0,.35);"
         else:
             big = f"{ev['peak_risk_z']:+.2f}" if ev.get("peak_risk_z") is not None else "n/a"
-            cap = f"peak on {ev.get('peak_date')}: never above +2, missed"
-            title = "RISK_Z PEAK IN THE EPISODE"
+            cap = f"on {long(ev.get('peak_date'))}: it never went above +2, the episode was missed"
+            title = "HIGHEST INDEX IN THE EPISODE"
             border = ""
         st.markdown(f'<div class="hr-glass" style="height:190px;padding:22px 26px;{border}">'
                     f'<div class="hr-caps">{title}</div>'
-                    f'<div class="hr-mono hr-glow" style="font-size:60px;line-height:1.15;color:{T["signal"]};'
+                    f'<div class="hr-mono hr-glow" style="font-size:46px;line-height:1.15;color:{T["signal"]};'
                     f'margin-top:10px">{big}</div><div style="font-size:17px;color:{T["frost_2"]}">{cap}</div>'
-                    f'<div class="hr-source" style="margin-top:6px">events.json &middot; risk_index.parquet</div></div>',
+                    f'<div class="hr-source" style="margin-top:6px">Weekly index during the episode.</div></div>',
                     unsafe_allow_html=True)
         with st.container(key="glass_path"):
-            st.markdown(f'<div class="hr-caps" style="padding-top:6px">INDEX, {pd.Timestamp(ev["start"]).year}'
+            st.markdown(f'<div class="hr-caps" style="padding-top:6px">RISK INDEX, {pd.Timestamp(ev["start"]).year}'
                         f'{"-" + str(pd.Timestamp(ev["end"]).year) if pd.Timestamp(ev["end"]).year != pd.Timestamp(ev["start"]).year else ""}'
                         f'</div>', unsafe_allow_html=True)
             st.plotly_chart(path_chart(ev), use_container_width=True, config={"displayModeBar": False},
                             key=f"path_{name}", theme=None)
         p0, p1, ch = ev.get("price_from"), ev.get("price_to"), ev.get("price_change_pct")
         fmt = (lambda x: f"{x:,.0f}") if key == "cocoa" else (lambda x: f"{x:,.2f}".rstrip("0").rstrip("."))
+        pi = data.jsonfile("price_impact.json").get("episodes", {}).get(name)
+        exp = ""
+        if pi:
+            exp = (f'<div style="font-size:16px;color:{T["frost_2"]};margin-top:10px;line-height:1.6">Expected from the '
+                   f'supply gap the model saw on {long(pi["date"])}: <span class="hr-mono">{pi["implied_pct"]:+.1f}%</span> '
+                   f'(likely {pi["low_pct"]:+.1f}% to {pi["high_pct"]:+.1f}%) over the marketing year.</div>'
+                   if pi["reliable"] else
+                   f'<div style="font-size:16px;color:{T["frost_2"]};margin-top:10px">No reliable supply-price link for '
+                   f'this crop, so no expected move is shown.</div>')
         if p0 and p1:
-            st.markdown(f'<div class="hr-glass" style="height:172px;padding:20px 26px">'
-                        f'<div class="hr-caps">{m["price_label"]} &middot; {ev["price_from_date"]} TO {ev["price_to_date"]}</div>'
+            frm = "from the signal" if ev.get("price_from_kind") == "signal" else "from the start of the episode"
+            st.markdown(f'<div class="hr-glass" style="padding:20px 26px">'
+                        f'<div class="hr-caps">{m["price_label"]}</div><div style="font-size:14px;color:{T["muted"]}">'
+                        f'{frm}, {long(ev["price_from_date"])} to {long(ev["price_to_date"])}</div>'
                         f'<div style="display:flex;align-items:baseline;gap:16px;margin-top:12px">'
                         f'<span class="hr-mono" style="font-size:34px;color:{T["frost_2"]}">{fmt(p0)}</span>'
                         f'<span style="color:{T["muted"]};font-size:17px">to</span>'
                         f'<span class="hr-mono" style="font-size:40px;color:{T["heat"] if ch and ch > 0 else T["frost"]}">{fmt(p1)}</span>'
                         f'<span class="hr-mono" style="font-size:22px;color:{T["heat"] if ch and ch > 0 else T["frost_2"]}">{ch:+.1f}%</span></div>'
-                        f'<div class="hr-source">prices_{key}.parquet &middot; {m["price_unit"]}'
-                        + (f' &middot; episode high {fmt(ev["price_max"])} on {ev["price_max_date"]}' if ev.get("price_max") else "")
-                        + '</div></div>', unsafe_allow_html=True)
+                        + exp + f'<div class="hr-source">{m["price_unit"][:1].upper() + m["price_unit"][1:]}'
+                        + (f'. Highest price of the episode: {fmt(ev["price_max"])} on {long(ev["price_max_date"])}'
+                           if ev.get("price_max") else "")
+                        + '.</div></div>', unsafe_allow_html=True)

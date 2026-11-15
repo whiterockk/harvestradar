@@ -33,6 +33,7 @@ train:
 
 index backtest:
 	$(BIN)/harvestradar index build
+	$(BIN)/harvestradar index daily
 
 notes:  ## Needs the optional LLM dependencies: pip install -r requirements-llm.lock
 	$(BIN)/harvestradar report notes

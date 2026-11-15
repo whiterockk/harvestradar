@@ -1,63 +1,66 @@
 Subject: Cocoa risk elevated: +1.64
-From: HarvestRadar Weekly <weekly@harvestradar.invalid>
+From: HarvestRadar Daily <daily@harvestradar.invalid>
 To: undisclosed-recipients:;
 Date: Fri, 13 Nov 2026 07:00:00 +0000
 Message-ID: <2026-11-13.cocoa@harvestradar.invalid>
 MIME-Version: 1.0
 Content-Type: multipart/alternative;
- boundary="===============2685248163900543929=="
+ boundary="===============6906062408427090837=="
 
---===============2685248163900543929==
+--===============6906062408427090837==
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
 Cocoa risk elevated: +1.64
-HarvestRadar Weekly, week of 13 Nov 2026
+HarvestRadar Daily, 13 Nov 2026
 
-MAIZE RISK_Z +2.43
-ARABICA RISK_Z +0.47
-COCOA RISK_Z +1.64
+MAIZE risk index +2.43
+ARABICA risk index +0.47
+COCOA risk index +1.64
 
-Cocoa harvest risk is elevated this week: the index reads +1.64, -0.04 over f=
-our weeks. Expected world supply against trend is -1.8%.
+Cocoa harvest risk is elevated today. The index stands at +1.64, unchanged si=
+nce the previous working day. Expected world supply is -1.8% compared with no=
+rmal.
 
 The largest contributions to world supply come from C=C3=B4te d'Ivoire (-2.44=
- pp) and Nigeria (+0.95 pp). The most stressed producing regions are Bas-Sass=
-andra and North, mainly from heat.
+ points) and Nigeria (+0.95 points). The most stressed producing regions are =
+Bas-Sassandra and North, mainly from heat.
 
-No critical window is open this week; the next one is C=C3=B4te d'Ivoire dry =
-season, in December 2026. Futures closed at 5,119, -9.3% over four weeks. For=
- background, the El Nino reading is +2.46 (ONI AUG-OCT 2026).
+No critical window is open today; the next one is C=C3=B4te d'Ivoire dry seas=
+on, in December 2026. Futures closed at 5,119, up 1.0% on the previous close.=
+ For background, the El Ni=C3=B1o reading is +2.46 (Aug to Oct 2026).
 
 Checks: Numbers checked passed, Context checked passed, Claims checked passed
 
 Sources:
   +1.64  COCOA harvest-risk index  (risk_index.parquet, 2026-11-13)
-  -0.04 over four weeks  Change over four weeks  (risk_index.parquet, 2026-11=
--13)
-  -1.8%  Expected world supply vs trend  (model predictions, 2026-11-13)
-  5,119  ICE cocoa close  (prices_cocoa.parquet, 2026-11-13)
-  -9.3% over four weeks  Price change, four weeks  (prices_cocoa.parquet, 202=
-6-11-13)
-  +2.46  El Ni=C3=B1o (ONI)  (oni.parquet, 2026-11-10)
-  -2.44 pp  C=C3=B4te d'Ivoire, world supply  (risk_index.parquet (contributo=
-rs), 2026-11-13)
-  +0.95 pp  Nigeria, world supply  (risk_index.parquet (contributors), 2026-1=
-1-13)
-  -0.50 pp  Ghana, world supply  (risk_index.parquet (contributors), 2026-11-=
+  unchanged since the previous working day  Change since the previous working=
+ day  (risk_index.parquet, 2026-11-13)
+  -1.8%  Expected world supply vs normal  (model predictions, 2026-11-13)
+  5,119  Cocoa futures (ICE, New York) close  (prices_cocoa.parquet, 2026-11-=
 13)
+  up 1.0% on the previous close  Price change on the previous close  (prices_=
+cocoa.parquet, 2026-11-13)
+  +2.46  El Ni=C3=B1o index (ONI, sea temperature anomaly)  (oni.parquet, 202=
+6-11-10)
+  -2.44 points  C=C3=B4te d'Ivoire, world supply  (risk_index.parquet (contri=
+butors), 2026-11-13)
+  +0.95 points  Nigeria, world supply  (risk_index.parquet (contributors), 20=
+26-11-13)
+  -0.50 points  Ghana, world supply  (risk_index.parquet (contributors), 2026=
+-11-13)
   +1.0  Bas-Sassandra stress  (stress_cocoa.parquet, 2026-11-10)
   +2.3  North stress  (stress_cocoa.parquet, 2026-11-10)
   +2.5  Para stress  (stress_cocoa.parquet, 2026-11-10)
 
 Research output, not investment advice.
 
---===============2685248163900543929==
+--===============6906062408427090837==
 MIME-Version: 1.0
 Content-Type: multipart/related;
- boundary="===============2418481959417577733=="
+ boundary="===============4505912115275104842=="
 
---===============2418481959417577733==
+--===============4505912115275104842==
 Content-Type: text/html; charset="utf-8"
 Content-Transfer-Encoding: quoted-printable
 
@@ -82,8 +85,8 @@ ght=3D"48" alt=3D"HarvestRadar" style=3D"display:block;border-radius:11px;"><=
  UI', Helvetica, Arial, sans-serif;font-size:22px;line-height:28px;font-weigh=
 t:700;color:#EAF0F5;">Cocoa risk elevated: +1.64</div>
   <div style=3D"font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Aria=
-l, sans-serif;font-size:14px;color:#8A9AAB;">HarvestRadar Weekly &middot; wee=
-k of 13 Nov 2026</div></td>
+l, sans-serif;font-size:14px;color:#8A9AAB;">HarvestRadar Daily &middot; 13 N=
+ov 2026</div></td>
  </tr></table>
 </td></tr>
 <tr><td style=3D"padding:16px 23px 8px 23px;"><table role=3D"presentation" wi=
@@ -92,77 +95,73 @@ dth=3D"100%" cellpadding=3D"0" cellspacing=3D"0"><tr><td width=3D"33%" style=
 =3D"0" cellspacing=3D"0" style=3D"background:#131C27;border:1px solid #2A3646=
 ;border-radius:12px;"><tr><td style=3D"padding:12px 14px;"><div style=3D"font=
 -family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size=
-:13px;letter-spacing:2px;color:#8A9AAB;">MAIZE &middot; RISK_Z</div><div data=
--fig=3D"READING_MAIZE" style=3D"font-family:'JetBrains Mono', Menlo, Consolas=
-, 'Courier New', monospace;font-size:28px;line-height:36px;color:#FFB547;font=
--variant-numeric:tabular-nums;">+2.43</div></td></tr></table></td><td width=
-=3D"33%" style=3D"padding:0 5px;"><table role=3D"presentation" width=3D"100%"=
- cellpadding=3D"0" cellspacing=3D"0" style=3D"background:#131C27;border:1px s=
-olid #2A3646;border-radius:12px;"><tr><td style=3D"padding:12px 14px;"><div s=
-tyle=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospa=
-ce;font-size:13px;letter-spacing:2px;color:#8A9AAB;">ARABICA &middot; RISK_Z<=
-/div><div data-fig=3D"READING_COFFEE" style=3D"font-family:'JetBrains Mono', =
-Menlo, Consolas, 'Courier New', monospace;font-size:28px;line-height:36px;col=
-or:#FFB547;font-variant-numeric:tabular-nums;">+0.47</div></td></tr></table><=
-/td><td width=3D"33%" style=3D"padding:0 5px;"><table role=3D"presentation" w=
-idth=3D"100%" cellpadding=3D"0" cellspacing=3D"0" style=3D"background:#131C27=
-;border:1px solid #2A3646;border-radius:12px;"><tr><td style=3D"padding:12px =
-14px;"><div style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier =
-New', monospace;font-size:13px;letter-spacing:2px;color:#8A9AAB;">COCOA &midd=
-ot; RISK_Z</div><div data-fig=3D"READING_COCOA" style=3D"font-family:'JetBrai=
-ns Mono', Menlo, Consolas, 'Courier New', monospace;font-size:28px;line-heigh=
-t:36px;color:#FFB547;font-variant-numeric:tabular-nums;">+1.64</div></td></tr=
-></table></td></tr></table></td></tr>
+:13px;letter-spacing:2px;color:#8A9AAB;">MAIZE &middot; RISK INDEX</div><div =
+data-fig=3D"READING_MAIZE" style=3D"font-family:'JetBrains Mono', Menlo, Cons=
+olas, 'Courier New', monospace;font-size:28px;line-height:36px;color:#FFB547;=
+font-variant-numeric:tabular-nums;">+2.43</div></td></tr></table></td><td wid=
+th=3D"33%" style=3D"padding:0 5px;"><table role=3D"presentation" width=3D"100=
+%" cellpadding=3D"0" cellspacing=3D"0" style=3D"background:#131C27;border:1px=
+ solid #2A3646;border-radius:12px;"><tr><td style=3D"padding:12px 14px;"><div=
+ style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monos=
+pace;font-size:13px;letter-spacing:2px;color:#8A9AAB;">ARABICA &middot; RISK =
+INDEX</div><div data-fig=3D"READING_COFFEE" style=3D"font-family:'JetBrains M=
+ono', Menlo, Consolas, 'Courier New', monospace;font-size:28px;line-height:36=
+px;color:#FFB547;font-variant-numeric:tabular-nums;">+0.47</div></td></tr></t=
+able></td><td width=3D"33%" style=3D"padding:0 5px;"><table role=3D"presentat=
+ion" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" style=3D"background:#=
+131C27;border:1px solid #2A3646;border-radius:12px;"><tr><td style=3D"padding=
+:12px 14px;"><div style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Co=
+urier New', monospace;font-size:13px;letter-spacing:2px;color:#8A9AAB;">COCOA=
+ &middot; RISK INDEX</div><div data-fig=3D"READING_COCOA" style=3D"font-famil=
+y:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:28px;=
+line-height:36px;color:#FFB547;font-variant-numeric:tabular-nums;">+1.64</div=
+></td></tr></table></td></tr></table></td></tr>
 <tr><td style=3D"padding:16px 28px 4px 28px;"><p style=3D"margin:0 0 14px 0;f=
 ont-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;fon=
 t-size:16px;line-height:26px;color:#C7D1DB;">Cocoa harvest risk is elevated t=
-his week: the index reads <span data-fig=3D"RISK" style=3D"font-family:'JetBr=
+oday. The index stands at <span data-fig=3D"RISK" style=3D"font-family:'JetBr=
 ains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;backgroun=
 d:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-radius:=
 6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;">+1=
-.64</span>, <span data-fig=3D"RISK_CHANGE" style=3D"font-family:'JetBrains Mo=
-no', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;background:rgba(=
-255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-radius:6px;pad=
-ding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;">-0.04</sp=
-an> over four weeks. Expected world supply against trend is <span data-fig=3D=
-"SUPPLY" style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New=
-', monospace;color:#FFB547;background:rgba(255,181,71,0.10);border:1px solid =
-rgba(255,181,71,0.55);border-radius:6px;padding:1px 6px;white-space:nowrap;fo=
-nt-variant-numeric:tabular-nums;">-1.8%</span>.</p><p style=3D"margin:0 0 14p=
-x 0;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-seri=
-f;font-size:16px;line-height:26px;color:#C7D1DB;">The largest contributions t=
-o world supply come from <span style=3D"color:#EAF0F5;font-weight:600;">C=C3=
-=B4te d&#x27;Ivoire</span> (<span data-fig=3D"DRIVER1_CONTRIB" style=3D"font-=
-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB=
-547;background:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);b=
-order-radius:6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabu=
-lar-nums;">-2.44 pp</span>) and <span style=3D"color:#EAF0F5;font-weight:600;=
-">Nigeria</span> (<span data-fig=3D"DRIVER2_CONTRIB" style=3D"font-family:'Je=
-tBrains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;backgr=
-ound:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-radi=
-us:6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;"=
->+0.95 pp</span>). The most stressed producing regions are <span style=3D"col=
-or:#EAF0F5;font-weight:600;">Bas-Sassandra</span> and <span style=3D"color:#E=
-AF0F5;font-weight:600;">North</span>, mainly from heat.</p><p style=3D"margin=
-:0 0 14px 0;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, s=
-ans-serif;font-size:16px;line-height:26px;color:#C7D1DB;">No critical window =
-is open this week; the next one is <span style=3D"color:#EAF0F5;font-weight:6=
-00;">C=C3=B4te d&#x27;Ivoire dry season</span>, in <span style=3D"color:#EAF0=
-F5;font-weight:600;">December 2026</span>. Futures closed at <span data-fig=
-=3D"PRICE" style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier N=
-ew', monospace;color:#FFB547;background:rgba(255,181,71,0.10);border:1px soli=
-d rgba(255,181,71,0.55);border-radius:6px;padding:1px 6px;white-space:nowrap;=
-font-variant-numeric:tabular-nums;">5,119</span>, <span data-fig=3D"PRICE_CHA=
-NGE" style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', m=
-onospace;color:#FFB547;background:rgba(255,181,71,0.10);border:1px solid rgba=
-(255,181,71,0.55);border-radius:6px;padding:1px 6px;white-space:nowrap;font-v=
-ariant-numeric:tabular-nums;">-9.3%</span> over four weeks. For background, t=
-he El Nino reading is <span data-fig=3D"ONI" style=3D"font-family:'JetBrains =
-Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;background:rgb=
-a(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-radius:6px;p=
-adding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;">+2.46</=
-span> (<span style=3D"color:#EAF0F5;font-weight:600;">ONI AUG-OCT 2026</span>=
-).</p></td></tr>
+.64</span>, unchanged since the previous working day. Expected world supply i=
+s <span data-fig=3D"SUPPLY" style=3D"font-family:'JetBrains Mono', Menlo, Con=
+solas, 'Courier New', monospace;color:#FFB547;background:rgba(255,181,71,0.10=
+);border:1px solid rgba(255,181,71,0.55);border-radius:6px;padding:1px 6px;wh=
+ite-space:nowrap;font-variant-numeric:tabular-nums;">-1.8%</span> compared wi=
+th normal.</p><p style=3D"margin:0 0 14px 0;font-family:Inter, -apple-system,=
+ 'Segoe UI', Helvetica, Arial, sans-serif;font-size:16px;line-height:26px;col=
+or:#C7D1DB;">The largest contributions to world supply come from <span style=
+=3D"color:#EAF0F5;font-weight:600;">C=C3=B4te d&#x27;Ivoire</span> (<span dat=
+a-fig=3D"DRIVER1_CONTRIB" style=3D"font-family:'JetBrains Mono', Menlo, Conso=
+las, 'Courier New', monospace;color:#FFB547;background:rgba(255,181,71,0.10);=
+border:1px solid rgba(255,181,71,0.55);border-radius:6px;padding:1px 6px;whit=
+e-space:nowrap;font-variant-numeric:tabular-nums;">-2.44 points</span>) and <=
+span style=3D"color:#EAF0F5;font-weight:600;">Nigeria</span> (<span data-fig=
+=3D"DRIVER2_CONTRIB" style=3D"font-family:'JetBrains Mono', Menlo, Consolas, =
+'Courier New', monospace;color:#FFB547;background:rgba(255,181,71,0.10);borde=
+r:1px solid rgba(255,181,71,0.55);border-radius:6px;padding:1px 6px;white-spa=
+ce:nowrap;font-variant-numeric:tabular-nums;">+0.95 points</span>). The most =
+stressed producing regions are <span style=3D"color:#EAF0F5;font-weight:600;"=
+>Bas-Sassandra</span> and <span style=3D"color:#EAF0F5;font-weight:600;">Nort=
+h</span>, mainly from heat.</p><p style=3D"margin:0 0 14px 0;font-family:Inte=
+r, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:16px;lin=
+e-height:26px;color:#C7D1DB;">No critical window is open today; the next one =
+is <span style=3D"color:#EAF0F5;font-weight:600;">C=C3=B4te d&#x27;Ivoire dry=
+ season</span>, in <span style=3D"color:#EAF0F5;font-weight:600;">December 20=
+26</span>. Futures closed at <span data-fig=3D"PRICE" style=3D"font-family:'J=
+etBrains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;backg=
+round:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-rad=
+ius:6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;=
+">5,119</span>, up <span data-fig=3D"PRICE_CHANGE" style=3D"font-family:'JetB=
+rains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;backgrou=
+nd:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-radius=
+:6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;">1=
+.0%</span> on the previous close. For background, the El Ni=C3=B1o reading is=
+ <span data-fig=3D"ONI" style=3D"font-family:'JetBrains Mono', Menlo, Consola=
+s, 'Courier New', monospace;color:#FFB547;background:rgba(255,181,71,0.10);bo=
+rder:1px solid rgba(255,181,71,0.55);border-radius:6px;padding:1px 6px;white-=
+space:nowrap;font-variant-numeric:tabular-nums;">+2.46</span> (<span style=3D=
+"color:#EAF0F5;font-weight:600;">Aug to Oct 2026</span>).</p></td></tr>
 <tr><td style=3D"padding:0 28px 6px 28px;"><span style=3D"display:inline-bloc=
 k;margin:0 8px 6px 0;padding:4px 10px;border:1px solid #2A3646;border-radius:=
 999px;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-se=
@@ -176,7 +175,9 @@ x 10px;border:1px solid #2A3646;border-radius:999px;font-family:Inter, -apple=
 B;">&#10003; Claims checked</span></td></tr>
 <tr><td style=3D"padding:0 28px 18px 28px;font-family:'JetBrains Mono', Menlo=
 , Consolas, 'Courier New', monospace;font-size:13px;color:#8A9AAB;">Written b=
-y Qwen2.5-1.5B, local &middot; figures inserted by software</td></tr>
+y a small AI model running locally (Qwen2.5-1.5B); 1 of 3 paragraphs from the=
+ fixed template. Every figure is inserted by the software, with its source.</=
+td></tr>
 <tr><td style=3D"padding:0 28px 20px 28px;">
  <div style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', =
 monospace;font-size:13px;letter-spacing:2px;color:#8A9AAB;padding-bottom:6px;=
@@ -192,94 +193,95 @@ harvest-risk index</td><td style=3D"padding:6px 0;border-top:1px solid #1E293=
 t-size:13px;color:#6F7F90;">risk_index.parquet &middot; 2026-11-13</td></tr><=
 tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBr=
 ains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#F=
-FB547;white-space:nowrap;" data-fig=3D"RISK_CHANGE">-0.04 over four weeks</td=
+FB547;white-space:nowrap;" data-fig=3D"RISK_CHANGE">unchanged since the previ=
+ous working day</td><td style=3D"padding:6px 10px;border-top:1px solid #1E293=
+5;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;=
+font-size:13px;color:#C7D1DB;">Change since the previous working day</td><td =
+style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mo=
+no', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#6F7F90;"=
+>risk_index.parquet &middot; 2026-11-13</td></tr><tr><td style=3D"padding:6px=
+ 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas=
+, 'Courier New', monospace;font-size:13px;color:#FFB547;white-space:nowrap;" =
+data-fig=3D"SUPPLY">-1.8%</td><td style=3D"padding:6px 10px;border-top:1px so=
+lid #1E2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, s=
+ans-serif;font-size:13px;color:#C7D1DB;">Expected world supply vs normal</td>=
+<td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrain=
+s Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#6F7F=
+90;">model predictions &middot; 2026-11-13</td></tr><tr><td style=3D"padding:=
+6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Conso=
+las, 'Courier New', monospace;font-size:13px;color:#FFB547;white-space:nowrap=
+;" data-fig=3D"PRICE">5,119</td><td style=3D"padding:6px 10px;border-top:1px =
+solid #1E2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial,=
+ sans-serif;font-size:13px;color:#C7D1DB;">Cocoa futures (ICE, New York) clos=
+e</td><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'Je=
+tBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color=
+:#6F7F90;">prices_cocoa.parquet &middot; 2026-11-13</td></tr><tr><td style=3D=
+"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Men=
+lo, Consolas, 'Courier New', monospace;font-size:13px;color:#FFB547;white-spa=
+ce:nowrap;" data-fig=3D"PRICE_CHANGE">up 1.0% on the previous close</td><td s=
+tyle=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -app=
+le-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7D=
+1DB;">Price change on the previous close</td><td style=3D"padding:6px 0;borde=
+r-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Couri=
+er New', monospace;font-size:13px;color:#6F7F90;">prices_cocoa.parquet &middo=
+t; 2026-11-13</td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1=
+E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace=
+;font-size:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"ONI">+2.46</td=
 ><td style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter=
 , -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;colo=
-r:#C7D1DB;">Change over four weeks</td><td style=3D"padding:6px 0;border-top:=
-1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New=
-', monospace;font-size:13px;color:#6F7F90;">risk_index.parquet &middot; 2026-=
-11-13</td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;fo=
-nt-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-si=
-ze:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"SUPPLY">-1.8%</td><td =
-style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -ap=
-ple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7=
-D1DB;">Expected world supply vs trend</td><td style=3D"padding:6px 0;border-t=
-op:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier =
-New', monospace;font-size:13px;color:#6F7F90;">model predictions &middot; 202=
-6-11-13</td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;=
-font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-=
-size:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"PRICE">5,119</td><td=
- style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -a=
-pple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C=
-7D1DB;">ICE cocoa close</td><td style=3D"padding:6px 0;border-top:1px solid #=
-1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospac=
-e;font-size:13px;color:#6F7F90;">prices_cocoa.parquet &middot; 2026-11-13</td=
-></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family=
+r:#C7D1DB;">El Ni=C3=B1o index (ONI, sea temperature anomaly)</td><td style=
+=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', =
+Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#6F7F90;">oni.=
+parquet &middot; 2026-11-10</td></tr><tr><td style=3D"padding:6px 0;border-to=
+p:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier N=
+ew', monospace;font-size:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"=
+DRIVER1_CONTRIB">-2.44 points</td><td style=3D"padding:6px 10px;border-top:1p=
+x solid #1E2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Aria=
+l, sans-serif;font-size:13px;color:#C7D1DB;">C=C3=B4te d&#x27;Ivoire, world s=
+upply</td><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family=
 :'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;c=
-olor:#FFB547;white-space:nowrap;" data-fig=3D"PRICE_CHANGE">-9.3% over four w=
-eeks</td><td style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-fami=
-ly:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:1=
-3px;color:#C7D1DB;">Price change, four weeks</td><td style=3D"padding:6px 0;b=
-order-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'C=
-ourier New', monospace;font-size:13px;color:#6F7F90;">prices_cocoa.parquet &m=
-iddot; 2026-11-13</td></tr><tr><td style=3D"padding:6px 0;border-top:1px soli=
-d #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monos=
-pace;font-size:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"ONI">+2.46=
-</td><td style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:I=
-nter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;=
-color:#C7D1DB;">El Ni=C3=B1o (ONI)</td><td style=3D"padding:6px 0;border-top:=
-1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New=
-', monospace;font-size:13px;color:#6F7F90;">oni.parquet &middot; 2026-11-10</=
-td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-fami=
-ly:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px=
-;color:#FFB547;white-space:nowrap;" data-fig=3D"DRIVER1_CONTRIB">-2.44 pp</td=
-><td style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter=
-, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;colo=
-r:#C7D1DB;">C=C3=B4te d&#x27;Ivoire, world supply</td><td style=3D"padding:6p=
-x 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consola=
-s, 'Courier New', monospace;font-size:13px;color:#6F7F90;">risk_index.parquet=
- (contributors) &middot; 2026-11-13</td></tr><tr><td style=3D"padding:6px 0;b=
-order-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'C=
-ourier New', monospace;font-size:13px;color:#FFB547;white-space:nowrap;" data=
--fig=3D"DRIVER2_CONTRIB">+0.95 pp</td><td style=3D"padding:6px 10px;border-to=
-p:1px solid #1E2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, =
-Arial, sans-serif;font-size:13px;color:#C7D1DB;">Nigeria, world supply</td><t=
-d style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains =
-Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#6F7F90=
-;">risk_index.parquet (contributors) &middot; 2026-11-13</td></tr><tr><td sty=
-le=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono'=
-, Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#FFB547;whit=
-e-space:nowrap;" data-fig=3D"DRIVER3_CONTRIB">-0.50 pp</td><td style=3D"paddi=
-ng:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -apple-system, 'S=
-egoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7D1DB;">Ghana, =
-world supply</td><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font=
--family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size=
-:13px;color:#6F7F90;">risk_index.parquet (contributors) &middot; 2026-11-13</=
-td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-fami=
-ly:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px=
-;color:#FFB547;white-space:nowrap;" data-fig=3D"REGION1_STRESS">+1.0</td><td =
-style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -ap=
-ple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7=
-D1DB;">Bas-Sassandra stress</td><td style=3D"padding:6px 0;border-top:1px sol=
-id #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', mono=
-space;font-size:13px;color:#6F7F90;">stress_cocoa.parquet &middot; 2026-11-10=
-</td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-fa=
-mily:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13=
-px;color:#FFB547;white-space:nowrap;" data-fig=3D"REGION2_STRESS">+2.3</td><t=
+olor:#6F7F90;">risk_index.parquet (contributors) &middot; 2026-11-13</td></tr=
+><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'Jet=
+Brains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:=
+#FFB547;white-space:nowrap;" data-fig=3D"DRIVER2_CONTRIB">+0.95 points</td><t=
 d style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -=
 apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#=
-C7D1DB;">North stress</td><td style=3D"padding:6px 0;border-top:1px solid #1E=
-2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;=
-font-size:13px;color:#6F7F90;">stress_cocoa.parquet &middot; 2026-11-10</td><=
-/tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'=
-JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;col=
-or:#FFB547;white-space:nowrap;" data-fig=3D"REGION3_STRESS">+2.5</td><td styl=
-e=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -apple-=
-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7D1DB=
-;">Para stress</td><td style=3D"padding:6px 0;border-top:1px solid #1E2935;fo=
-nt-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-si=
-ze:13px;color:#6F7F90;">stress_cocoa.parquet &middot; 2026-11-10</td></tr></t=
-able>
+C7D1DB;">Nigeria, world supply</td><td style=3D"padding:6px 0;border-top:1px =
+solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', m=
+onospace;font-size:13px;color:#6F7F90;">risk_index.parquet (contributors) &mi=
+ddot; 2026-11-13</td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid=
+ #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monosp=
+ace;font-size:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"DRIVER3_CON=
+TRIB">-0.50 points</td><td style=3D"padding:6px 10px;border-top:1px solid #1E=
+2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-ser=
+if;font-size:13px;color:#C7D1DB;">Ghana, world supply</td><td style=3D"paddin=
+g:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Con=
+solas, 'Courier New', monospace;font-size:13px;color:#6F7F90;">risk_index.par=
+quet (contributors) &middot; 2026-11-13</td></tr><tr><td style=3D"padding:6px=
+ 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas=
+, 'Courier New', monospace;font-size:13px;color:#FFB547;white-space:nowrap;" =
+data-fig=3D"REGION1_STRESS">+1.0</td><td style=3D"padding:6px 10px;border-top=
+:1px solid #1E2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, A=
+rial, sans-serif;font-size:13px;color:#C7D1DB;">Bas-Sassandra stress</td><td =
+style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mo=
+no', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#6F7F90;"=
+>stress_cocoa.parquet &middot; 2026-11-10</td></tr><tr><td style=3D"padding:6=
+px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consol=
+as, 'Courier New', monospace;font-size:13px;color:#FFB547;white-space:nowrap;=
+" data-fig=3D"REGION2_STRESS">+2.3</td><td style=3D"padding:6px 10px;border-t=
+op:1px solid #1E2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica,=
+ Arial, sans-serif;font-size:13px;color:#C7D1DB;">North stress</td><td style=
+=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', =
+Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#6F7F90;">stre=
+ss_cocoa.parquet &middot; 2026-11-10</td></tr><tr><td style=3D"padding:6px 0;=
+border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, '=
+Courier New', monospace;font-size:13px;color:#FFB547;white-space:nowrap;" dat=
+a-fig=3D"REGION3_STRESS">+2.5</td><td style=3D"padding:6px 10px;border-top:1p=
+x solid #1E2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Aria=
+l, sans-serif;font-size:13px;color:#C7D1DB;">Para stress</td><td style=3D"pad=
+ding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, =
+Consolas, 'Courier New', monospace;font-size:13px;color:#6F7F90;">stress_coco=
+a.parquet &middot; 2026-11-10</td></tr></table>
 </td></tr>
 <tr><td style=3D"padding:14px 28px 22px 28px;border-top:1px solid #1E2935;fon=
 t-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-siz=
@@ -289,7 +291,7 @@ e:13px;color:#6F7F90;">
 </td></tr>
 </table></td></tr></table></body></html>
 
---===============2418481959417577733==
+--===============4505912115275104842==
 Content-Type: image/png
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="harvestradar.png"
@@ -385,6 +387,6 @@ SD78WQ0hOJwr7SO37wVpS6XulSamolNyCFtyfpKC9HCismmTF6KcJcMBSqXXZAvSIGIOD4ojpW4a
 EKVks63jt8V8MbP4rLP4tTVL2ScP6vje7vK93eXXdygYPEcOqZyJHtNq898DAAD//02Xv7AAAAAG
 SURBVAMAqagd+4RpdrEAAAAASUVORK5CYII=
 
---===============2418481959417577733==--
+--===============4505912115275104842==--
 
---===============2685248163900543929==--
+--===============6906062408427090837==--

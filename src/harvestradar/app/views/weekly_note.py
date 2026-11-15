@@ -29,9 +29,10 @@ def body_html(template: str, payload: dict) -> str:
             if s is None:
                 out.append(H.escape(m.group(0)))
             elif s["kind"] == "figure":
-                fig, rest = split_figure(s["text"])
-                out.append(f'<span class="hr-pill" title="{H.escape(s["source"])} · {H.escape(s["date"])}">'
-                           f'{H.escape(fig)}</span>{H.escape(rest)}')
+                pre, fig, rest = split_figure(s["text"])
+                pill = (f'<span class="hr-pill" title="{H.escape(s["source"])} · {H.escape(s["date"])}">'
+                        f'{H.escape(fig)}</span>' if fig else "")
+                out.append(H.escape(pre) + pill + H.escape(rest))
             else:
                 out.append(f'<span style="color:{T["frost"]};font-weight:600">{H.escape(s["text"])}</span>')
             last = m.end()
@@ -59,15 +60,15 @@ def render() -> None:
     with left:
         st.markdown('<div style="display:flex;justify-content:space-between;align-items:baseline;margin:4px 4px 6px 4px">'
                     '<span style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:28px">Inbox</span>'
-                    '<span class="hr-caps">FRIDAY 07:00</span></div>', unsafe_allow_html=True)
+                    '<span class="hr-caps">EVERY WORKING DAY, 07:00</span></div>', unsafe_allow_html=True)
         for wk in weeks:
             rows = n[n.week == wk].sort_values("commodity", key=lambda s: s.map(ORDER))
             for r in rows.itertuples():
                 k = f"{pd.Timestamp(wk):%Y-%m-%d}|{r.commodity}"
                 active = st.session_state.note_sel == k
                 tp = int(getattr(r, "template_paragraphs", 0) or 0)
-                label = ("DETERMINISTIC-TEMPLATE" if r.model == "deterministic-template"
-                         else (f"TEMPLATE {tp}/3" if tp else ""))
+                label = ("FIXED TEMPLATE" if r.model == "deterministic-template"
+                         else (f"{tp} OF 3 FROM TEMPLATE" if tp else ""))
                 tag = ('<div style="margin-top:6px"><span class="hr-chip" style="padding:3px 8px;font-size:13px">'
                        f'{label}</span></div>' if label else "")
                 bg = "background:rgba(255,181,71,.08);border-color:rgba(255,181,71,.6);" if active else ""
@@ -76,8 +77,8 @@ def render() -> None:
                     f'<span style="border-radius:10px;overflow:hidden;display:inline-flex;flex:none;height:40px">'
                     f'{C.mark_on_signal(40)}</span><div style="flex:1;min-width:0">'
                     f'<div style="display:flex;justify-content:space-between"><span style="font-weight:600;font-size:16px">'
-                    f'HarvestRadar Weekly</span><span class="hr-mono" style="font-size:13px;color:{T["muted"]}">'
-                    f'{pd.Timestamp(wk):%d %b}</span></div>'
+                    f'HarvestRadar Daily</span><span class="hr-mono" style="font-size:13px;color:{T["muted"]}">'
+                    f'{pd.Timestamp(wk):%d %b}, 07:00</span></div>'
                     f'<div style="font-size:15px;color:{T["frost_2"]};white-space:nowrap;overflow:hidden;'
                     f'text-overflow:ellipsis">{H.escape(r.title)}</div>{tag}</div></div>', unsafe_allow_html=True)
                 st.button(f"Open {r.title}", key=f"pickn_{k}", on_click=_select, args=(k,), use_container_width=True)
@@ -94,8 +95,8 @@ def render() -> None:
                 f'<div style="display:flex;gap:16px;align-items:center;margin-bottom:18px;min-height:64px">'
                 f'<span style="border-radius:12px;overflow:hidden;display:inline-flex;flex:none">{C.mark_on_signal(52)}</span>'
                 f'<div><div style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:30px;line-height:1.15">'
-                f'{H.escape(row.title)}</div><div style="font-size:16px;color:{T["muted"]}">HarvestRadar Weekly &middot; '
-                f'week of {pd.Timestamp(p["week"]).day} {pd.Timestamp(p["week"]):%b %Y}</div></div></div>',
+                f'{H.escape(row.title)}</div><div style="font-size:16px;color:{T["muted"]}">HarvestRadar Daily &middot; '
+                f'{pd.Timestamp(p["week"]).day} {pd.Timestamp(p["week"]):%B %Y}</div></div></div>',
                 unsafe_allow_html=True)
             cols = st.columns(3)
             for col, (k2, rd) in zip(cols, p.get("readings", {}).items()):
@@ -107,19 +108,20 @@ def render() -> None:
             checks = (C.badge("Numbers checked", bool(row.numbers_ok)) + C.badge("Context checked", bool(row.context_ok))
                       + C.badge("Claims checked", bool(row.claims_ok)))
             tp = int(row.get("template_paragraphs", 0) or 0)
-            who = ("Deterministic template" if row.model == "deterministic-template"
-                   else f"Written by {m['llm']['display_name']}, local"
-                   + (f", {tp} of 3 paragraphs from the template" if tp else ""))
+            who = ("Written from the fixed template (the AI model failed the checks)"
+                   if row.model == "deterministic-template"
+                   else f"Written by a small AI model running locally ({m['llm']['display_name']})"
+                   + (f"; {tp} of 3 paragraphs from the fixed template" if tp else ""))
             st.markdown(f'<div style="display:flex;flex-wrap:wrap;align-items:center">{checks}'
                         f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]};margin-left:6px">{who} '
-                        f'&middot; figures inserted by software</span></div>', unsafe_allow_html=True)
+                        f'. Every figure is inserted by the software, with its source.</span></div>', unsafe_allow_html=True)
             b1, b2, _ = st.columns([0.2, 0.24, 0.56])
             with b1:
                 st.button("Open the map", key="open_map", on_click=go, args=("stress",),
                           kwargs={"crop": key}, use_container_width=True)
             with b2:
                 content, fname = eml_bytes(row.to_dict())
-                st.download_button("Download as email", data=content, file_name=fname, mime="message/rfc822",
+                st.download_button("Download as email (.eml)", data=content, file_name=fname, mime="message/rfc822",
                                    key="download_eml", use_container_width=True)
         with st.expander("Data given to the model", expanded=st.session_state.get("q_data") == "1"):
             figs = [(k, s) for k, s in p["slots"].items() if s["kind"] == "figure"]

@@ -73,29 +73,32 @@ def render() -> None:
     months = maps.MONTHS
     rng = f"{months[pd.Timestamp(frames[0]['date']).month - 1]} · {months[pd.Timestamp(frames[-1]['date']).month - 1]} {dekad.year}"
     cfg = {"viewBox": maps.world_viewbox(), "base": maps.base_layer(), "countries": borders, "regions": regs,
-           "frames": frames, "start": start, "ringRadius": 230, "labelPrefix": "STRESS VS OWN HISTORY",
+           "frames": frames, "start": start, "ringRadius": 230, "labelPrefix": "STRESS VS NORMAL", "labelWord": "",
            "rangeLabel": rng, "capture": st.session_state.capture,
            "autoplay": st.session_state.get("q_play") == "1",
            "ariaLabel": f"{m['label']} stress map, dekad {frames[start]['label']} {dekad.year}"}
     with left:
         st.iframe(maps.map_html(cfg, MAP_H, "world"), height=MAP_H)
-        st.markdown(f'<div class="hr-source">{m["label"]}: {m["regions"]} regions covering '
-                    f'{100 * m["coverage"]:.0f}% of world output (MapSPAM 2020) &middot; stress = heat, rain and '
-                    f'root-zone soil moisture vs {data.meta()["climatology_base"][0]}-{data.meta()["climatology_base"][1]}'
-                    f' &middot; NASA POWER, stress_{key}.parquet</div>', unsafe_allow_html=True)
+        base = data.meta()["climatology_base"]
+        st.markdown(f'<div class="hr-source">{m["label"]}: {m["regions"]} producing regions, '
+                    f'{100 * m["coverage"]:.0f}% of world output (MapSPAM 2020). Stress combines heat, rainfall and '
+                    f'soil moisture, compared with the same 10 days in {base[0]}-{base[1]}. Weather: NASA POWER.</div>',
+                    unsafe_allow_html=True)
     with right:
         top = data.top_regions(key, dekad, 5)
         best = float(top["score"].max()) if len(top) and top["score"].max() > 0 else 1.0
-        rows = [{"rank": i + 1, "name": r.adm1_name, "iso": r.country_iso3,
+        rows = [{"rank": i + 1, "name": r.adm1_name, "iso": r.country_name,
                  "frac": max(0.0, float(r.score) / best), "hot": i == 0 and r.stress >= 2}
                 for i, r in enumerate(top.itertuples())]
-        st.markdown(C.panel("STRESS &times; SHARE OF WORLD SUPPLY", C.ranking_rows(rows, m["glyph"]),
-                            f"dekad {maps.dekad_label(dekad).lower()} {dekad.year} &middot; stress_{key}.parquet "
-                            f"&times; regions_{key}.geojson weights", height=356), unsafe_allow_html=True)
+        st.markdown(C.panel("MOST STRESSED REGIONS, WEIGHTED BY OUTPUT", C.ranking_rows(rows, m["glyph"]),
+                            f"10 days to {dekad.day} {dekad:%B %Y}. Ranked by stress times the region's share of "
+                            f"world output.", height=356), unsafe_allow_html=True)
         o = data.oni_latest(st.session_state.asof)
         if o:
-            st.markdown(C.climate_card(f"{o['value']:+.2f}", o["label"], o["series"],
-                                       f"NOAA CPC ONI, published {o['available_at']} &middot; oni.parquet"),
+            period = o["label"].replace("-", " to ").title().replace(" To ", " to ")
+            st.markdown(C.climate_card(f"{o['value']:+.2f}", period, o["series"],
+                                       f"NOAA Oceanic Niño Index, published {o['available_at']}. Shown for context: "
+                                       f"it is not part of the index.", data.oni_strength(o["value"])),
                         unsafe_allow_html=True)
         n = data.notes()
         if len(n):
@@ -105,6 +108,6 @@ def render() -> None:
             if len(row):
                 r = row.iloc[0]
                 passed = int(r.numbers_ok) + int(r.get("context_ok", False)) + int(r.get("claims_ok", False))
-                st.markdown(C.note_ready(passed, 3, "Friday note ready"), unsafe_allow_html=True)
-                st.button("Open the weekly note", key="pick_note", on_click=go, args=("note",),
+                st.markdown(C.note_ready(passed, 3, "Today's note is ready"), unsafe_allow_html=True)
+                st.button("Open today's note", key="pick_note", on_click=go, args=("note",),
                           use_container_width=True)

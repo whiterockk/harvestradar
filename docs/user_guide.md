@@ -29,21 +29,24 @@ root-zone soil moisture with the same dekad in 2001-2020.
   arrows step one dekad, `x1 / x2.5` changes speed. Rings mark the three regions with the highest
   stress x share of world supply. The right column ranks the top five for the latest dekad, shows El Nino as
   context only, and links to the Friday note.
-- **Commodity**: the index (amber) against the futures price (white), the main producer's critical windows
-  shaded and named from `config/commodities.yaml`. "Who drives this week" gives each country's contribution
+- **Commodity**: the index (amber, left scale) against the futures price (white, right scale), the main
+  producer's critical windows shaded and named from `config/commodities.yaml`. "What it means for the price"
+  turns the expected world supply gap into the move of the futures price that such a gap has come with since
+  2002 (a rough guide with an 80 % range; for arabica no reliable link was found, so none is shown). "Who drives this week" gives each country's contribution
   in percentage points of world supply (amber raises risk, blue lowers it). Pick a country to see the four
   largest SHAP contributions of its forecast.
 - **Replay**: pick an episode. The chip says which seasons the model had seen. The film strip shows six
   dekads; the event card gives the first week with `risk_z` at or above +2, or the peak if it never got there.
-- **Weekly note**: notes for the latest two weeks. Figures are amber pills; hover one to see its source.
-  "Data given to the model" lists every figure with its source and date. A note tagged
-  `DETERMINISTIC-TEMPLATE` means the model failed the checks after two retries (or was not run).
+- **Daily note**: one note per commodity for each of the last five working days. Figures are amber pills;
+  hover one to see its source. "Data given to the model" lists every figure with its source and date. A note
+  tagged `FIXED TEMPLATE` means the model failed the checks for every paragraph; `n OF 3 FROM TEMPLATE` means
+  that n paragraphs were replaced by the fixed template after failing the checks.
 - **Method**: pipeline, out-of-sample evaluation, the honest record (what the index caught and missed, the
   trading-rule test), credits.
 
-## 4. Exporting the weekly note as an email
+## 4. Exporting the daily note as an email
 
-On the Weekly note page, **Download as email** saves a `.eml` file (open it with any mail client). From the
+On the Daily note page, **Download as email** saves a `.eml` file (open it with any mail client). From the
 command line, for the three commodities of the latest week:
 
 ```bash
@@ -70,7 +73,7 @@ embedded), so it renders offline. Nothing is sent: there is no SMTP and no store
 ## 6. Refreshing the data
 
 See the README ("Rebuild everything"). The date of the weekly update is `dates.as_of_end` in
-`config/settings.yaml`; set it to the latest Friday and run `make all`.
+`config/settings.yaml`; set it to the latest working day and run `make all`.
 
 ## 7. Limits
 

@@ -95,19 +95,28 @@ def index_build() -> None:
     build_index(_cfg())
 
 
+@index_app.command("daily")
+def index_daily() -> None:
+    """Index every working day since dates.daily_start, and the implied price reaction."""
+    from harvestradar.pipeline import build_daily
+
+    build_daily(_cfg())
+
+
 @report_app.command("notes")
-def report_notes(weeks: int = typer.Option(None, help="Number of latest weeks"),
-                 deterministic: bool = typer.Option(False, help="Skip the LLM, use the template")) -> None:
-    """Weekly notes (local Hugging Face model, guarded by number and claim checks)."""
+def report_notes(days: int = typer.Option(None, help="Number of latest working days"),
+                 deterministic: bool = typer.Option(False, help="Skip the LLM, use the template"),
+                 commodity: list[str] = typer.Option(None, help="Regenerate only these commodities")) -> None:
+    """Daily notes (local Hugging Face model, guarded by number and claim checks)."""
     from harvestradar.report.weekly_note import build_notes
 
-    build_notes(_cfg(), weeks=weeks, deterministic=deterministic)
+    build_notes(_cfg(), days=days, deterministic=deterministic, only=commodity or None)
 
 
 @report_app.command("email")
-def report_email(week: str = typer.Option("latest", help="'latest' or a date YYYY-MM-DD"),
+def report_email(week: str = typer.Option("latest", help="'latest' or a date YYYY-MM-DD (the note's day)"),
                  out_dir: str = typer.Option("reports/notes", help="Output directory")) -> None:
-    """Write the weekly notes as .eml and .html (offline: nothing is sent)."""
+    """Write the latest daily notes as .eml and .html (offline: nothing is sent)."""
     from pathlib import Path
 
     from harvestradar.report.email_note import export_week

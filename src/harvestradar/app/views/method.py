@@ -11,14 +11,14 @@ from harvestradar.app import components as C
 from harvestradar.app import data
 from harvestradar.app.theme import T, ramp_hex
 
-CHIPS = ["WEIGHTED GEOSPATIAL AGGREGATION", "LEAK-FREE TEMPORAL VALIDATION", "SHAP EXPLANATIONS",
-         "GUARD-RAILED LOCAL LLM", "PERMUTATION-TESTED BACKTEST"]
+CHIPS = ["WEATHER WEIGHTED BY WHERE CROPS GROW", "TESTING WITHOUT PEEKING AT THE FUTURE",
+         "EXPLANATIONS BY WEATHER FACTOR (SHAP)", "LOCAL AI WRITER WITH FACT CHECKS", "TRADING TEST AGAINST LUCK"]
 
 
 def _card(num: str, title: str, big: str, sub: str, extra: str = "", active: bool = False) -> str:
     border = "border-color:rgba(255,181,71,.75);" if active else ""
     return (f'<div class="hr-glass" style="height:304px;padding:20px 24px;{border}">'
-            f'<div class="hr-mono" style="font-size:13px;color:{T["signal"] if active else T["muted"]}">{num}</div>'
+            f'<div class="hr-mono" style="font-size:13px;color:{T["signal"] if active else T["muted"]}">STEP {num}</div>'
             f'<div style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:28px;margin-top:6px">{title}</div>'
             f'<div class="hr-mono" style="font-size:40px;color:{T["frost"]};margin-top:8px">{big}</div>'
             f'<div style="font-size:16px;color:{T["frost_2"]}">{sub}</div>{extra}</div>')
@@ -27,7 +27,7 @@ def _card(num: str, title: str, big: str, sub: str, extra: str = "", active: boo
 def _ledger_row(ok: bool, text: str, figure: str, verdict: str) -> str:
     icon = f'<span style="color:{T["frost"]};font-size:22px">&#10003;</span>' if ok else \
         f'<span style="color:{T["muted"]};font-size:22px">&#10005;</span>'
-    return (f'<div style="display:grid;grid-template-columns:40px 1fr 330px 110px;align-items:center;'
+    return (f'<div style="display:grid;grid-template-columns:40px 1fr 360px 150px;align-items:center;'
             f'padding:16px 4px;border-bottom:1px solid {T["line"]}">{icon}'
             f'<span style="font-size:22px;color:{T["frost"] if ok else T["frost_2"]}">{H.escape(text)}</span>'
             f'<span class="hr-mono" style="font-size:22px;text-align:right;color:{T["frost_2"]}">{H.escape(figure)}</span>'
@@ -44,7 +44,6 @@ def render() -> None:
                 unsafe_allow_html=True)
     n_regions = sum(c.get("regions") or 0 for c in com.values())
     glyphs = "".join(C.glyph(c["glyph"], 26, T["frost_2"]) for c in com.values())
-    cov = " &middot; ".join(f'{c["label"]} {100 * c["coverage"]:.0f}%' for c in com.values() if c.get("coverage"))
     # weather strip: dekad stress of the top US maize region during summer 2012 (if present)
     strip = ""
     try:
@@ -53,14 +52,14 @@ def render() -> None:
         x = s[(s.region_id == top.region_id) & (s.dekad_end >= "2012-05-01") & (s.dekad_end <= "2012-08-31")]
         cells = "".join(f'<i style="flex:1;height:22px;border-radius:3px;background:{ramp_hex(v)}"></i>' for v in x.stress)
         strip = (f'<div style="display:flex;gap:3px;margin-top:26px">{cells}</div><div class="hr-source">'
-                 f'{H.escape(top.adm1_name).upper()} 2012 &middot; {len(x)} DEKADS</div>')
+                 f'{H.escape(top.adm1_name)}, summer 2012, every 10 days</div>')
     except Exception:  # noqa: BLE001
         pass
     pooled = ev.get("pooled", {}).get("end", {})
     rm = pooled.get("rmse_vs_trend_weighted_pct", pooled.get("rmse_vs_trend_pct"))
     rm_unw = pooled.get("rmse_vs_trend_pct")
-    model_extra = (f'<div style="margin-top:22px">{C.chip("LIGHTGBM &middot; 3 CROPS".replace("&middot;", "·"))} '
-                   f'{C.chip("SHAP", True)}</div>')
+    model_extra = (f'<div style="margin-top:22px">{C.chip("GRADIENT BOOSTING")} '
+                   f'{C.chip("EXPLAINED FACTOR BY FACTOR", True)}</div>')
     r = data.latest_risk("maize", st.session_state.asof)
     shares = sorted(r.get("contributors", []), key=lambda c: -c["share_pct"])[:3] if r else []
     bars = "".join(
@@ -72,12 +71,14 @@ def render() -> None:
         for c in shares)
     cols = st.columns(4)
     cards = [
-        _card("01", "Crop maps", f"{n_regions:,}", f"regions, {cov} of world output", f'<div style="display:flex;gap:14px;margin-top:28px">{glyphs}</div>'),
-        _card("02", "Weather", f"{meta.get('cells') or 0:,}", "NASA POWER grid points, daily since 1981", strip),
-        _card("03", "Model", f"{rm:+.1f}%" if rm is not None else "n/a",
-              "error vs trend only, end of season, out of sample, weighted by world share", model_extra, active=True),
-        _card("04", "World index", f"{r.get('risk_z', float('nan')):+.2f}" if r else "n/a",
-              "maize today, weighted by world shares", bars),
+        _card("1", "Crop maps", f"{n_regions:,}", "producing regions, covering 90% of world output of each crop "
+              "(MapSPAM 2020)", f'<div style="display:flex;gap:14px;margin-top:28px">{glyphs}</div>'),
+        _card("2", "Weather", f"{meta.get('cells') or 0:,}", "NASA weather points, read every day since 1981", strip),
+        _card("3", "Model", f"{rm:+.1f}%" if rm is not None else "n/a",
+              "smaller harvest-forecast error than a simple trend, on harvests the model had never seen, weighted "
+              "by world share", model_extra, active=True),
+        _card("4", "World index", f"{r.get('risk_z', float('nan')):+.2f}" if r else "n/a",
+              "maize today: country forecasts weighted by their share of world output", bars),
     ]
     for col, html in zip(cols, cards):
         with col:
@@ -92,26 +93,31 @@ def render() -> None:
         rows = []
         if rm is not None:
             t0, t1 = ev.get("test_seasons", ["", ""])
-            rows.append(_ledger_row(rm < 0, f"Model vs trend only, {t0} to {t1}", f"{rm:+.1f}% error",
-                                    "MODEST" if -10 < rm < 0 else ("BETTER" if rm <= -10 else "WORSE")))
+            def word(x):
+                return "CLEAR GAIN" if x <= -10 else ("SMALL GAIN" if x < 0 else "NO GAIN")
+            rows.append(_ledger_row(rm < 0, f"Forecast error vs a simple trend, harvests {t0} to {t1}",
+                                    f"{rm:+.1f}%", word(rm)))
             if rm_unw is not None:
-                rows.append(_ledger_row(rm_unw < 0, "Same, every country counted equally", f"{rm_unw:+.1f}% error",
-                                        "MODEST" if -10 < rm_unw < 0 else ("BETTER" if rm_unw <= -10 else "WORSE")))
+                rows.append(_ledger_row(rm_unw < 0, "Same, every country counted equally", f"{rm_unw:+.1f}%",
+                                        word(rm_unw)))
         for e in events.values():
-            fig = (f"+2 on {pd.Timestamp(e['first_above_2']).day} {pd.Timestamp(e['first_above_2']):%B}"
-                   if e.get("first_above_2") else f"peak {e['peak_risk_z']:+.2f}")
-            if e["verdict"] == "late":
-                fig = f"+2 on {pd.Timestamp(e['first_above_2']).day} {pd.Timestamp(e['first_above_2']):%b}, after the peak"
-            rows.append(_ledger_row(e["verdict"] == "caught", e["label"], fig, e["verdict"].upper()))
+            if e.get("first_above_2"):
+                d = pd.Timestamp(e["first_above_2"])
+                fig = f"above +2 on {d.day} {d:%B %Y}" + (", after the price peak" if e["verdict"] == "late" else "")
+            else:
+                fig = f"highest {e['peak_risk_z']:+.2f}, never above +2"
+            rows.append(_ledger_row(e["verdict"] == "caught", e["label"], fig,
+                                    {"caught": "CAUGHT", "late": "TOO LATE", "missed": "MISSED"}[e["verdict"]]))
         if bt:
             bp, bc = bt.get("best_rule_p"), bt.get("best_rule_p_corrected")
-            rows.append(_ledger_row(bc is not None and bc < 0.05, "Trading rule after costs",
-                                    f"p = {bp:.2f}, {bc:.2f} corrected" if bp is not None else "n/a",
-                                    "EDGE" if bc is not None and bc < 0.05 else "NO EDGE"))
-        st.markdown("".join(rows) + '<div class="hr-source">model_eval.json, events.json, backtest.json &middot; '
-                    'HarvestRadar is a radar, not a crystal ball.</div>', unsafe_allow_html=True)
+            rows.append(_ledger_row(bc is not None and bc < 0.05, "Trading on the index, after costs",
+                                    f"{100 * bc:.0f}% chance it is luck" if bc is not None else "n/a",
+                                    "REAL GAIN" if bc is not None and bc < 0.05 else "NO RELIABLE GAIN"))
+            _ = bp
+        st.markdown("".join(rows) + '<div class="hr-source">HarvestRadar is a radar, not a crystal ball. "Caught" '
+                    'means the index went above +2 before the futures price peaked.</div>', unsafe_allow_html=True)
     with right:
-        st.markdown('<h2 style="font-size:30px;margin:18px 0 6px 0">Evaluation, end of season</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 style="font-size:30px;margin:18px 0 6px 0">Forecast errors at the end of each season</h2>', unsafe_allow_html=True)
         trs = []
         for k, block in ev.get("by_commodity", {}).items():
             e = block.get("end", {})
@@ -126,12 +132,12 @@ def render() -> None:
                        f'<td class="hr-mono" style="text-align:right">{100 * (mm.get("sign_accuracy") or 0):.0f}%</td></tr>')
         st.markdown(f'<div class="hr-glass"><table style="width:100%;border-collapse:collapse;font-size:16px;'
                     f'color:{T["frost_2"]}"><thead><tr class="hr-caps"><th style="text-align:left;padding:6px">CROP</th>'
-                    f'<th style="text-align:right">N</th><th style="text-align:right">RMSE MODEL</th>'
-                    f'<th style="text-align:right">RMSE TREND</th><th style="text-align:right">SPEARMAN</th>'
-                    f'<th style="text-align:right">SIGN</th></tr></thead><tbody>{"".join(trs)}</tbody></table>'
-                    f'<div class="hr-source">RMSE in percentage points of the yield (maize) or production (tree crops) '
-                    f'anomaly &middot; rolling origin, each year predicted by a model trained only on seasons '
-                    f'published before it &middot; model_eval.json</div></div>', unsafe_allow_html=True)
+                    f'<th style="text-align:right">HARVESTS</th><th style="text-align:right">MODEL ERROR</th>'
+                    f'<th style="text-align:right">TREND ERROR</th><th style="text-align:right">RANK MATCH</th>'
+                    f'<th style="text-align:right">RIGHT DIRECTION</th></tr></thead><tbody>{"".join(trs)}</tbody></table>'
+                    f'<div class="hr-source">Typical error in percentage points of yield (maize) or production (tree '
+                    f'crops) vs normal. Rank match: how well the model orders good and bad harvests (1 = perfectly). '
+                    f'Each year is forecast by a model trained only on harvests published before it.</div></div>', unsafe_allow_html=True)
         st.markdown(
             f'<div class="hr-glass" style="margin-top:16px"><div class="hr-caps" style="margin-bottom:8px">CREDITS</div>'
             f'<div style="font-size:15px;line-height:1.7;color:{T["frost_2"]}">'

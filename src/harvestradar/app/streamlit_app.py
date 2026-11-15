@@ -19,7 +19,7 @@ from harvestradar.app import components as C  # noqa: E402
 from harvestradar.app import data, theme  # noqa: E402
 from harvestradar.app.views import commodity, method, replay, stress_map, weekly_note  # noqa: E402
 
-PAGES = {"stress": "Stress map", "commodity": "Commodity", "replay": "Replay", "note": "Weekly note",
+PAGES = {"stress": "Stress map", "commodity": "Commodity", "replay": "Replay", "note": "Daily note",
          "method": "Method"}
 ALIASES = {"stress-map": "stress", "map": "stress", "weekly-note": "note", "notes": "note", "episode": "replay"}
 CROPS = ("maize", "coffee", "cocoa")

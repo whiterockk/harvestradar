@@ -26,10 +26,11 @@ def fill(template: str, payload: dict) -> str:
                        else m.group(0), template)
 
 
-def split_figure(text: str) -> tuple[str, str]:
-    """'+0.09 over four weeks' -> ('+0.09', ' over four weeks'): the figure goes in the pill, words stay text."""
-    m = re.match(r"^\s*([-+]?[\d,]*\.?\d+(?:\s?(?:%|pp))?)(.*)$", text)
-    return (m.group(1), m.group(2)) if m else (text, "")
+def split_figure(text: str) -> tuple[str, str, str]:
+    """'up 0.7% on the previous close' -> ('up ', '0.7%', ' on the previous close'): only the number goes in the
+    pill, the words stay plain text. A text without a number gives ('', '', text)."""
+    m = re.search(r"[-+]?[\d,]*\.?\d+(?:\s?(?:%|pp|points))?", text)
+    return (text[:m.start()], m.group(0), text[m.end():]) if m else ("", "", text)
 
 
 def _num(s: str) -> float:
@@ -155,6 +156,8 @@ def check_claims(template: str, payload: dict) -> tuple[bool, list[str]]:
     for sent in re.split(r"(?<=[.!?])\s+", template):
         sl = set(slots_in(sent))
         lo_s = SLOT_RE.sub(" ", sent).lower()
+        if re.search(r"\b(due to|because of|caused by|from)\s*\{REGION\d_STRESS\}", sent):
+            reasons.append("a stress level is presented as a cause")
         if re.search(r"\b(from|was|previous(ly)?)\s*\{RISK_CHANGE\}", sent):
             reasons.append("the four-week change is read as a previous level")
         if "RISK_CHANGE" in sl and "trend" in lo_s and "supply" not in lo_s:
@@ -185,8 +188,12 @@ def check_claims(template: str, payload: dict) -> tuple[bool, list[str]]:
         if any(c > 0 for c in cv) and re.search(r"rais(e|es|ing) (the )?risk|contribut\w* negatively|"
                                                 r"lower(s|ing)? (world )?supply", cl):
             reasons.append("a supply-raising contribution is described as raising the risk")
-    if re.search(r"over four weeks,? (over|from|in|compared)|weeks over (the past )?four weeks", low):
-        reasons.append("repeated timing phrase")
+    if re.search(r"over four weeks,? (over|from|in|compared)|weeks over (the past )?four weeks", low) or \
+            re.search(r"working day,? (since|from|compared|over)|previous close,? (since|from|compared|over)|"
+                      r"\b(up|down|unchanged|rose|fell|increased|decreased|moved) (up|down|unchanged)\b|\bdekad", low):
+        reasons.append("repeated timing or direction phrase")
+    if re.search(r"\bel nino\b", low):
+        reasons.append("El Niño misspelt")
     causes = f.get("region_causes", {})
     for sent in re.split(r"(?<=[.!?])\s+", template):
         regs = [x for x in slots_in(sent) if re.fullmatch(r"REGION\d", x)]

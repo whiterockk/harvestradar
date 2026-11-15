@@ -49,7 +49,23 @@ See `data/demo/events.json`, `model_eval.json`, `backtest.json` and `docs/storyb
 values. Verdict rule fixed in code: an episode is "caught" only if `risk_z` crossed +2 before the futures
 price peaked, "late" if it crossed after, "missed" otherwise.
 
-## 5. Trading rule
+## 5. Daily index
+
+The weekly history (Fridays since 2001) is complemented by an index for every working day since 1 August 2025:
+features as of each day, the vintage model of that year, the same model climatology. On Fridays both series are
+identical (checked).
+
+## 6. What it means for the price
+
+`signal/price_impact.py`: for each crop, the change of the average front-month futures price over a marketing
+year (maize from September, arabica from July, cocoa from October) is regressed on the realised world supply gap
+of that year (FAOSTAT, modelled countries, share-weighted), 2002-2024, 23 years, robust standard errors. The
+slope is applied to the model's expected supply gap; the 80 % range uses the slope +/- 1.28 standard errors.
+Results: maize -3.1 % of price per 1 % of supply (p = 0.01, R2 0.15), cocoa -1.9 (p = 0.03, R2 0.26),
+arabica no reliable link (p = 0.90), so the app shows no estimate for arabica. It is a rough guide, not a price
+forecast.
+
+## 7. Trading rule
 
 Pre-registered rule (SPEC 9.1), 5 bps per trade, 1,000 permutations. Three commodities are tested, so the
 smallest p-value is reported with a Bonferroni correction; the 3 x 3 robustness grid is reported in full and

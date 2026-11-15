@@ -35,9 +35,19 @@ def risk() -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
+def risk_daily() -> pd.DataFrame:
+    p = DATA / "risk_index_daily.parquet"
+    if not p.exists():
+        return risk()
+    r = pd.read_parquet(p)
+    r["date"] = pd.to_datetime(r["date"])
+    return r
+
+
+@st.cache_data(show_spinner=False)
 def today() -> pd.Timestamp:
     """The app's "today": the latest date in data/demo (never the clock)."""
-    return risk()["date"].max()
+    return risk_daily()["date"].max()
 
 
 @st.cache_data(show_spinner=False)
@@ -100,7 +110,7 @@ def world() -> gpd.GeoDataFrame:
 
 @st.cache_data(show_spinner=False)
 def latest_risk(key: str, at: pd.Timestamp | None = None) -> dict:
-    r = risk()
+    r = risk_daily()
     r = r[(r.commodity == key)].dropna(subset=["risk_z"]).sort_values("date")
     if at is not None:
         r = r[r.date <= at]
@@ -159,6 +169,22 @@ def window_spans(key: str, country: str, start: pd.Timestamp, end: pd.Timestamp)
             if e >= start and s <= end:
                 out.append((max(s, start), min(e, end), w["stage"]))
     return sorted(set(out))
+
+
+def country_names() -> dict:
+    out = {}
+    for c in meta()["commodities"].values():
+        out.update(c.get("country_names", {}))
+    return out
+
+
+def oni_strength(v: float) -> str:
+    """NOAA convention for the Oceanic Nino Index."""
+    a = abs(v)
+    kind = "El Niño" if v > 0 else "La Niña"
+    if a < 0.5:
+        return "neutral conditions"
+    return ("weak " if a < 1 else "moderate " if a < 1.5 else "strong " if a < 2 else "very strong ") + kind
 
 
 def fmt_signed(x: float, nd: int = 2) -> str:
