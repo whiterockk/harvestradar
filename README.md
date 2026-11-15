@@ -84,3 +84,10 @@ Data: NASA POWER, MapSPAM 2020 (IFPRI), geoBoundaries, FAOSTAT, NOAA CPC, Yahoo 
 Natural Earth. Imagery: NASA Blue Marble. Model: LightGBM, SHAP; weekly note by Qwen2.5-1.5B-Instruct
 (Hugging Face, Apache 2.0). App: Streamlit, Plotly. Fonts: Space Grotesk, Inter, JetBrains Mono (SIL OFL).
 Advanced AI Algorithms, ESSEC Business School.
+
+## Web edition (no Python needed)
+
+`python scripts/build_web.py` writes `dist/web/index.html`: one self-contained page (about 3 MB) with the five
+pages, the same data snapshot and the same map code, for viewing in a browser or publishing as a page.
+Differences with the Streamlit app: the weekly email is shown in the page instead of downloaded, and fonts
+load from Google Fonts.

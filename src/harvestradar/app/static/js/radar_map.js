@@ -145,5 +145,6 @@
     }
     show(idx);
     if (cfg.autoplay && !cfg.capture) play();
+    return { stop: stop, play: play, show: show };
   };
 })();
