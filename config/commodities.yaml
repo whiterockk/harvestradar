@@ -35,7 +35,7 @@ coffee:
   label: "Arabica"
   display: "ARABICA"
   glyph: arabica
-  spam_crop: ACOF
+  spam_crop: COFF               # MapSPAM 2020 code for arabica (RCOF is robusta)
   fao_item: 656
   tickers: {ice_us: "KC=F"}
   price_label: "ICE ARABICA"
@@ -43,7 +43,7 @@ coffee:
   price_unit: "US cents per pound"
   coverage: 0.90
   # The spec suggests export weights for coffee. USDA PSD exports do not split arabica from robusta,
-  # so arabica uses production weights from MapSPAM 2020 (ACOF). See docs/data_sources.md.
+  # so arabica uses production weights from MapSPAM 2020 (COFF = arabica). See docs/data_sources.md.
   weight_mode: production
   share_source: mapspam          # FAOSTAT does not split arabica from robusta
   # tree crop: FAOSTAT harvested area is often imputed, so the target is the production anomaly

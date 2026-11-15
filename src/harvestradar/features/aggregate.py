@@ -199,7 +199,8 @@ def to_country_season(cfg: Settings, key: str, cdaily: pd.DataFrame, dates: list
 def _attach_anom_last(feat: pd.DataFrame, targets: pd.DataFrame) -> pd.DataFrame:
     """Most recent published yield anomaly of an earlier season (published by as_of)."""
     t = targets[["commodity", "country_iso3", "season", "yield_anom", "available_at"]].dropna()
-    t = t.sort_values("available_at")
+    t = t.assign(available_at=pd.to_datetime(t["available_at"]).astype("datetime64[ns]")).sort_values("available_at")
+    feat = feat.assign(as_of=pd.to_datetime(feat["as_of"]).astype("datetime64[ns]"))
     out = []
     for (k, ctry), g in feat.groupby(["commodity", "country_iso3"]):
         tt = t[(t.commodity == k) & (t.country_iso3 == ctry)]

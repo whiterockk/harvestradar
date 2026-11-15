@@ -44,8 +44,9 @@ def build_features(cfg: Settings) -> None:
 def _panel(cfg: Settings) -> pd.DataFrame:
     feats = pd.concat([pd.read_parquet(PROCESSED / f"features_weekly_{k}.parquet") for k in cfg.commodities],
                       ignore_index=True)
-    t = pd.read_parquet(PROCESSED / "targets.parquet")[
-        ["commodity", "country_iso3", "season", "yield_anom", "available_at"]].rename(
+    t = pd.read_parquet(PROCESSED / "targets.parquet")
+    t["target_share"] = t["production_t"] / t["world_production_t"]  # known when the target is published
+    t = t[["commodity", "country_iso3", "season", "yield_anom", "available_at", "target_share"]].rename(
         columns={"available_at": "target_available_at"})
     return feats.merge(t, on=["commodity", "country_iso3", "season"], how="left")
 
@@ -89,6 +90,15 @@ def evaluate(cfg: Settings, preds: pd.DataFrame, meta: dict) -> dict:
                  "linear_3var": metrics(y, g.pred_linear.to_numpy())}
             rm, rz = r["model"].get("rmse"), r["trend_only"].get("rmse")
             r["rmse_vs_trend_pct"] = round(100 * (rm / rz - 1), 1) if rm and rz else None
+            # headline metric (fixed before looking at the test period): weighted by share of world output
+            ok = g.yield_anom.notna() & g.pred_anom.notna()
+            w = g.loc[ok, "target_share"].fillna(0).to_numpy()
+            if w.sum() > 0:
+                e_m = (g.loc[ok, "yield_anom"] - g.loc[ok, "pred_anom"]).to_numpy()
+                e_t = g.loc[ok, "yield_anom"].to_numpy()
+                rmw, rzw = (float((w * e_m ** 2).sum() / w.sum()) ** 0.5, float((w * e_t ** 2).sum() / w.sum()) ** 0.5)
+                r["rmse_weighted"] = {"model": rmw, "trend_only": rzw}
+                r["rmse_vs_trend_weighted_pct"] = round(100 * (rmw / rzw - 1), 1)
             inside = ((g.yield_anom >= g.pred_lo) & (g.yield_anom <= g.pred_hi)).mean()
             r["band_coverage_p10_p90"] = round(float(inside), 3)
             if name == "pooled":
@@ -115,6 +125,9 @@ def _eval_markdown(ev: dict) -> str:
                 lines.append(f"| {h} | {m} | {x.get('n', '')} | {f(x.get('rmse'))} | {f(x.get('mae'))} | "
                              f"{f(x.get('spearman'))} | {f(x.get('sign_accuracy'))} |")
             lines.append(f"| {h} | model RMSE vs trend only | | {r['rmse_vs_trend_pct']} % | | | |")
+            if r.get("rmse_vs_trend_weighted_pct") is not None:
+                lines.append(f"| {h} | same, weighted by share of world output (headline) | | "
+                             f"{r['rmse_vs_trend_weighted_pct']} % | | | |")
         lines.append("")
     return "\n".join(lines)
 

@@ -37,11 +37,15 @@ features:
 model:
   first_test_year: 2012
   last_test_year: 2024
-  num_leaves: 15
-  min_data_in_leaf: 10
-  learning_rate: 0.05
-  n_estimators: 300
-  feature_fraction: 0.8
+  # Hyperparameters chosen on vintages 2003-2011 only (out-of-sample, end of season), then frozen.
+  # Compared: 15 leaves / 10 per leaf (spec default), 7 / 40, 5 / 80; equal, sqrt-share, share weights.
+  num_leaves: 5
+  min_data_in_leaf: 80
+  learning_rate: 0.03
+  n_estimators: 200
+  feature_fraction: 0.7
+  reg_lambda: 10.0
+  sample_weight: sqrt_share     # each country-season weighs sqrt(its share of world production)
   monotone_heat: true
   quantiles: [0.1, 0.9]
 

@@ -45,7 +45,8 @@ def fetch_oni() -> pd.DataFrame:
 
 def oni_as_of(oni: pd.DataFrame, dates: pd.Series) -> pd.Series:
     """Latest ONI value published on or before each date."""
-    o = oni.sort_values("available_at")[["available_at", "oni"]]
-    d = pd.DataFrame({"date": pd.to_datetime(dates)}).reset_index()
+    o = oni.sort_values("available_at")[["available_at", "oni"]].copy()
+    o["available_at"] = pd.to_datetime(o["available_at"]).astype("datetime64[ns]")
+    d = pd.DataFrame({"date": pd.to_datetime(pd.Series(dates).to_numpy()).astype("datetime64[ns]")}).reset_index()
     m = pd.merge_asof(d.sort_values("date"), o, left_on="date", right_on="available_at")
     return m.set_index("index").sort_index()["oni"]

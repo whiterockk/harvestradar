@@ -44,6 +44,7 @@ def _params(cfg: Settings) -> dict:
     return dict(num_leaves=int(m["num_leaves"]), min_child_samples=int(m["min_data_in_leaf"]),
                 learning_rate=float(m["learning_rate"]), n_estimators=int(m["n_estimators"]),
                 colsample_bytree=float(m["feature_fraction"]), subsample=0.8, subsample_freq=1,
+                reg_lambda=float(m.get("reg_lambda", 0.0)),
                 random_state=int(cfg.seed), deterministic=True, force_row_wise=True, n_jobs=4, verbose=-1)
 
 
@@ -53,6 +54,10 @@ def train(rows: pd.DataFrame, cfg: Settings) -> YieldModel:
     y = rows["yield_anom"].astype(float)
     key = rows["commodity"] + "|" + rows["country_iso3"] + "|" + rows["season"].astype(str)
     w = 1.0 / key.map(key.value_counts())
+    mode = cfg.model.get("sample_weight", "equal")
+    if mode in ("sqrt_share", "share") and "target_share" in rows:
+        s = rows["target_share"].fillna(rows["target_share"].median()).clip(lower=1e-4)
+        w = w * (np.sqrt(s) if mode == "sqrt_share" else s)
     base = _params(cfg)
     mono = [0] * len(MODEL_FEATURES)
     if cfg.model.get("monotone_heat", True):

@@ -53,7 +53,7 @@ make email     # writes reports/notes/<week>_<crop>.eml and .html
 
 **One manual step**: MapSPAM 2020 sits behind a Harvard Dataverse guestbook. Download
 `spam2020V2r2_global_production.geotiff.zip` from https://doi.org/10.7910/DVN/SWPENT, and put the three files
-`*_P_MAIZ_A.tif`, `*_P_ACOF_A.tif`, `*_P_COCO_A.tif` in `data/raw/spam/`.
+`*_P_MAIZ_A.tif`, `*_P_COFF_A.tif` (arabica), `*_P_COCO_A.tif` in `data/raw/spam/`.
 
 Every download is recorded in `data/manifest.json` (URL, date, licence, SHA-256). Sources and licences:
 [docs/data_sources.md](docs/data_sources.md). User guide: [docs/user_guide.md](docs/user_guide.md).

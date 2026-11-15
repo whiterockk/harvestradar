@@ -57,7 +57,8 @@ def render() -> None:
     except Exception:  # noqa: BLE001
         pass
     pooled = ev.get("pooled", {}).get("end", {})
-    rm = pooled.get("rmse_vs_trend_pct")
+    rm = pooled.get("rmse_vs_trend_weighted_pct", pooled.get("rmse_vs_trend_pct"))
+    rm_unw = pooled.get("rmse_vs_trend_pct")
     model_extra = (f'<div style="margin-top:22px">{C.chip("LIGHTGBM &middot; 3 CROPS".replace("&middot;", "·"))} '
                    f'{C.chip("SHAP", True)}</div>')
     r = data.latest_risk("maize", st.session_state.asof)
@@ -74,7 +75,7 @@ def render() -> None:
         _card("01", "Crop maps", f"{n_regions:,}", f"regions, {cov} of world output", f'<div style="display:flex;gap:14px;margin-top:28px">{glyphs}</div>'),
         _card("02", "Weather", f"{meta.get('cells') or 0:,}", "NASA POWER grid points, daily since 1981", strip),
         _card("03", "Model", f"{rm:+.1f}%" if rm is not None else "n/a",
-              "error vs trend only, end of season, out of sample", model_extra, active=True),
+              "error vs trend only, end of season, out of sample, weighted by world share", model_extra, active=True),
         _card("04", "World index", f"{r.get('risk_z', float('nan')):+.2f}" if r else "n/a",
               "maize today, weighted by world shares", bars),
     ]
@@ -93,6 +94,9 @@ def render() -> None:
             t0, t1 = ev.get("test_seasons", ["", ""])
             rows.append(_ledger_row(rm < 0, f"Model vs trend only, {t0} to {t1}", f"{rm:+.1f}% error",
                                     "MODEST" if -10 < rm < 0 else ("BETTER" if rm <= -10 else "WORSE")))
+            if rm_unw is not None:
+                rows.append(_ledger_row(rm_unw < 0, "Same, every country counted equally", f"{rm_unw:+.1f}% error",
+                                        "MODEST" if -10 < rm_unw < 0 else ("BETTER" if rm_unw <= -10 else "WORSE")))
         for e in events.values():
             fig = (f"+2 on {pd.Timestamp(e['first_above_2']).day} {pd.Timestamp(e['first_above_2']):%B}"
                    if e.get("first_above_2") else f"peak {e['peak_risk_z']:+.2f}")
