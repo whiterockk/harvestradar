@@ -1,0 +1,77 @@
+# Paths are relative to the repository root.
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  demo: data/demo
+  reports: reports
+
+seed: 42
+
+dates:
+  weather_start: "1981-01-01"
+  # The pipeline's "today": the Friday of the latest weekly update. Fixed for reproducibility.
+  as_of_end: "2026-11-13"
+  index_start: "2001-01-05"
+  publication_lag_days: 5        # NASA POWER daily data are used 5 days after the fact
+
+climatology:
+  base: [2001, 2020]             # fixed base for the stress map
+  min_years_expanding: 10        # expanding climatology for the model (past years only)
+
+regions:
+  max_cells_per_region: 5        # NASA POWER cells (0.5 x 0.625 deg) sampled per region
+  weights_switch_year: 2016      # documented assumption: MapSPAM 2020 weights used for all years
+
+targets:
+  trend_years: 15                # linear trend on the previous 15 years
+  min_trend_years: 8
+  publication_month: 12          # FAOSTAT year Y is published in December of Y+1
+
+features:
+  lead_days: 120                 # a season becomes active this many days before its first window
+  tail_days: 120                 # and stays active this many days after its last window
+  pre_window_days: 60            # soil moisture before the window
+  first_season: 1991
+
+model:
+  first_test_year: 2012
+  last_test_year: 2024
+  num_leaves: 15
+  min_data_in_leaf: 10
+  learning_rate: 0.05
+  n_estimators: 300
+  feature_fraction: 0.8
+  monotone_heat: true
+  quantiles: [0.1, 0.9]
+
+index:
+  sigma_history_years: 30
+  min_sigma_years: 10
+  major_share: 0.10              # a window is "major" when the country holds >= 10 % of world supply
+
+backtest:
+  theta: 0.5
+  delta_weeks: 4
+  cost_bps_per_trade: 5
+  slippage_bps: 0
+  permutations: 1000
+  grid_theta: [0.25, 0.5, 1.0]
+  grid_delta: [2, 4, 8]
+  start: "2006-01-01"
+
+llm:
+  provider: transformers
+  model_id: "Qwen/Qwen2.5-1.5B-Instruct"
+  display_name: "Qwen2.5-1.5B"
+  max_new_tokens: 320
+  retries: 2
+  weeks: 2                       # notes generated for the latest N weeks
+
+episodes:
+  us_drought_2012: {commodity: maize, label: "US drought 2012", start: "2012-05-01", end: "2012-09-28",
+                    show_end: "2012-07-20", region_focus: USA, stage_country: USA}
+  brazil_frost_2021: {commodity: coffee, label: "Brazil frost 2021", start: "2021-05-01", end: "2021-09-30",
+                      show_end: "2021-08-31", region_focus: BRA, stage_country: BRA}
+  cocoa_2023_2024: {commodity: cocoa, label: "Cocoa 2023-2024", start: "2023-07-01", end: "2024-12-31",
+                    show_end: "2024-12-31", region_focus: CIV, stage_country: CIV}

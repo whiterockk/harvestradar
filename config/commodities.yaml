@@ -1,0 +1,88 @@
+# HarvestRadar commodity configuration.
+# Critical windows are DEFAULTS TO VALIDATE against GEOGLAM, SAGE (Sacks 2010) and USDA IPAD calendars.
+# Window dates are MM-DD. year_offset is relative to the season year (the FAOSTAT harvest year).
+# A window whose end is before its start runs into the next calendar year.
+maize:
+  label: "Maize"
+  display: "MAIZE"
+  glyph: maize
+  spam_crop: MAIZ
+  fao_item: 56
+  tickers: {cbot: "ZC=F"}
+  price_label: "CBOT PRICE"
+  price_name: "CBOT corn"
+  price_unit: "US cents per bushel"
+  coverage: 0.90
+  weight_mode: production
+  target: yield                  # annual crop: yield anomaly (area responds to planting decisions)
+  thresholds: {heat_c: 29.0, frost_c: 0.0}
+  main_country: USA
+  windows:
+    USA: [{start: "07-01", end: "08-15", stage: "pollination"}]
+    CHN: [{start: "07-01", end: "08-31", stage: "silking"}]
+    BRA: [{start: "03-01", end: "05-31", stage: "safrinha"}]
+    ARG: [{start: "01-01", end: "02-28", stage: "flowering"}]
+    UKR: [{start: "07-01", end: "08-15", stage: "pollination"}]
+    IND: [{start: "08-01", end: "09-15", stage: "kharif flowering"}]
+    MEX: [{start: "08-01", end: "09-30", stage: "flowering"}]
+    CAN: [{start: "07-01", end: "08-15", stage: "pollination"}]
+    FRA: [{start: "07-01", end: "08-15", stage: "pollination"}]
+    RUS: [{start: "07-01", end: "08-15", stage: "pollination"}]
+    ZAF: [{start: "01-01", end: "02-28", stage: "flowering"}]
+    ROU: [{start: "07-01", end: "08-15", stage: "pollination"}]
+
+coffee:
+  label: "Arabica"
+  display: "ARABICA"
+  glyph: arabica
+  spam_crop: ACOF
+  fao_item: 656
+  tickers: {ice_us: "KC=F"}
+  price_label: "ICE ARABICA"
+  price_name: "ICE arabica coffee"
+  price_unit: "US cents per pound"
+  coverage: 0.90
+  # The spec suggests export weights for coffee. USDA PSD exports do not split arabica from robusta,
+  # so arabica uses production weights from MapSPAM 2020 (ACOF). See docs/data_sources.md.
+  weight_mode: production
+  share_source: mapspam          # FAOSTAT does not split arabica from robusta
+  # tree crop: FAOSTAT harvested area is often imputed, so the target is the production anomaly
+  target: production
+  thresholds: {heat_c: 30.0, frost_c: 2.0}
+  main_country: BRA
+  windows:
+    BRA: [{start: "09-01", end: "11-30", stage: "flowering", year_offset: -1},
+          {start: "06-01", end: "08-31", stage: "frost risk", year_offset: -1}]
+    COL: [{start: "03-01", end: "05-31", stage: "flowering"}]
+    ETH: [{start: "02-01", end: "04-30", stage: "flowering"}]
+    HND: [{start: "03-01", end: "05-31", stage: "flowering"}]
+    PER: [{start: "09-01", end: "11-30", stage: "flowering", year_offset: -1}]
+    GTM: [{start: "03-01", end: "05-31", stage: "flowering"}]
+    MEX: [{start: "03-01", end: "05-31", stage: "flowering"}]
+
+cocoa:
+  label: "Cocoa"
+  display: "COCOA"
+  glyph: cocoa
+  spam_crop: COCO
+  fao_item: 661
+  tickers: {ice_us: "CC=F"}
+  price_label: "ICE COCOA"
+  price_name: "ICE cocoa"
+  price_unit: "US dollars per tonne"
+  coverage: 0.90
+  weight_mode: production
+  target: production             # tree crop, see coffee
+  thresholds: {heat_c: 33.0, frost_c: 0.0}
+  main_country: CIV
+  windows:
+    CIV: [{start: "05-01", end: "09-30", stage: "main crop development"},
+          {start: "12-01", end: "02-28", stage: "dry season"}]
+    GHA: [{start: "05-01", end: "09-30", stage: "main crop development"},
+          {start: "12-01", end: "02-28", stage: "dry season"}]
+    NGA: [{start: "05-01", end: "09-30", stage: "main crop development"},
+          {start: "12-01", end: "02-28", stage: "dry season"}]
+    CMR: [{start: "05-01", end: "09-30", stage: "main crop development"},
+          {start: "12-01", end: "02-28", stage: "dry season"}]
+    IDN: [{start: "06-01", end: "09-30", stage: "dry season"}]
+    ECU: [{start: "01-01", end: "04-30", stage: "flowering"}]

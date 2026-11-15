@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harvestradar"
+version = "0.1.0"
+description = "Harvest-risk index for agricultural commodities: weather where crops grow, one number per commodity, every week."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = { text = "MIT" }
+dependencies = [
+  "pandas", "pyarrow", "numpy", "geopandas", "shapely", "pyogrio", "rasterio", "exactextract",
+  "requests", "pydantic", "pyyaml", "typer", "pycountry",
+  "scikit-learn", "lightgbm", "shap", "statsmodels",
+  "streamlit", "pydeck", "plotly", "pillow", "yfinance",
+]
+
+[project.optional-dependencies]
+llm = ["torch", "transformers", "accelerate"]
+dev = ["pytest", "ruff", "playwright"]
+
+[project.scripts]
+harvestradar = "harvestradar.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+harvestradar = ["report/prompts/*.md", "app/static/**/*", "app/.streamlit/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"

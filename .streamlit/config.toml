@@ -1,0 +1,97 @@
+[theme]
+base = "dark"
+primaryColor = "#FFB547"
+backgroundColor = "#0B0F14"
+secondaryBackgroundColor = "#131C27"
+textColor = "#EAF0F5"
+font = "Inter, sans-serif"
+headingFont = "Space Grotesk, sans-serif"
+codeFont = "JetBrains Mono, monospace"
+baseFontSize = 16
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/Inter-400-latin.woff2"
+weight = 400
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/Inter-400-latin-ext.woff2"
+weight = 400
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/Inter-500-latin.woff2"
+weight = 500
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/Inter-500-latin-ext.woff2"
+weight = 500
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/Inter-600-latin.woff2"
+weight = 600
+
+[[theme.fontFaces]]
+family = "Inter"
+url = "app/static/fonts/Inter-600-latin-ext.woff2"
+weight = 600
+
+[[theme.fontFaces]]
+family = "Space Grotesk"
+url = "app/static/fonts/SpaceGrotesk-500-latin.woff2"
+weight = 500
+
+[[theme.fontFaces]]
+family = "Space Grotesk"
+url = "app/static/fonts/SpaceGrotesk-500-latin-ext.woff2"
+weight = 500
+
+[[theme.fontFaces]]
+family = "Space Grotesk"
+url = "app/static/fonts/SpaceGrotesk-700-latin.woff2"
+weight = 700
+
+[[theme.fontFaces]]
+family = "Space Grotesk"
+url = "app/static/fonts/SpaceGrotesk-700-latin-ext.woff2"
+weight = 700
+
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "app/static/fonts/JetBrainsMono-400-latin.woff2"
+weight = 400
+
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "app/static/fonts/JetBrainsMono-400-latin-ext.woff2"
+weight = 400
+
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "app/static/fonts/JetBrainsMono-500-latin.woff2"
+weight = 500
+
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "app/static/fonts/JetBrainsMono-500-latin-ext.woff2"
+weight = 500
+
+[server]
+enableStaticServing = true   # serves src/harvestradar/app/static at /app/static
+headless = true
+runOnSave = false
+fileWatcherType = "none"
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true
+showSidebarNavigation = false
+
+[browser]
+gatherUsageStats = false
+
+[global]
+developmentMode = false

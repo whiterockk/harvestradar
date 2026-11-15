@@ -1,0 +1,12 @@
+{
+  "projection": "+proj=eqearth +lon_0=0 +datum=WGS84 +units=m +no_defs",
+  "x_min_km": -17243.95906221695,
+  "x_max_km": 17243.95906221695,
+  "y_top_km": 8324.47823069376,
+  "y_bottom_km": -6748.566338589754,
+  "lat_min": -58.0,
+  "lat_max": 84.0,
+  "width_px": 3600,
+  "height_px": 1573,
+  "source": "NASA Blue Marble Next Generation (public domain), graded"
+}
