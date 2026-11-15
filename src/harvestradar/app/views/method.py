@@ -17,7 +17,7 @@ CHIPS = ["WEIGHTED GEOSPATIAL AGGREGATION", "LEAK-FREE TEMPORAL VALIDATION", "SH
 
 def _card(num: str, title: str, big: str, sub: str, extra: str = "", active: bool = False) -> str:
     border = "border-color:rgba(255,181,71,.75);" if active else ""
-    return (f'<div class="hr-glass" style="height:270px;padding:20px 24px;{border}">'
+    return (f'<div class="hr-glass" style="height:304px;padding:20px 24px;{border}">'
             f'<div class="hr-mono" style="font-size:13px;color:{T["signal"] if active else T["muted"]}">{num}</div>'
             f'<div style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:28px;margin-top:6px">{title}</div>'
             f'<div class="hr-mono" style="font-size:40px;color:{T["frost"]};margin-top:8px">{big}</div>'
@@ -27,7 +27,7 @@ def _card(num: str, title: str, big: str, sub: str, extra: str = "", active: boo
 def _ledger_row(ok: bool, text: str, figure: str, verdict: str) -> str:
     icon = f'<span style="color:{T["frost"]};font-size:22px">&#10003;</span>' if ok else \
         f'<span style="color:{T["muted"]};font-size:22px">&#10005;</span>'
-    return (f'<div style="display:grid;grid-template-columns:40px 1fr 260px 120px;align-items:center;'
+    return (f'<div style="display:grid;grid-template-columns:40px 1fr 330px 110px;align-items:center;'
             f'padding:16px 4px;border-bottom:1px solid {T["line"]}">{icon}'
             f'<span style="font-size:22px;color:{T["frost"] if ok else T["frost_2"]}">{H.escape(text)}</span>'
             f'<span class="hr-mono" style="font-size:22px;text-align:right;color:{T["frost_2"]}">{H.escape(figure)}</span>'
@@ -100,12 +100,14 @@ def render() -> None:
         for e in events.values():
             fig = (f"+2 on {pd.Timestamp(e['first_above_2']).day} {pd.Timestamp(e['first_above_2']):%B}"
                    if e.get("first_above_2") else f"peak {e['peak_risk_z']:+.2f}")
+            if e["verdict"] == "late":
+                fig = f"+2 on {pd.Timestamp(e['first_above_2']).day} {pd.Timestamp(e['first_above_2']):%b}, after the peak"
             rows.append(_ledger_row(e["verdict"] == "caught", e["label"], fig, e["verdict"].upper()))
         if bt:
-            bp = bt.get("best_p_overall")
-            rows.append(_ledger_row(bp is not None and bp < 0.05, "Trading rule after costs",
-                                    f"best p = {bp:.2f}" if bp is not None else "n/a",
-                                    "EDGE" if bp is not None and bp < 0.05 else "NO EDGE"))
+            bp, bc = bt.get("best_rule_p"), bt.get("best_rule_p_corrected")
+            rows.append(_ledger_row(bc is not None and bc < 0.05, "Trading rule after costs",
+                                    f"p = {bp:.2f}, {bc:.2f} corrected" if bp is not None else "n/a",
+                                    "EDGE" if bc is not None and bc < 0.05 else "NO EDGE"))
         st.markdown("".join(rows) + '<div class="hr-source">model_eval.json, events.json, backtest.json &middot; '
                     'HarvestRadar is a radar, not a crystal ball.</div>', unsafe_allow_html=True)
     with right:

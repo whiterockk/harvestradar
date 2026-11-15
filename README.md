@@ -67,11 +67,13 @@ NASA POWER daily (1981 ->)        -> region and country series -> dekad stress m
 FAOSTAT yields and production     -> anomalies vs a trend fitted on earlier years only
 LightGBM (3 crops, one model)     -> rolling-origin vintages: year V trained on seasons published before V
                                    -> expected anomaly per country, 10-90 % band, SHAP
-World index                        -> dP = sum(share x anomaly), risk_z = -dP / sd(realised world anomalies)
+World index                        -> dP = sum(share x anomaly); risk_z = -(dP - mean) / sd, where mean and sd
+                                      come from the same model re-forecasting the same weeks of the past 15 years
 Weekly note                        -> Qwen2.5-1.5B writes with slots, software inserts sourced figures,
                                       numbers / context / claims checks, deterministic template fallback
 ```
 
+Method decisions and the honest record: [docs/method_notes.md](docs/method_notes.md).
 Code: `src/harvestradar/{ingest,geo,features,models,signal,report,app}`. Specification: [SPEC.md](SPEC.md).
 App guidelines: [docs/app_guidelines.md](docs/app_guidelines.md). Prompts used with AI tools:
 [docs/prompts_log.md](docs/prompts_log.md).

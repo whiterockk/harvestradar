@@ -108,6 +108,12 @@ def run_backtest(cfg: Settings, risk: pd.DataFrame, prices: dict[str, pd.DataFra
                 grid.append(g)
         out["commodities"][key] = {"rule": res, "benchmarks": bench, "grid": grid,
                                    "best_grid_p": min(g["permutation_p"] for g in grid)}
+    n_c = len(out["commodities"])
+    n_g = len(b["grid_theta"]) * len(b["grid_delta"])
     out["best_p_overall"] = min(v["best_grid_p"] for v in out["commodities"].values())
     out["best_rule_p"] = min(v["rule"]["permutation_p"] for v in out["commodities"].values())
+    # multiple testing: Bonferroni over the commodities (rule) and over commodities x grid (best of the grid)
+    out["best_rule_p_corrected"] = min(1.0, out["best_rule_p"] * n_c)
+    out["best_p_overall_corrected"] = min(1.0, out["best_p_overall"] * n_c * n_g)
+    out["tests"] = {"commodities": n_c, "grid_cells": n_g, "correction": "Bonferroni"}
     return out

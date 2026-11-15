@@ -13,7 +13,7 @@ from harvestradar.app import components as C
 from harvestradar.app import data
 from harvestradar.app.theme import T
 from harvestradar.app.views.common import go
-from harvestradar.report.checks import SLOT_RE
+from harvestradar.report.checks import SLOT_RE, split_figure
 from harvestradar.report.email_note import eml_bytes
 
 ORDER = {"maize": 0, "coffee": 1, "cocoa": 2}
@@ -29,8 +29,9 @@ def body_html(template: str, payload: dict) -> str:
             if s is None:
                 out.append(H.escape(m.group(0)))
             elif s["kind"] == "figure":
+                fig, rest = split_figure(s["text"])
                 out.append(f'<span class="hr-pill" title="{H.escape(s["source"])} · {H.escape(s["date"])}">'
-                           f'{H.escape(s["text"])}</span>')
+                           f'{H.escape(fig)}</span>{H.escape(rest)}')
             else:
                 out.append(f'<span style="color:{T["frost"]};font-weight:600">{H.escape(s["text"])}</span>')
             last = m.end()
@@ -64,8 +65,11 @@ def render() -> None:
             for r in rows.itertuples():
                 k = f"{pd.Timestamp(wk):%Y-%m-%d}|{r.commodity}"
                 active = st.session_state.note_sel == k
+                tp = int(getattr(r, "template_paragraphs", 0) or 0)
+                label = ("DETERMINISTIC-TEMPLATE" if r.model == "deterministic-template"
+                         else (f"TEMPLATE {tp}/3" if tp else ""))
                 tag = ('<div style="margin-top:6px"><span class="hr-chip" style="padding:3px 8px;font-size:13px">'
-                       'DETERMINISTIC-TEMPLATE</span></div>' if r.model == "deterministic-template" else "")
+                       f'{label}</span></div>' if label else "")
                 bg = "background:rgba(255,181,71,.08);border-color:rgba(255,181,71,.6);" if active else ""
                 st.markdown(
                     f'<div class="hr-glass" style="height:104px;padding:12px 16px;display:flex;gap:14px;{bg}">'
@@ -99,11 +103,13 @@ def render() -> None:
                 with col:
                     st.markdown(C.ticker_card(rd["display"], rd["glyph"], rd["text"], s["risk_z"].tolist(), k2 == key,
                                               rd["value"] >= 2, spark_w=96), unsafe_allow_html=True)
-            st.markdown(body_html(row.template, p), unsafe_allow_html=True)
+            st.markdown(f'<div style="margin-top:10px">{body_html(row.template, p)}</div>', unsafe_allow_html=True)
             checks = (C.badge("Numbers checked", bool(row.numbers_ok)) + C.badge("Context checked", bool(row.context_ok))
                       + C.badge("Claims checked", bool(row.claims_ok)))
+            tp = int(row.get("template_paragraphs", 0) or 0)
             who = ("Deterministic template" if row.model == "deterministic-template"
-                   else f"Written by {m['llm']['display_name']}, local")
+                   else f"Written by {m['llm']['display_name']}, local"
+                   + (f", {tp} of 3 paragraphs from the template" if tp else ""))
             st.markdown(f'<div style="display:flex;flex-wrap:wrap;align-items:center">{checks}'
                         f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]};margin-left:6px">{who} '
                         f'&middot; figures inserted by software</span></div>', unsafe_allow_html=True)

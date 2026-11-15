@@ -640,6 +640,14 @@
       "sha256": "34c868953add58a176ef7998a62dc73205e63e0a1cf1bd276d2042724d545d35",
       "bytes": 426765
     },
+    "data/raw/naturalearth/ne_110m_admin_0_countries.zip": {
+      "source": "Natural Earth 1:110m admin 0 countries",
+      "url": "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip",
+      "licence": "Public domain",
+      "collected_at": "2026-11-15T14:09:35Z",
+      "sha256": "0f243aeac8ac6cf26f0417285b0bd33ac47f1b5bdb719fd3e0df37d03ea37110",
+      "bytes": 214976
+    },
     "data/raw/oni/oni.ascii.txt": {
       "source": "NOAA CPC ONI",
       "url": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
@@ -695,6 +703,16 @@
       "collected_at": "2026-11-15T12:43:08Z",
       "sha256": "1db1778160f6259e53f1c05eeab899f09297a62147cbd85a735b6e2c41184785",
       "bytes": 37890590
+    }
+  },
+  "groups": {
+    "data/raw/power": {
+      "source": "NASA POWER daily point API (MERRA-2)",
+      "url": "https://power.larc.nasa.gov/api/temporal/daily/point",
+      "licence": "NASA open data, free of charge",
+      "collected_at": "2026-11-15T12:50:14Z",
+      "files": 2478,
+      "note": "1981-01-01 to 2026-11-13, parameters T2M_MAX,T2M_MIN,PRECTOTCORR,GWETROOT,GWETTOP"
     }
   }
 }

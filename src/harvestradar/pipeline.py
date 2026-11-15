@@ -145,7 +145,7 @@ def train_models(cfg: Settings) -> None:
     def store(v, model):
         joblib.dump(model, MODELS_STORE / f"yield_model_{v}.joblib")
 
-    first = min(cfg.index_start.year, int(cfg.model["first_test_year"]))
+    first = int(cfg.model.get("first_vintage", min(cfg.index_start.year, int(cfg.model["first_test_year"]))))
     preds, meta = rolling_origin(panel, cfg, first, cfg.as_of_end.year, store=store)
     preds.to_parquet(PROCESSED / "predictions_weekly.parquet", index=False)
     ev = evaluate(cfg, preds, meta)
@@ -166,10 +166,23 @@ def build_index(cfg: Settings) -> None:
     from harvestradar.signal.risk_index import build_risk_index
 
     preds = pd.read_parquet(PROCESSED / "predictions_weekly.parquet")
-    preds = preds[preds.as_of >= pd.Timestamp(cfg.index_start)]
     targets = pd.read_parquet(PROCESSED / "targets.parquet")
     fao = pd.read_parquet(PROCESSED / "fao_qcl.parquet")
-    risk = build_risk_index(cfg, preds, targets, fao)
+    import joblib
+
+    from harvestradar.signal.risk_index import hindcast_climatology
+
+    def load(v):
+        p = MODELS_STORE / f"yield_model_{v}.joblib"
+        return joblib.load(p) if p.exists() else None
+
+    panel = pd.read_parquet(PROCESSED / "model_panel.parquet")
+    ix = cfg.index
+    clim = hindcast_climatology(cfg, panel, load, fao, sorted(preds.vintage.unique().tolist()),
+                                int(ix["standardize_years"]), int(ix["calendar_window_weeks"]), float(ix["sigma_floor"]))
+    clim.to_parquet(PROCESSED / "model_climatology.parquet", index=False)
+    risk = build_risk_index(cfg, preds, targets, fao, clim)
+    risk = risk[risk.date >= pd.Timestamp(cfg.index_start)].reset_index(drop=True)
     risk.to_parquet(PROCESSED / "risk_index.parquet", index=False)
     prices = {k: pd.read_parquet(PROCESSED / f"prices_{k}.parquet") for k in cfg.commodities}
     ev = json.loads((PROCESSED / "model_eval.json").read_text())

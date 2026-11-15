@@ -16,3 +16,5 @@ the prompt (or an excerpt) and what was kept.
 - Second version: a style example with invented facts ("the window opens next month") leaked into the output.
   The example was rewritten with slots only, the fact sheet now gives the next window explicitly, and the
   claims check rejects unsupported timing ("next month", "next week") and windows said to be open when none is.
+| 4 | 2026-11-15 | Claude Code | Data access decision | "Remplis-le pour moi" (answer to: fill in the MapSPAM Dataverse guestbook with the account e-mail and ESSEC Business School) | MapSPAM 2020 rasters downloaded through the Dataverse API after the guestbook response. |
+| 5 | 2026-11-15 | Claude Code | Scope reminder from the user | "A quelle étape es-tu sur le codage de l'application ? Ton rôle est uniquement ceci." | Work narrowed to finishing and delivering the app. |

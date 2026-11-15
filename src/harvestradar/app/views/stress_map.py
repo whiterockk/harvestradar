@@ -18,7 +18,8 @@ def world_layers(key: str) -> tuple[list[dict], str, dict]:
     g = maps.project(data.regions(key))
     regs = [{"i": i, "id": r.region_id, "name": r.adm1_name, "country": r.country_name, "d": maps.geom_to_path(r.geometry)}
             for i, r in enumerate(g.itertuples())]
-    w = maps.project(data.world(), tol_m=8000)
+    wd = data.world()
+    w = maps.project(wd[wd["iso3"] != "ATA"], tol_m=8000)
     borders = "".join(maps.geom_to_path(x) for x in w.geometry)
     pts = g.geometry.representative_point()
     centroids = {r.region_id: (round(p.x / 1000, 1), round(-p.y / 1000, 1)) for r, p in zip(g.itertuples(), pts)}

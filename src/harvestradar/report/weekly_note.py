@@ -83,7 +83,7 @@ def build_payload(cfg: Settings, key: str, week: pd.Timestamp, risk: pd.DataFram
         "RISK": dict(kind="figure", text=fmt_signed(cur.risk_z), value=round(float(cur.risk_z), 2),
                      label=f"{c.display} harvest-risk index", source="risk_index.parquet", date=wk,
                      detail=f"week of {week.strftime('%d %b %Y')}"),
-        "RISK_CHANGE": dict(kind="figure", text=fmt_signed(cur.risk_z - prev.risk_z),
+        "RISK_CHANGE": dict(kind="figure", text=f"{fmt_signed(cur.risk_z - prev.risk_z)} over four weeks",
                             value=round(float(cur.risk_z - prev.risk_z), 2), label="Change over four weeks",
                             source="risk_index.parquet", date=wk, detail=f"vs {d(prev.date)}"),
         "SUPPLY": dict(kind="figure", text=fmt_signed(cur.delta_prod_pct, 1, "%"),
@@ -93,7 +93,7 @@ def build_payload(cfg: Settings, key: str, week: pd.Timestamp, risk: pd.DataFram
         "PRICE": dict(kind="figure", text=fmt_price(key, px.close), value=round(float(px.close), 2),
                       label=f"{c.price_name} close", source=f"prices_{key}.parquet", date=d(px.date),
                       detail=f"{c.price_name} close, {c.price_unit}"),
-        "PRICE_CHANGE": dict(kind="figure", text=fmt_signed(100 * (px.close / px0.close - 1), 1, "%"),
+        "PRICE_CHANGE": dict(kind="figure", text=f"{fmt_signed(100 * (px.close / px0.close - 1), 1, '%')} over four weeks",
                              value=round(float(100 * (px.close / px0.close - 1)), 1), label="Price change, four weeks",
                              source=f"prices_{key}.parquet", date=d(px.date), detail=f"vs close of {d(px0.date)}"),
         "ONI": dict(kind="figure", text=fmt_signed(o.oni), value=round(float(o.oni), 2), label="El Niño (ONI)",
@@ -143,7 +143,7 @@ def build_payload(cfg: Settings, key: str, week: pd.Timestamp, risk: pd.DataFram
                             "value": round(float(r2.risk_z.iloc[-1]), 2), "source": "risk_index.parquet",
                             "date": r2.date.iloc[-1].strftime("%Y-%m-%d")}
     return {"commodity": key, "label": c.label, "display": c.display, "week": wk, "slots": slots,
-            "readings": readings,
+            "readings": readings, "model_display": cfg.llm["display_name"],
             "facts": facts, "allowed_names": sorted(set(names)), "all_region_names": all_regions,
             "title": f"{c.label} risk {facts['level']}: {slots['RISK']['text']}"}
 
@@ -164,15 +164,17 @@ def fact_sheet(p: dict) -> str:
     sup = "below trend" if f["delta_prod_pct"] < 0 else "above trend"
     prc = "higher" if f["price_change_4w_pct"] > 0.5 else ("lower" if f["price_change_4w_pct"] < -0.5 else "flat")
     parts = [f"The commodity is {p['label']}. The harvest-risk index this week is {{RISK}}; its level is "
-             f"{f['level']}. Over four weeks it moved by {{RISK_CHANGE}}, so it is {chg} than a month ago. "
-             f"Expected world supply against trend is {{SUPPLY}}, which is {sup}."]
+             f"{f['level']}. {{RISK_CHANGE}} is the change of the index over four weeks (not a level), so the "
+             f"index is {chg} than a month ago. Expected world supply against trend is {{SUPPLY}}, which is {sup}. "
+             "There is no information on how supply changed over time."]
     drv = []
     for d in f["drivers"]:
         s = d["slot"]
         drv.append(f"{{{s}}} contributes {{{s}_CONTRIB}} of world supply and {d['effect']}"
                    + (" (its critical window is open)" if d["window_open"] else ""))
     if drv:
-        parts.append("The largest contributions: " + "; ".join(drv) + ".")
+        parts.append("The largest contributions to world supply (negative values lower supply and raise the risk, "
+                     "positive values add supply and lower the risk): " + "; ".join(drv) + ".")
     if "REGION1" in p["slots"]:
         regs = [f"{{REGION{i}}} ({{REGION{i}_STRESS}}, mainly {f['region_causes'][f'REGION{i}']})"
                 for i in range(1, 4) if f"REGION{i}" in p["slots"]]
@@ -195,8 +197,7 @@ def user_prompt(p: dict) -> str:
 def template_note(p: dict) -> str:
     f = p["facts"]
     chg = "up" if f["risk_change_4w"] > 0.05 else ("down" if f["risk_change_4w"] < -0.05 else "little changed")
-    move = (f"{chg} {{RISK_CHANGE}} from four weeks ago" if chg != "little changed"
-            else "little changed from four weeks ago")
+    move = (f"{chg} {{RISK_CHANGE}}" if chg != "little changed" else "little changed over four weeks")
     first = (f"{p['label']} harvest risk is {f['level']} this week. The index stands at {{RISK}}, {move}. "
              f"Expected world supply is {{SUPPLY}} against trend.")
     drv = [d["slot"] for d in f["drivers"]]
@@ -212,44 +213,83 @@ def template_note(p: dict) -> str:
              "No critical window is open for the main producers this week. ")
     if "NEXT_WINDOW" in p["slots"]:
         third += "The next major window is {NEXT_WINDOW}, which opens in {NEXT_WINDOW_MONTH}. "
-    third += ("Futures settled at {PRICE}, {PRICE_CHANGE} over four weeks. "
+    third += ("Futures settled at {PRICE}, {PRICE_CHANGE}. "
               "Climate context: the El Niño reading is {ONI} ({ONI_PERIOD}), shown as background only.")
     return "\n\n".join(x.strip() for x in (first, second, third) if x.strip())
 
 
-def run_checks(template: str, p: dict) -> dict:
+PARA_TASKS = [
+    ("What the index says", "Write two sentences. First: the harvest-risk level this week with {RISK}, and how the "
+     "index moved with {RISK_CHANGE}. Second: expected world supply against trend with {SUPPLY}.",
+     "Cocoa harvest risk is near normal this week: the index reads {RISK}, {RISK_CHANGE}. Expected world supply "
+     "sits at {SUPPLY} against trend."),
+    ("Where the risk comes from", "Write two sentences. First: the countries with the largest contributions to "
+     "world supply, each followed by its contribution slot in brackets. Second: the most stressed producing regions "
+     "and the main cause given for them.",
+     "The largest contributions to world supply come from {DRIVER1} ({DRIVER1_CONTRIB}) and {DRIVER2} "
+     "({DRIVER2_CONTRIB}). The most stressed producing regions are {REGION1} and {REGION2}, mainly from heat."),
+    ("What to watch", "Write two or three sentences: the critical windows (open now, or the next one), the futures "
+     "price with {PRICE} and {PRICE_CHANGE}, and the El Nino reading {ONI} ({ONI_PERIOD}) as background only.",
+     "No critical window is open this week; the next one is {NEXT_WINDOW}, in {NEXT_WINDOW_MONTH}. Futures closed "
+     "at {PRICE}, {PRICE_CHANGE}. For background, the El Nino reading is {ONI} ({ONI_PERIOD})."),
+]
+
+
+def paragraph_prompt(p: dict, i: int) -> str:
+    title, task, example = PARA_TASKS[i]
+    return ("FACT SHEET\n" + fact_sheet(p) + f"\n\nTASK: paragraph {i + 1} of 3, '{title}'. {task}\n"
+            "Rules: plain prose, no title, no list, no digits, copy each {SLOT} exactly and at most once, never "
+            "write + or - in front of a slot, use only facts from the sheet.\n"
+            f"EXAMPLE (another commodity, other facts, do not copy its facts): {example}\n\nParagraph:")
+
+
+def run_checks(template: str, p: dict, min_words: int = 50, max_words: int = 220, require_index: bool = True) -> dict:
     n_ok, n_r = check_numbers(template, p)
-    c_ok, c_r = check_context(template, p)
+    c_ok, c_r = check_context(template, p, min_words=min_words, max_words=max_words, require_index=require_index)
     k_ok, k_r = check_claims(template, p)
     return {"numbers_ok": n_ok, "context_ok": c_ok, "claims_ok": k_ok, "reasons": n_r + c_r + k_r}
 
 
 def write_note(cfg: Settings, p: dict, deterministic: bool = False) -> dict:
+    """Three paragraphs, each written by the model and checked on its own (2 retries); a paragraph that keeps
+    failing is replaced by the matching paragraph of the deterministic template. The whole note is checked again."""
     from harvestradar.report import llm
 
     system = resources.files("harvestradar.report").joinpath("prompts/weekly_note_system.md").read_text()
-    user = user_prompt(p)
+    fallback = template_note(p).split("\n\n")
     t0 = time.time()
-    failures, attempts = [], 0
+    failures, attempts, paras, from_template = [], 0, [], 0
     model_id = cfg.llm["model_id"]
-    if not deterministic:
-        for attempt in range(1 + int(cfg.llm["retries"])):
-            attempts += 1
-            try:
-                text = llm.generate(model_id, system, user, int(cfg.llm["max_new_tokens"]),
-                                    seed=int(cfg.seed) + attempt, sample=attempt > 0)
-            except Exception as e:  # noqa: BLE001
-                failures.append(f"attempt {attempts}: generation error {e}")
-                break
-            res = run_checks(text, p)
-            if res["numbers_ok"] and res["context_ok"] and res["claims_ok"]:
-                return {"template": text, "model": model_id, "seconds": round(time.time() - t0, 1),
-                        "attempts": attempts, "failures": failures, **res}
-            failures.append(f"attempt {attempts}: " + "; ".join(res["reasons"][:6]))
-    text = template_note(p)
-    res = run_checks(text, p)
-    return {"template": text, "model": FALLBACK_ID, "seconds": round(time.time() - t0, 1), "attempts": attempts,
-            "failures": failures, **res}
+    for i in range(3):
+        text = None
+        if not deterministic:
+            for attempt in range(1 + int(cfg.llm["retries"])):
+                attempts += 1
+                try:
+                    out = llm.generate(model_id, system, paragraph_prompt(p, i), 160,
+                                       seed=int(cfg.seed) + 10 * i + attempt, sample=attempt > 0)
+                except Exception as e:  # noqa: BLE001
+                    failures.append(f"paragraph {i + 1}: generation error {e}")
+                    break
+                out = out.strip().strip('"').strip()
+                res = run_checks(out, p, min_words=12, max_words=90, require_index=(i == 0))
+                if res["numbers_ok"] and res["context_ok"] and res["claims_ok"]:
+                    text = out
+                    break
+                failures.append(f"paragraph {i + 1}, attempt {attempt + 1}: " + "; ".join(res["reasons"][:4]))
+        if text is None:
+            text = fallback[i] if i < len(fallback) else ""
+            from_template += 1
+        paras.append(text)
+    note = "\n\n".join(x for x in paras if x)
+    res = run_checks(note, p)
+    if not (res["numbers_ok"] and res["context_ok"] and res["claims_ok"]):
+        failures.append("whole note: " + "; ".join(res["reasons"][:4]))
+        note, from_template = template_note(p), 3
+        res = run_checks(note, p)
+    model = FALLBACK_ID if from_template == 3 else model_id
+    return {"template": note, "model": model, "seconds": round(time.time() - t0, 1), "attempts": attempts,
+            "template_paragraphs": from_template, "failures": failures, **res}
 
 
 def build_notes(cfg: Settings, weeks: int | None = None, deterministic: bool = False) -> pd.DataFrame:
@@ -269,8 +309,10 @@ def build_notes(cfg: Settings, weeks: int | None = None, deterministic: bool = F
                          "markdown": md, "numbers_ok": res["numbers_ok"], "context_ok": res["context_ok"],
                          "claims_ok": res["claims_ok"], "model": res["model"],
                          "payload": json.dumps(p, ensure_ascii=False), "seconds": res["seconds"],
-                         "attempts": res["attempts"], "failures": json.dumps(res["failures"])})
+                         "attempts": res["attempts"], "template_paragraphs": res["template_paragraphs"],
+                         "failures": json.dumps(res["failures"])})
             print(f"[notes] {week.date()} {key}: {res['model']} in {res['seconds']}s, attempts {res['attempts']}, "
+                  f"template paragraphs {res['template_paragraphs']}, "
                   f"checks {res['numbers_ok']}/{res['context_ok']}/{res['claims_ok']}"
                   + (f" | {res['failures']}" if res["failures"] else ""))
     df = pd.DataFrame(rows)

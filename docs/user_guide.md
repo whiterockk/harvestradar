@@ -13,8 +13,9 @@ Open http://localhost:8501. The app reads only `data/demo/` and makes no externa
 
 ## 2. Reading the index
 
-`risk_z` is the expected world production gap of a commodity, in units of a typical year-to-year supply
-surprise, with the sign flipped so that **positive means more supply risk**. Zero is a normal season; above +2
+`risk_z` says how unusual this week's expected world production gap is, for this time of year, compared
+with what the same model says at the same weeks of the previous 15 years; the sign is flipped so that
+**positive means more supply risk**. Zero is a normal season; above +2
 is rare (the share of weeks above +2 since 2001 is in `data/demo/meta.json`). Before a critical window opens
 the model knows little and the index stays near zero; it moves when the window weather comes in.
 

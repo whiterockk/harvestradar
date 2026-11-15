@@ -26,6 +26,12 @@ def fill(template: str, payload: dict) -> str:
                        else m.group(0), template)
 
 
+def split_figure(text: str) -> tuple[str, str]:
+    """'+0.09 over four weeks' -> ('+0.09', ' over four weeks'): the figure goes in the pill, words stay text."""
+    m = re.match(r"^\s*([-+]?[\d,]*\.?\d+(?:\s?(?:%|pp))?)(.*)$", text)
+    return (m.group(1), m.group(2)) if m else (text, "")
+
+
 def _num(s: str) -> float:
     return float(s.replace(",", "").replace("+", ""))
 
@@ -39,6 +45,8 @@ def check_numbers(template: str, payload: dict) -> tuple[bool, list[str]]:
     bare = SLOT_RE.sub(" ", template)
     if re.search(r"\d", bare):
         reasons.append("the model typed a digit")
+    if re.search(r"[-+\u2212]\s?\{[A-Z]", template):
+        reasons.append("a sign typed in front of a figure that already carries its sign")
     allowed = []
     for s in payload["slots"].values():
         allowed += extract_numbers(s["text"])
@@ -65,13 +73,14 @@ def _known_names() -> set[str]:
     return names
 
 
-def check_context(template: str, payload: dict, min_words: int = 50, max_words: int = 220) -> tuple[bool, list[str]]:
+def check_context(template: str, payload: dict, min_words: int = 50, max_words: int = 220,
+                  require_index: bool = True) -> tuple[bool, list[str]]:
     reasons = []
     used = set(slots_in(template))
     unknown = used - set(payload["slots"])
     if unknown:
         reasons.append(f"unknown slots {sorted(unknown)}")
-    if "RISK" not in used:
+    if require_index and "RISK" not in used:
         reasons.append("index slot {RISK} missing")
     allowed = {s["text"] for s in payload["slots"].values() if s["kind"] == "name"}
     allowed |= set(payload.get("allowed_names", []))
@@ -84,8 +93,20 @@ def check_context(template: str, payload: dict, min_words: int = 50, max_words: 
     n = len(fill(template, payload).split())
     if not (min_words <= n <= max_words):
         reasons.append(f"length {n} words")
-    if "#" in template or re.search(r"^\s*[-*] ", template, re.M):
+    if "#" in template or re.search(r"^\s*[-*] ", template, re.M) or re.search(r"^\s*\*\*[^*]+\*\*:?\s*$", template, re.M):
         reasons.append("headings or bullets")
+    counts = {}
+    for sl in slots_in(template):
+        if sl in payload["slots"] and payload["slots"][sl]["kind"] == "figure":
+            counts[sl] = counts.get(sl, 0) + 1
+    reused = [k for k, v in counts.items() if v > 1]
+    if reused:
+        reasons.append(f"figure used more than once: {reused}")
+    low = bare.lower()
+    for concept in ("stay tuned", "stability", "coming months", "dynamics", "suggest", "demand", "consumption", "stockpile", "stocks", "inventor", "export", "import", "disease",
+                    "pest", "tariff", "currency", "dollar", "speculat", "investor", "balanced market", "sentiment"):
+        if concept in low:
+            reasons.append(f"concept not in the fact sheet: {concept}")
     return (not reasons), reasons
 
 
@@ -130,6 +151,48 @@ def check_claims(template: str, payload: dict) -> tuple[bool, list[str]]:
     if re.search(r"el ni(n|ñ)o[^.]*\b(driv\w*|caus\w*|explain\w*|behind|push\w*|fuel\w*)", low) or \
             re.search(r"\b(driv\w*|caus\w*|explain\w*|fuel\w*)\b[^.]*el ni(n|ñ)o", low):
         reasons.append("El Nino presented as a driver")
+    vals = {k: v.get("value") for k, v in payload["slots"].items() if v["kind"] == "figure"}
+    for sent in re.split(r"(?<=[.!?])\s+", template):
+        sl = set(slots_in(sent))
+        lo_s = SLOT_RE.sub(" ", sent).lower()
+        if re.search(r"\b(from|was|previous(ly)?)\s*\{RISK_CHANGE\}", sent):
+            reasons.append("the four-week change is read as a previous level")
+        if "RISK_CHANGE" in sl and "trend" in lo_s and "supply" not in lo_s:
+            reasons.append("the four-week change is not described as a change over time")
+        if re.search(r"el ni(n|ñ)o|\boni\b", lo_s) and re.search(
+                r"\b(impact\w*|chance\w*|neutral|indicat\w*|suggest\w*|likely|effect\w*|affect\w*|influenc\w*|weak|strong|falls? into)\b", lo_s):
+            reasons.append("El Nino reading interpreted beyond the fact sheet")
+        if "supply" in lo_s and "price" not in lo_s and "futures" not in lo_s:
+            if d < 0 and re.search(r"(higher|above|more|increas\w*|greater)[- ]?(than[- ]?)?(trend|usual|normal)?[- ]?supply|supply[^.]*\b(above|higher|increas\w*|surplus)", lo_s):
+                reasons.append("supply said to be higher while the figure is below trend")
+            if d > 0 and re.search(r"(lower|below|less|reduc\w*|short\w*)[- ]?(than[- ]?)?(trend|usual|normal)?[- ]?supply|supply[^.]*\b(below|lower|reduc\w*|shortfall|deficit)", lo_s):
+                reasons.append("supply said to be lower while the figure is above trend")
+            if re.search(r"(month ago|last month|four weeks|past weeks)", lo_s) and "index" not in lo_s:
+                reasons.append("unsupported change in supply over time")
+        contribs = [vals.get(k) for k in sl if k.startswith("DRIVER") and k.endswith("_CONTRIB")]
+        contribs = [c for c in contribs if c is not None]
+        if contribs and re.search(r"\b(risk|lower supply|reduc\w*|shortfall|decrease)", lo_s) and any(c > 0 for c in contribs):
+            reasons.append("a supply-raising contribution is presented as a risk")
+        if contribs and re.search(r"\b(increased supply|higher supply|surplus|adds? to supply)", lo_s) and any(c < 0 for c in contribs):
+            reasons.append("a supply-lowering contribution is presented as adding supply")
+    for clause in re.split(r"(?<=[.!?;])\s+", template):
+        cl = SLOT_RE.sub(" ", clause).lower()
+        cv = [vals.get(k) for k in slots_in(clause) if k.startswith("DRIVER") and k.endswith("_CONTRIB")]
+        cv = [c for c in cv if c is not None]
+        if any(c < 0 for c in cv) and re.search(r"lower(s|ing)? (the )?risk|reduc\w* (the )?risk|contribut\w* positively|"
+                                                r"rais(e|es|ing) (world )?supply|add(s|ing)? (to )?supply", cl):
+            reasons.append("a supply-lowering contribution is described as lowering the risk")
+        if any(c > 0 for c in cv) and re.search(r"rais(e|es|ing) (the )?risk|contribut\w* negatively|"
+                                                r"lower(s|ing)? (world )?supply", cl):
+            reasons.append("a supply-raising contribution is described as raising the risk")
+    if re.search(r"over four weeks,? (over|from|in|compared)|weeks over (the past )?four weeks", low):
+        reasons.append("repeated timing phrase")
+    causes = f.get("region_causes", {})
+    for sent in re.split(r"(?<=[.!?])\s+", template):
+        regs = [x for x in slots_in(sent) if re.fullmatch(r"REGION\d", x)]
+        said = [c for c in ("heat", "dry soils", "low rainfall") if c in sent.lower()]
+        if regs and len(said) == 1 and any(causes.get(r) and causes.get(r) != said[0] for r in regs):
+            reasons.append(f"cause '{said[0]}' given for a region whose main cause differs")
     wins = f.get("windows_open", [])
     if wins and re.search(r"\bno (critical )?windows? (is |are )?open", low):
         reasons.append("says no window is open while one is")

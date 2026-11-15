@@ -19,7 +19,7 @@ from pathlib import Path
 import pandas as pd
 
 from harvestradar.paths import DEMO, PROCESSED, ROOT
-from harvestradar.report.checks import SLOT_RE, fill
+from harvestradar.report.checks import SLOT_RE, fill, split_figure
 
 C = {"night": "#0B0F14", "console": "#131C27", "line": "#1E2935", "line_strong": "#2A3646", "frost": "#EAF0F5",
      "frost_2": "#C7D1DB", "muted": "#8A9AAB", "faint": "#6F7F90", "signal": "#FFB547", "heat": "#FF5A36"}
@@ -49,7 +49,8 @@ def _body_html(template: str, payload: dict) -> str:
             if s is None:
                 out.append(H.escape(m.group(0)))
             elif s["kind"] == "figure":
-                out.append(_pill(s["text"], m.group(1)))
+                fig, rest = split_figure(s["text"])
+                out.append(_pill(fig, m.group(1)) + H.escape(rest))
             else:
                 out.append(f'<span style="color:{C["frost"]};font-weight:600;">{H.escape(s["text"])}</span>')
             last = m.end()
@@ -85,8 +86,10 @@ def render_note_email(note_row: dict | pd.Series, risk_rows: pd.DataFrame | None
         f'border-radius:999px;font-family:{SANS};font-size:13px;color:{C["frost_2"]};">'
         f'{"&#10003;" if row.get(k) else "&#10005;"} {label}</span>' for k, label in CHECKS)
     model = row.get("model", "")
+    tp = int(row.get("template_paragraphs", 0) or 0)
     who = ("Deterministic template" if model == "deterministic-template"
-           else f"Written by {H.escape(p.get('model_display', model.split('/')[-1]))}, local")
+           else f"Written by {H.escape(p.get('model_display', model.split('/')[-1]))}, local"
+           + (f", {tp} of 3 paragraphs from the template" if tp else ""))
     sources = "".join(
         f'<tr><td style="padding:6px 0;border-top:1px solid {C["line"]};font-family:{MONO};font-size:13px;'
         f'color:{C["signal"]};white-space:nowrap;" data-fig="{k}">{H.escape(s["text"])}</td>'

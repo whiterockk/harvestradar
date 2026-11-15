@@ -1,0 +1,390 @@
+Subject: Maize risk elevated: +2.43
+From: HarvestRadar Weekly <weekly@harvestradar.invalid>
+To: undisclosed-recipients:;
+Date: Fri, 13 Nov 2026 07:00:00 +0000
+Message-ID: <2026-11-13.maize@harvestradar.invalid>
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============5491708978565925090=="
+
+--===============5491708978565925090==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Maize risk elevated: +2.43
+HarvestRadar Weekly, week of 13 Nov 2026
+
+MAIZE RISK_Z +2.43
+ARABICA RISK_Z +0.47
+COCOA RISK_Z +1.64
+
+Maize harvest risk is elevated this week. The index stands at +2.43, up +0.09=
+ over four weeks. Expected world supply is -0.9% against trend.
+
+The largest contributions to world supply come from United States (-0.35 pp) =
+and China (-0.20 pp). The most stressed producing regions in the latest dekad=
+ are Mato Grosso, Illinois and Indiana.
+
+No critical window is open this week; the next one is United States pollinati=
+on, in July 2027. Futures closed at 445.50, -6.1% over four weeks. For backgr=
+ound, the El Nino reading is +2.46 (ONI AUG-OCT 2026).
+
+Checks: Numbers checked passed, Context checked passed, Claims checked passed
+
+Sources:
+  +2.43  MAIZE harvest-risk index  (risk_index.parquet, 2026-11-13)
+  +0.09 over four weeks  Change over four weeks  (risk_index.parquet, 2026-11=
+-13)
+  -0.9%  Expected world supply vs trend  (model predictions, 2026-11-13)
+  445.50  CBOT corn close  (prices_maize.parquet, 2026-11-13)
+  -6.1% over four weeks  Price change, four weeks  (prices_maize.parquet, 202=
+6-11-13)
+  +2.46  El Ni=C3=B1o (ONI)  (oni.parquet, 2026-11-10)
+  -0.35 pp  United States, world supply  (risk_index.parquet (contributors), =
+2026-11-13)
+  -0.20 pp  China, world supply  (risk_index.parquet (contributors), 2026-11-=
+13)
+  -0.15 pp  India, world supply  (risk_index.parquet (contributors), 2026-11-=
+13)
+  +3.0  Mato Grosso stress  (stress_maize.parquet, 2026-11-10)
+  +1.3  Illinois stress  (stress_maize.parquet, 2026-11-10)
+  +2.2  Indiana stress  (stress_maize.parquet, 2026-11-10)
+
+Research output, not investment advice.
+
+--===============5491708978565925090==
+MIME-Version: 1.0
+Content-Type: multipart/related;
+ boundary="===============2247604910594765249=="
+
+--===============2247604910594765249==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE html>
+<html lang=3D"en"><head><meta charset=3D"utf-8"><meta name=3D"viewport" conte=
+nt=3D"width=3Ddevice-width,initial-scale=3D1">
+<meta name=3D"color-scheme" content=3D"dark"><title>Maize risk elevated: +2.4=
+3</title></head>
+<body style=3D"margin:0;padding:0;background:#0B0F14;">
+<table role=3D"presentation" width=3D"100%" cellpadding=3D"0" cellspacing=3D"=
+0" style=3D"background:#0B0F14;">
+<tr><td align=3D"center" style=3D"padding:24px 12px;">
+<table role=3D"presentation" width=3D"640" cellpadding=3D"0" cellspacing=3D"0=
+" style=3D"width:640px;max-width:640px;
+background:#131C27;border:1px solid #2A3646;border-radius:18px;">
+<tr><td style=3D"padding:24px 28px 8px 28px;">
+ <table role=3D"presentation" cellpadding=3D"0" cellspacing=3D"0"><tr>
+  <td style=3D"padding-right:14px;"><img src=3D"cid:hr-logo" width=3D"48" hei=
+ght=3D"48" alt=3D"HarvestRadar" style=3D"display:block;border-radius:11px;"><=
+/td>
+  <td><div style=3D"font-family:'Space Grotesk', Inter, -apple-system, 'Segoe=
+ UI', Helvetica, Arial, sans-serif;font-size:22px;line-height:28px;font-weigh=
+t:700;color:#EAF0F5;">Maize risk elevated: +2.43</div>
+  <div style=3D"font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Aria=
+l, sans-serif;font-size:14px;color:#8A9AAB;">HarvestRadar Weekly &middot; wee=
+k of 13 Nov 2026</div></td>
+ </tr></table>
+</td></tr>
+<tr><td style=3D"padding:16px 23px 8px 23px;"><table role=3D"presentation" wi=
+dth=3D"100%" cellpadding=3D"0" cellspacing=3D"0"><tr><td width=3D"33%" style=
+=3D"padding:0 5px;"><table role=3D"presentation" width=3D"100%" cellpadding=
+=3D"0" cellspacing=3D"0" style=3D"background:#131C27;border:1px solid #2A3646=
+;border-radius:12px;"><tr><td style=3D"padding:12px 14px;"><div style=3D"font=
+-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size=
+:13px;letter-spacing:2px;color:#8A9AAB;">MAIZE &middot; RISK_Z</div><div data=
+-fig=3D"READING_MAIZE" style=3D"font-family:'JetBrains Mono', Menlo, Consolas=
+, 'Courier New', monospace;font-size:28px;line-height:36px;color:#FFB547;font=
+-variant-numeric:tabular-nums;">+2.43</div></td></tr></table></td><td width=
+=3D"33%" style=3D"padding:0 5px;"><table role=3D"presentation" width=3D"100%"=
+ cellpadding=3D"0" cellspacing=3D"0" style=3D"background:#131C27;border:1px s=
+olid #2A3646;border-radius:12px;"><tr><td style=3D"padding:12px 14px;"><div s=
+tyle=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospa=
+ce;font-size:13px;letter-spacing:2px;color:#8A9AAB;">ARABICA &middot; RISK_Z<=
+/div><div data-fig=3D"READING_COFFEE" style=3D"font-family:'JetBrains Mono', =
+Menlo, Consolas, 'Courier New', monospace;font-size:28px;line-height:36px;col=
+or:#FFB547;font-variant-numeric:tabular-nums;">+0.47</div></td></tr></table><=
+/td><td width=3D"33%" style=3D"padding:0 5px;"><table role=3D"presentation" w=
+idth=3D"100%" cellpadding=3D"0" cellspacing=3D"0" style=3D"background:#131C27=
+;border:1px solid #2A3646;border-radius:12px;"><tr><td style=3D"padding:12px =
+14px;"><div style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier =
+New', monospace;font-size:13px;letter-spacing:2px;color:#8A9AAB;">COCOA &midd=
+ot; RISK_Z</div><div data-fig=3D"READING_COCOA" style=3D"font-family:'JetBrai=
+ns Mono', Menlo, Consolas, 'Courier New', monospace;font-size:28px;line-heigh=
+t:36px;color:#FFB547;font-variant-numeric:tabular-nums;">+1.64</div></td></tr=
+></table></td></tr></table></td></tr>
+<tr><td style=3D"padding:16px 28px 4px 28px;"><p style=3D"margin:0 0 14px 0;f=
+ont-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;fon=
+t-size:16px;line-height:26px;color:#C7D1DB;">Maize harvest risk is elevated t=
+his week. The index stands at <span data-fig=3D"RISK" style=3D"font-family:'J=
+etBrains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;backg=
+round:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-rad=
+ius:6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;=
+">+2.43</span>, up <span data-fig=3D"RISK_CHANGE" style=3D"font-family:'JetBr=
+ains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;backgroun=
+d:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-radius:=
+6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;">+0=
+.09</span> over four weeks. Expected world supply is <span data-fig=3D"SUPPLY=
+" style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', mono=
+space;color:#FFB547;background:rgba(255,181,71,0.10);border:1px solid rgba(25=
+5,181,71,0.55);border-radius:6px;padding:1px 6px;white-space:nowrap;font-vari=
+ant-numeric:tabular-nums;">-0.9%</span> against trend.</p><p style=3D"margin:=
+0 0 14px 0;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sa=
+ns-serif;font-size:16px;line-height:26px;color:#C7D1DB;">The largest contribu=
+tions to world supply come from <span style=3D"color:#EAF0F5;font-weight:600;=
+">United States</span> (<span data-fig=3D"DRIVER1_CONTRIB" style=3D"font-fami=
+ly:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;=
+background:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);borde=
+r-radius:6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-=
+nums;">-0.35 pp</span>) and <span style=3D"color:#EAF0F5;font-weight:600;">Ch=
+ina</span> (<span data-fig=3D"DRIVER2_CONTRIB" style=3D"font-family:'JetBrain=
+s Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;background:r=
+gba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-radius:6px=
+;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;">-0.20=
+ pp</span>). The most stressed producing regions in the latest dekad are <spa=
+n style=3D"color:#EAF0F5;font-weight:600;">Mato Grosso</span>, <span style=3D=
+"color:#EAF0F5;font-weight:600;">Illinois</span> and <span style=3D"color:#EA=
+F0F5;font-weight:600;">Indiana</span>.</p><p style=3D"margin:0 0 14px 0;font-=
+family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-si=
+ze:16px;line-height:26px;color:#C7D1DB;">No critical window is open this week=
+; the next one is <span style=3D"color:#EAF0F5;font-weight:600;">United State=
+s pollination</span>, in <span style=3D"color:#EAF0F5;font-weight:600;">July =
+2027</span>. Futures closed at <span data-fig=3D"PRICE" style=3D"font-family:=
+'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;bac=
+kground:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-r=
+adius:6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-num=
+s;">445.50</span>, <span data-fig=3D"PRICE_CHANGE" style=3D"font-family:'JetB=
+rains Mono', Menlo, Consolas, 'Courier New', monospace;color:#FFB547;backgrou=
+nd:rgba(255,181,71,0.10);border:1px solid rgba(255,181,71,0.55);border-radius=
+:6px;padding:1px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;">-=
+6.1%</span> over four weeks. For background, the El Nino reading is <span dat=
+a-fig=3D"ONI" style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courie=
+r New', monospace;color:#FFB547;background:rgba(255,181,71,0.10);border:1px s=
+olid rgba(255,181,71,0.55);border-radius:6px;padding:1px 6px;white-space:nowr=
+ap;font-variant-numeric:tabular-nums;">+2.46</span> (<span style=3D"color:#EA=
+F0F5;font-weight:600;">ONI AUG-OCT 2026</span>).</p></td></tr>
+<tr><td style=3D"padding:0 28px 6px 28px;"><span style=3D"display:inline-bloc=
+k;margin:0 8px 6px 0;padding:4px 10px;border:1px solid #2A3646;border-radius:=
+999px;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-se=
+rif;font-size:13px;color:#C7D1DB;">&#10003; Numbers checked</span><span style=
+=3D"display:inline-block;margin:0 8px 6px 0;padding:4px 10px;border:1px solid=
+ #2A3646;border-radius:999px;font-family:Inter, -apple-system, 'Segoe UI', He=
+lvetica, Arial, sans-serif;font-size:13px;color:#C7D1DB;">&#10003; Context ch=
+ecked</span><span style=3D"display:inline-block;margin:0 8px 6px 0;padding:4p=
+x 10px;border:1px solid #2A3646;border-radius:999px;font-family:Inter, -apple=
+-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7D1D=
+B;">&#10003; Claims checked</span></td></tr>
+<tr><td style=3D"padding:0 28px 18px 28px;font-family:'JetBrains Mono', Menlo=
+, Consolas, 'Courier New', monospace;font-size:13px;color:#8A9AAB;">Written b=
+y Qwen2.5-1.5B, local, 2 of 3 paragraphs from the template &middot; figures i=
+nserted by software</td></tr>
+<tr><td style=3D"padding:0 28px 20px 28px;">
+ <div style=3D"font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', =
+monospace;font-size:13px;letter-spacing:2px;color:#8A9AAB;padding-bottom:6px;=
+">SOURCES OF EVERY FIGURE</div>
+ <table role=3D"presentation" width=3D"100%" cellpadding=3D"0" cellspacing=3D=
+"0"><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'=
+JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;col=
+or:#FFB547;white-space:nowrap;" data-fig=3D"RISK">+2.43</td><td style=3D"padd=
+ing:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -apple-system, '=
+Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7D1DB;">MAIZE =
+harvest-risk index</td><td style=3D"padding:6px 0;border-top:1px solid #1E293=
+5;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;fon=
+t-size:13px;color:#6F7F90;">risk_index.parquet &middot; 2026-11-13</td></tr><=
+tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBr=
+ains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#F=
+FB547;white-space:nowrap;" data-fig=3D"RISK_CHANGE">+0.09 over four weeks</td=
+><td style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter=
+, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;colo=
+r:#C7D1DB;">Change over four weeks</td><td style=3D"padding:6px 0;border-top:=
+1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New=
+', monospace;font-size:13px;color:#6F7F90;">risk_index.parquet &middot; 2026-=
+11-13</td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;fo=
+nt-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-si=
+ze:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"SUPPLY">-0.9%</td><td =
+style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -ap=
+ple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7=
+D1DB;">Expected world supply vs trend</td><td style=3D"padding:6px 0;border-t=
+op:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier =
+New', monospace;font-size:13px;color:#6F7F90;">model predictions &middot; 202=
+6-11-13</td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;=
+font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-=
+size:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"PRICE">445.50</td><t=
+d style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -=
+apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#=
+C7D1DB;">CBOT corn close</td><td style=3D"padding:6px 0;border-top:1px solid =
+#1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospa=
+ce;font-size:13px;color:#6F7F90;">prices_maize.parquet &middot; 2026-11-13</t=
+d></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-famil=
+y:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;=
+color:#FFB547;white-space:nowrap;" data-fig=3D"PRICE_CHANGE">-6.1% over four =
+weeks</td><td style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-fam=
+ily:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:=
+13px;color:#C7D1DB;">Price change, four weeks</td><td style=3D"padding:6px 0;=
+border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, '=
+Courier New', monospace;font-size:13px;color:#6F7F90;">prices_maize.parquet &=
+middot; 2026-11-13</td></tr><tr><td style=3D"padding:6px 0;border-top:1px sol=
+id #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', mono=
+space;font-size:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"ONI">+2.4=
+6</td><td style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:=
+Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px=
+;color:#C7D1DB;">El Ni=C3=B1o (ONI)</td><td style=3D"padding:6px 0;border-top=
+:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier Ne=
+w', monospace;font-size:13px;color:#6F7F90;">oni.parquet &middot; 2026-11-10<=
+/td></tr><tr><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-fam=
+ily:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13p=
+x;color:#FFB547;white-space:nowrap;" data-fig=3D"DRIVER1_CONTRIB">-0.35 pp</t=
+d><td style=3D"padding:6px 10px;border-top:1px solid #1E2935;font-family:Inte=
+r, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;col=
+or:#C7D1DB;">United States, world supply</td><td style=3D"padding:6px 0;borde=
+r-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Couri=
+er New', monospace;font-size:13px;color:#6F7F90;">risk_index.parquet (contrib=
+utors) &middot; 2026-11-13</td></tr><tr><td style=3D"padding:6px 0;border-top=
+:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Consolas, 'Courier Ne=
+w', monospace;font-size:13px;color:#FFB547;white-space:nowrap;" data-fig=3D"D=
+RIVER2_CONTRIB">-0.20 pp</td><td style=3D"padding:6px 10px;border-top:1px sol=
+id #1E2935;font-family:Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sa=
+ns-serif;font-size:13px;color:#C7D1DB;">China, world supply</td><td style=3D"=
+padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menl=
+o, Consolas, 'Courier New', monospace;font-size:13px;color:#6F7F90;">risk_ind=
+ex.parquet (contributors) &middot; 2026-11-13</td></tr><tr><td style=3D"paddi=
+ng:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains Mono', Menlo, Co=
+nsolas, 'Courier New', monospace;font-size:13px;color:#FFB547;white-space:now=
+rap;" data-fig=3D"DRIVER3_CONTRIB">-0.15 pp</td><td style=3D"padding:6px 10px=
+;border-top:1px solid #1E2935;font-family:Inter, -apple-system, 'Segoe UI', H=
+elvetica, Arial, sans-serif;font-size:13px;color:#C7D1DB;">India, world suppl=
+y</td><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'Je=
+tBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color=
+:#6F7F90;">risk_index.parquet (contributors) &middot; 2026-11-13</td></tr><tr=
+><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrai=
+ns Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#FFB=
+547;white-space:nowrap;" data-fig=3D"REGION1_STRESS">+3.0</td><td style=3D"pa=
+dding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -apple-system,=
+ 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7D1DB;">Mato=
+ Grosso stress</td><td style=3D"padding:6px 0;border-top:1px solid #1E2935;fo=
+nt-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-si=
+ze:13px;color:#6F7F90;">stress_maize.parquet &middot; 2026-11-10</td></tr><tr=
+><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrai=
+ns Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#FFB=
+547;white-space:nowrap;" data-fig=3D"REGION2_STRESS">+1.3</td><td style=3D"pa=
+dding:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -apple-system,=
+ 'Segoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7D1DB;">Illi=
+nois stress</td><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-=
+family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:=
+13px;color:#6F7F90;">stress_maize.parquet &middot; 2026-11-10</td></tr><tr><t=
+d style=3D"padding:6px 0;border-top:1px solid #1E2935;font-family:'JetBrains =
+Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px;color:#FFB547=
+;white-space:nowrap;" data-fig=3D"REGION3_STRESS">+2.2</td><td style=3D"paddi=
+ng:6px 10px;border-top:1px solid #1E2935;font-family:Inter, -apple-system, 'S=
+egoe UI', Helvetica, Arial, sans-serif;font-size:13px;color:#C7D1DB;">Indiana=
+ stress</td><td style=3D"padding:6px 0;border-top:1px solid #1E2935;font-fami=
+ly:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-size:13px=
+;color:#6F7F90;">stress_maize.parquet &middot; 2026-11-10</td></tr></table>
+</td></tr>
+<tr><td style=3D"padding:14px 28px 22px 28px;border-top:1px solid #1E2935;fon=
+t-family:'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;font-siz=
+e:13px;color:#6F7F90;">
+ Research output, not investment advice.<br>Produced offline by HarvestRadar.=
+ Nothing was sent by the app.
+</td></tr>
+</table></td></tr></table></body></html>
+
+--===============2247604910594765249==
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="harvestradar.png"
+Content-ID: <hr-logo>
+MIME-Version: 1.0
+
+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
+SURBVAMAqagd+4RpdrEAAAAASUVORK5CYII=
+
+--===============2247604910594765249==--
+
+--===============5491708978565925090==--

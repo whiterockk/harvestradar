@@ -24,7 +24,11 @@ def episode_layers(key: str, focus: str) -> tuple[list[dict], list[float], dict,
     sub = sub.sort_values("weight", ascending=False)
     core = sub[(sub["weight"].cumsum() / sub["weight"].sum()).shift(fill_value=0) < 0.85]
     vb = maps.bbox_viewbox(core if len(core) else sub, pad=0.18, aspect=1.75)
-    # every region inside the view is drawn (neighbours give context), focus first
+    # every region that intersects the view is drawn (neighbours give context), nothing else
+    from shapely.geometry import box
+
+    view = box(vb[0] * 1000, -(vb[1] + vb[3]) * 1000, (vb[0] + vb[2]) * 1000, -vb[1] * 1000)
+    g = g[g.geometry.intersects(view)].reset_index(drop=True)
     regs = [{"i": i, "id": r.region_id, "name": r.adm1_name, "country": r.country_name,
              "d": maps.geom_to_path(r.geometry)} for i, r in enumerate(g.itertuples())]
     pts = g.geometry.representative_point()
@@ -129,6 +133,8 @@ def render() -> None:
     with right:
         if ev.get("first_above_2"):
             big, cap = ev["first_above_2"], ev.get("lead_text", "")
+            if ev.get("verdict") == "late":
+                cap = f"after the price peak of {ev.get('price_max_date')}: late"
             title = "RISK_Z FIRST ABOVE +2"
             border = "border-color:rgba(255,181,71,.75);box-shadow:0 0 30px rgba(255,181,71,.15), 0 20px 60px rgba(0,0,0,.35);"
         else:

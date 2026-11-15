@@ -35,6 +35,7 @@ features:
   first_season: 1991
 
 model:
+  first_vintage: 1997           # early vintages only feed the rolling history used to standardise the index
   first_test_year: 2012
   last_test_year: 2024
   # Hyperparameters chosen on vintages 2003-2011 only (out-of-sample, end of season), then frozen.
@@ -50,8 +51,13 @@ model:
   quantiles: [0.1, 0.9]
 
 index:
-  sigma_history_years: 30
-  min_sigma_years: 10
+  # risk_z = -(dP - mean) / sd; mean and sd: model climatology (the same vintage re-forecasts the same
+  # weeks, +/- 3, of the previous 15 years); sd floored at 0.5 x sd of all weeks. Chosen for calibration
+  # (sd of risk_z close to 1 over 2006-2026) among: raw forecast history (rolling or expanding) and this.
+  standardize_years: 15
+  calendar_window_weeks: 3
+  min_years: 4
+  sigma_floor: 0.5
   major_share: 0.10              # a window is "major" when the country holds >= 10 % of world supply
 
 backtest:

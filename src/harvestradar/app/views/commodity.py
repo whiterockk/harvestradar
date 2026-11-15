@@ -32,7 +32,7 @@ def index_chart(key: str, end: pd.Timestamp, weeks: int = 64) -> go.Figure:
     p = data.prices(key)
     p = p[(p.date >= r.date.min()) & (p.date <= end)]
     fig = go.Figure()
-    lo = float(min(-1.0, r.risk_z.min() - 0.3))
+    lo = float(min(-0.5, r.risk_z.min() - 0.3)) - 0.35
     hi = float(max(2.6, r.risk_z.max() + 0.4))
     for s, e, stage in data.window_spans(key, m["main_country"], r.date.min(), end):
         fig.add_vrect(x0=s, x1=e, fillcolor="rgba(255,181,71,.07)", line_width=0, layer="below")

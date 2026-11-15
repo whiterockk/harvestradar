@@ -56,7 +56,7 @@ def episode(cfg: Settings, name: str, spec: dict, risk: pd.DataFrame, prices: pd
            "first_above_2": first.strftime("%Y-%m-%d") if first is not None else None,
            "peak_risk_z": round(float(peak.risk_z), 3) if peak is not None else None,
            "peak_date": peak.date.strftime("%Y-%m-%d") if peak is not None else None,
-           "verdict": "caught" if first is not None else "missed"}
+           "verdict": "missed"}
     # price window: from the first +2 crossing (or from the episode start when the index missed it)
     from_day = first if first is not None and first <= show_end else start
     d0, p0 = price_on(prices, from_day)
@@ -68,23 +68,32 @@ def episode(cfg: Settings, name: str, spec: dict, risk: pd.DataFrame, prices: pd
     if len(pr):
         mx = pr.loc[pr.close.idxmax()]
         out.update(price_max=float(mx.close), price_max_date=mx.date.strftime("%Y-%m-%d"))
+        # "caught" only if the index crossed +2 before the futures price peaked: before the price does
+        if first is not None:
+            out["verdict"] = "caught" if first <= mx.date else "late"
     # weeks between the signal and the opening of the main country's window, from config
     stage_country = spec.get("stage_country", c.main_country)
     if first is not None:
-        season = first.year + 1 if first.month > 10 else first.year
-        for s in (season, season + 1):
-            ws = [w for w in c.windows[stage_country]]
-            opens = sorted((w.dates(s)[0], w.stage) for w in ws)
-            fut = [(o, st) for o, st in opens if o >= first.date()]
-            if fut:
-                o, stage = fut[0]
-                weeks = round((o - first.date()).days / 7)
-                out["weeks_before_window"] = weeks
-                out["window_stage"] = stage
-                out["window_open_date"] = o.isoformat()
-                out["lead_text"] = (f"{WORDS.get(weeks, str(weeks))} week{'s' if weeks != 1 else ''} "
-                                    f"before {stage}") if weeks > 0 else f"as {stage} began"
-                break
+        fd = first.date()
+        spans = []
+        for season in (fd.year - 1, fd.year, fd.year + 1):
+            for w in c.windows[stage_country]:
+                ws, we = w.dates(season)
+                spans.append((ws, we, w.stage))
+        inside = [(ws, we, st) for ws, we, st in spans if ws <= fd <= we]
+        ahead = sorted((ws, st) for ws, we, st in spans if ws > fd)
+        if inside:
+            ws, _, stage = inside[0]
+            days = (fd - ws).days
+            out["window_stage"], out["window_open_date"] = stage, ws.isoformat()
+            out["weeks_before_window"] = -round(days / 7)
+            out["lead_text"] = (f"as {stage} began" if days == 0 else
+                                f"{WORDS.get(days, str(days))} day{'s' if days != 1 else ''} into {stage}")
+        elif ahead and (ahead[0][0] - fd).days <= 120:
+            ws, stage = ahead[0]
+            weeks = round((ws - fd).days / 7)
+            out["window_stage"], out["window_open_date"], out["weeks_before_window"] = stage, ws.isoformat(), weeks
+            out["lead_text"] = f"{WORDS.get(weeks, str(weeks))} week{'s' if weeks != 1 else ''} before {stage}"
     v = vintages.get(int(start.year)) or vintages.get(str(start.year))
     if v:
         out["model_trained_on_seasons_up_to"] = v["trained_on_seasons_up_to"]

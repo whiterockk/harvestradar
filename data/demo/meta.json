@@ -1,0 +1,337 @@
+{
+  "as_of": "2026-11-13",
+  "index_start": "2001-01-05",
+  "climatology_base": [
+    2001,
+    2020
+  ],
+  "weather": "NASA POWER daily (MERRA-2), since 1981",
+  "cells": 2016,
+  "llm": {
+    "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+    "display_name": "Qwen2.5-1.5B"
+  },
+  "commodities": {
+    "maize": {
+      "label": "Maize",
+      "display": "MAIZE",
+      "glyph": "maize",
+      "ticker": "ZC=F",
+      "price_label": "CBOT PRICE",
+      "price_name": "CBOT corn",
+      "price_unit": "US cents per bushel",
+      "main_country": "USA",
+      "main_country_name": "United States",
+      "target": "yield",
+      "share_source": "fao",
+      "windows": {
+        "USA": [
+          {
+            "start": "07-01",
+            "end": "08-15",
+            "stage": "pollination",
+            "year_offset": 0
+          }
+        ],
+        "CHN": [
+          {
+            "start": "07-01",
+            "end": "08-31",
+            "stage": "silking",
+            "year_offset": 0
+          }
+        ],
+        "BRA": [
+          {
+            "start": "03-01",
+            "end": "05-31",
+            "stage": "safrinha",
+            "year_offset": 0
+          }
+        ],
+        "ARG": [
+          {
+            "start": "01-01",
+            "end": "02-28",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ],
+        "UKR": [
+          {
+            "start": "07-01",
+            "end": "08-15",
+            "stage": "pollination",
+            "year_offset": 0
+          }
+        ],
+        "IND": [
+          {
+            "start": "08-01",
+            "end": "09-15",
+            "stage": "kharif flowering",
+            "year_offset": 0
+          }
+        ],
+        "MEX": [
+          {
+            "start": "08-01",
+            "end": "09-30",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ],
+        "CAN": [
+          {
+            "start": "07-01",
+            "end": "08-15",
+            "stage": "pollination",
+            "year_offset": 0
+          }
+        ],
+        "FRA": [
+          {
+            "start": "07-01",
+            "end": "08-15",
+            "stage": "pollination",
+            "year_offset": 0
+          }
+        ],
+        "RUS": [
+          {
+            "start": "07-01",
+            "end": "08-15",
+            "stage": "pollination",
+            "year_offset": 0
+          }
+        ],
+        "ZAF": [
+          {
+            "start": "01-01",
+            "end": "02-28",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ],
+        "ROU": [
+          {
+            "start": "07-01",
+            "end": "08-15",
+            "stage": "pollination",
+            "year_offset": 0
+          }
+        ]
+      },
+      "country_names": {
+        "USA": "United States",
+        "CHN": "China",
+        "BRA": "Brazil",
+        "ARG": "Argentina",
+        "UKR": "Ukraine",
+        "IND": "India",
+        "MEX": "Mexico",
+        "CAN": "Canada",
+        "FRA": "France",
+        "RUS": "Russia",
+        "ZAF": "South Africa",
+        "ROU": "Romania"
+      },
+      "regions": 312,
+      "coverage": 0.9,
+      "weeks": 1350,
+      "weeks_above_2_pct": 2.5,
+      "latest_dekad_end": "2026-11-10"
+    },
+    "coffee": {
+      "label": "Arabica",
+      "display": "ARABICA",
+      "glyph": "arabica",
+      "ticker": "KC=F",
+      "price_label": "ICE ARABICA",
+      "price_name": "ICE arabica coffee",
+      "price_unit": "US cents per pound",
+      "main_country": "BRA",
+      "main_country_name": "Brazil",
+      "target": "production",
+      "share_source": "mapspam",
+      "windows": {
+        "BRA": [
+          {
+            "start": "09-01",
+            "end": "11-30",
+            "stage": "flowering",
+            "year_offset": -1
+          },
+          {
+            "start": "06-01",
+            "end": "08-31",
+            "stage": "frost risk",
+            "year_offset": -1
+          }
+        ],
+        "COL": [
+          {
+            "start": "03-01",
+            "end": "05-31",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ],
+        "ETH": [
+          {
+            "start": "02-01",
+            "end": "04-30",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ],
+        "HND": [
+          {
+            "start": "03-01",
+            "end": "05-31",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ],
+        "PER": [
+          {
+            "start": "09-01",
+            "end": "11-30",
+            "stage": "flowering",
+            "year_offset": -1
+          }
+        ],
+        "GTM": [
+          {
+            "start": "03-01",
+            "end": "05-31",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ],
+        "MEX": [
+          {
+            "start": "03-01",
+            "end": "05-31",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ]
+      },
+      "country_names": {
+        "BRA": "Brazil",
+        "COL": "Colombia",
+        "ETH": "Ethiopia",
+        "HND": "Honduras",
+        "PER": "Peru",
+        "GTM": "Guatemala",
+        "MEX": "Mexico"
+      },
+      "regions": 93,
+      "coverage": 0.9001,
+      "weeks": 1350,
+      "weeks_above_2_pct": 6.4,
+      "latest_dekad_end": "2026-11-10"
+    },
+    "cocoa": {
+      "label": "Cocoa",
+      "display": "COCOA",
+      "glyph": "cocoa",
+      "ticker": "CC=F",
+      "price_label": "ICE COCOA",
+      "price_name": "ICE cocoa",
+      "price_unit": "US dollars per tonne",
+      "main_country": "CIV",
+      "main_country_name": "Côte d'Ivoire",
+      "target": "production",
+      "share_source": "fao",
+      "windows": {
+        "CIV": [
+          {
+            "start": "05-01",
+            "end": "09-30",
+            "stage": "main crop development",
+            "year_offset": 0
+          },
+          {
+            "start": "12-01",
+            "end": "02-28",
+            "stage": "dry season",
+            "year_offset": 0
+          }
+        ],
+        "GHA": [
+          {
+            "start": "05-01",
+            "end": "09-30",
+            "stage": "main crop development",
+            "year_offset": 0
+          },
+          {
+            "start": "12-01",
+            "end": "02-28",
+            "stage": "dry season",
+            "year_offset": 0
+          }
+        ],
+        "NGA": [
+          {
+            "start": "05-01",
+            "end": "09-30",
+            "stage": "main crop development",
+            "year_offset": 0
+          },
+          {
+            "start": "12-01",
+            "end": "02-28",
+            "stage": "dry season",
+            "year_offset": 0
+          }
+        ],
+        "CMR": [
+          {
+            "start": "05-01",
+            "end": "09-30",
+            "stage": "main crop development",
+            "year_offset": 0
+          },
+          {
+            "start": "12-01",
+            "end": "02-28",
+            "stage": "dry season",
+            "year_offset": 0
+          }
+        ],
+        "IDN": [
+          {
+            "start": "06-01",
+            "end": "09-30",
+            "stage": "dry season",
+            "year_offset": 0
+          }
+        ],
+        "ECU": [
+          {
+            "start": "01-01",
+            "end": "04-30",
+            "stage": "flowering",
+            "year_offset": 0
+          }
+        ]
+      },
+      "country_names": {
+        "CIV": "Côte d'Ivoire",
+        "GHA": "Ghana",
+        "NGA": "Nigeria",
+        "CMR": "Cameroon",
+        "IDN": "Indonesia",
+        "ECU": "Ecuador"
+      },
+      "regions": 65,
+      "coverage": 0.9002,
+      "weeks": 1350,
+      "weeks_above_2_pct": 4.8,
+      "latest_dekad_end": "2026-11-10"
+    }
+  }
+}
