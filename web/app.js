@@ -492,7 +492,7 @@
   }
   const ctxLabel = () => { const v = current(); return v === "ask" || v === "method" ? "all three crops" : VIEWS[v] + " \u00b7 " + D.crops[S.crop].label; };
   const GPT_URL = "https://chatgpt.com/?q=";
-  const RULES = "You are the HarvestRadar assistant, inside a research dashboard on weather risk for maize, arabica coffee and cocoa futures. Use only the HarvestRadar figures below for numbers, and say plainly when something is not in them (stocks, positioning, news). The risk index compares the expected world harvest with normal for the time of year: 0 = normal, above +2 = rare; it moves with the weather and is weakly linked to prices week to week. The climate fair value is the 12-month average price moved by the price reaction to the expected world supply gap. Give trade ideas as scenarios with entry logic, invalidation level and risks, never personalised advice. Answer in at most 150 words, in the language of the question.";
+  const RULES = "You are the HarvestRadar assistant, inside a research dashboard on weather risk for maize, arabica coffee and cocoa futures. Use only the HarvestRadar figures below for numbers, and say plainly when something is not in them (stocks, positioning, news). The risk index compares the expected world harvest with normal for the time of year: 0 = normal, above +2 = rare; it moves with the weather and is weakly linked to prices week to week. Less supply than normal (index above 0) tends to push prices up; more supply pushes them down. The climate fair value is the 12-month average price moved by the price reaction to the expected world supply gap. Give trade ideas as scenarios with entry logic, invalidation level and risks, never personalised advice. Answer in at most 150 words, in the language of the question.";
   function cropLine(k, full) {
     const c = D.crops[k], la = c.latest, f = c.fair;
     let s = "- " + c.label + " (" + c.priceName + ", " + c.priceUnit + "): risk index " + sg(la.z) + "; expected world supply " + pct(la.dp, 2) + " vs normal; last close " + fmtPrice(k, c.lastPrice.close) + " (" + dLong(c.lastPrice.date) + ")";
@@ -513,40 +513,24 @@
   }
   const gptLink = (q) => { let p = contextText(true) + "\n\nMy question: " + q; if (encodeURIComponent(p).length > 7000) p = contextText(false) + "\n\nMy question: " + q; return GPT_URL + encodeURIComponent(p); };
 
-  /* The model runs in the viewer's browser (WebLLM on WebGPU): free, no account, nothing leaves the computer
-     except the model download (about 900 MB from Hugging Face, once, then kept by the browser). */
-  const WEBLLM = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.87/+esm";
-  const LLM = { engine: null, loading: null, state: "idle", pct: 0, text: "", model: "", error: "", blocked: false };
-  async function gpuAdapter() {
-    if (!navigator.gpu) return null;
-    let a = null;
-    try { a = await navigator.gpu.requestAdapter(); } catch (e) { a = null; }
-    LLM.blocked = !a;  // WebGPU exists but gives no adapter: turned off, or blocked after a graphics reset
-    return a;
-  }
-  // Models of the prebuilt WebLLM list, chosen for modest graphics cards (memory WebLLM states for 4,096 tokens):
-  // default Llama 3.2 1B (about 0.9 GB), light SmolLM2 360M (about 0.4 GB) after a graphics error.
-  const MODELS = { main: ["Llama-3.2-1B-Instruct-q4f16_1-MLC", "Llama-3.2-1B-Instruct-q4f32_1-MLC"],
-                   light: ["SmolLM2-360M-Instruct-q4f16_1-MLC", "Qwen2.5-0.5B-Instruct-q4f32_1-MLC"] };
-  const LABEL = { "Llama-3.2-1B": "Llama 3.2, 1B", "SmolLM2-360M": "SmolLM2, 360M", "Qwen2.5-0.5B": "Qwen 2.5, 0.5B" };
-  const modelLabel = (id) => LABEL[Object.keys(LABEL).find((k) => id.startsWith(k))] || id;
-  const store = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } } };
-  function loadEngine(tier) {
-    if (LLM.engine && !tier) return Promise.resolve(LLM.engine);
-    if (LLM.loading && !tier) return LLM.loading;
+  /* The model runs in the viewer's browser on the processor (wllama: llama.cpp compiled to WebAssembly), so it
+     works without a graphics card: free, no account, nothing leaves the computer except the one-time model
+     download (about 400 MB from Hugging Face, then kept by the browser). */
+  const WLLAMA = "https://cdn.jsdelivr.net/npm/@wllama/wllama@3.8.1/esm/index.js";
+  const WLLAMA_WASM = "https://cdn.jsdelivr.net/npm/@wllama/wllama@3.8.1/esm/wasm/wllama.wasm";
+  const GGUF = { repo: "Qwen/Qwen2.5-0.5B-Instruct-GGUF", file: "qwen2.5-0.5b-instruct-q4_k_m.gguf" };
+  const LLM = { engine: null, loading: null, state: "idle", pct: 0, error: "", ctl: null };
+  function loadEngine() {
+    if (LLM.engine) return Promise.resolve(LLM.engine);
+    if (LLM.loading) return LLM.loading;
     LLM.loading = (async () => {
-      if (tier && LLM.engine) { try { await LLM.engine.unload(); } catch (e) { /* device already gone */ } LLM.engine = null; }
-      const a = await gpuAdapter();
-      if (!a) { LLM.state = "unsupported"; throw new Error("WebGPU is not available"); }
-      const f16 = a.features && a.features.has("shader-f16");
-      const t = tier || (new URLSearchParams(location.search).get("llm") === "small" || store.get("hr-llm-tier") === "light" ? "light" : "main");
-      LLM.tier = t; LLM.model = MODELS[t][f16 ? 0 : 1];
-      LLM.state = "loading"; LLM.pct = 0; LLM.text = "Starting"; askRefresh();
-      const webllm = await import(WEBLLM);
-      LLM.engine = await webllm.CreateMLCEngine(LLM.model, { initProgressCallback: (r) => { LLM.pct = r.progress || 0; LLM.text = r.text || ""; showProgress(); } },
-                                                { context_window_size: 2048 });
-      LLM.state = "ready"; askRefresh();
-      return LLM.engine;
+      if (typeof WebAssembly !== "object") { LLM.state = "unsupported"; throw new Error("WebAssembly is not available"); }
+      LLM.state = "loading"; LLM.pct = 0; askRefresh();
+      const { Wllama } = await import(WLLAMA);
+      const w = new Wllama({ default: WLLAMA_WASM }, { suppressNativeLog: true });
+      await w.loadModelFromHF(GGUF, { n_ctx: 2048, n_gpu_layers: 0, progressCallback: ({ loaded, total }) => { LLM.pct = total ? loaded / total : 0; showProgress(); } });
+      LLM.engine = w; LLM.state = "ready"; askRefresh();
+      return w;
     })().catch((e) => {
       LLM.loading = null;
       if (LLM.state !== "unsupported") { LLM.state = "failed"; LLM.error = String((e && e.message) || e).split("\n")[0].slice(0, 200); }
@@ -558,7 +542,7 @@
   function showProgress() {
     const b = document.getElementById("llm-bar"), t = document.getElementById("llm-text");
     if (b) b.style.width = Math.round(100 * LLM.pct) + "%";
-    if (t) t.textContent = "Loading the model on this computer: " + Math.round(100 * LLM.pct) + "%. The first time it downloads " + (LLM.tier === "light" ? "about 400 MB" : "about 900 MB") + ", then your browser keeps it.";
+    if (t) t.textContent = LLM.pct < 1 ? "Downloading the model: " + Math.round(100 * LLM.pct) + "% of about 400 MB (once: your browser keeps it)." : "Starting the model on this computer...";
   }
 
   function md(src) {
@@ -590,11 +574,11 @@
       '<form class="composer" id="ask-form"><textarea id="ask-input" rows="2" placeholder="Ask about this page..." aria-label="Your question"></textarea><button class="btn primary" id="ask-send" type="submit">Send</button><button class="btn" id="ask-stop" type="button" hidden>Stop</button></form>' +
       '<div class="ctx-line" id="ask-ctx"></div>' +
       '<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--frost-2);font-size:14px">What the assistant receives</summary><pre id="gpt-preview" class="mono" style="white-space:pre-wrap;font-size:13px;color:var(--muted);line-height:1.5;margin:8px 0 0"></pre></details>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px"><span class="source" style="margin:0">Free, no account: a small open model (Llama 3.2, 1B) runs in your browser. It can be wrong: check figures on the page. Not investment advice.</span><button class="btn sm" id="ask-clear" type="button">Clear</button></div>';
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px"><span class="source" style="margin:0">Free, no account: a small open model (Qwen 2.5, 0.5B) runs in your browser. It can be wrong: check figures on the page. Not investment advice.</span><button class="btn sm" id="ask-clear" type="button">Clear</button></div>';
     chatEl.querySelector("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); askSend(chatEl.querySelector("#ask-input").value); });
     chatEl.querySelector("#ask-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(e.target.value); } });
-    chatEl.querySelector("#ask-stop").addEventListener("click", () => { S.chat.stop = true; if (LLM.engine) LLM.engine.interruptGenerate(); });
-    chatEl.querySelector("#ask-clear").addEventListener("click", () => { if (S.chat.busy) { S.chat.stop = true; if (LLM.engine) LLM.engine.interruptGenerate(); } S.chat.turns = []; S.chat.error = ""; askRefresh(); });
+    chatEl.querySelector("#ask-stop").addEventListener("click", () => { S.chat.stop = true; if (LLM.ctl) LLM.ctl.abort(); });
+    chatEl.querySelector("#ask-clear").addEventListener("click", () => { if (S.chat.busy) { S.chat.stop = true; if (LLM.ctl) LLM.ctl.abort(); } S.chat.turns = []; S.chat.error = ""; askRefresh(); });
     return chatEl;
   }
   function askRefresh() {
@@ -610,7 +594,7 @@
     const st = document.getElementById("llm-status");
     if (st) {
       if (LLM.state === "loading") st.innerHTML = '<div style="margin-bottom:10px"><div style="height:6px;border-radius:3px;background:var(--line)"><div id="llm-bar" style="height:6px;border-radius:3px;background:var(--signal);width:0"></div></div><div class="ctx-line" id="llm-text" style="margin-top:6px"></div></div>';
-      else if (LLM.state === "idle") st.innerHTML = '<div class="ctx-line" style="margin:0 0 10px">The first question downloads the model (' + (store.get("hr-llm-tier") === "light" ? "about 400 MB" : "about 900 MB") + ', once). It then runs on this computer.</div>';
+      else if (LLM.state === "idle") st.innerHTML = '<div class="ctx-line" style="margin:0 0 10px">The first question downloads the model (about 400 MB, once). It then runs on this computer\'s processor: an answer takes about 30 to 60 seconds.</div>';
       else st.innerHTML = "";
       if (LLM.state === "loading") showProgress();
     }
@@ -624,9 +608,8 @@
     document.querySelectorAll("[data-ask]").forEach((b) => { b.disabled = C.busy; });
   }
   function fallbackHtml(q) {
-    const why = LLM.state !== "unsupported" ? "The model could not be loaded here" + (LLM.error ? " (" + esc(LLM.error) + ")" : "") + "."
-      : LLM.blocked ? "The browser does not give this page access to the graphics card (WebGPU). It works by default in Chrome or Edge on Windows and Mac. If the assistant worked before, the browser turned it off after a graphics reset: close every browser window, reopen it and try again."
-      : "This browser cannot run the assistant: it needs WebGPU (a recent Chrome or Edge on a computer).";
+    const why = LLM.state === "unsupported" ? "This browser cannot run the assistant (it needs WebAssembly)."
+      : "The model could not be loaded here" + (LLM.error ? " (" + esc(LLM.error) + ")" : "") + ".";
     return why + ' You can still <a href="' + esc(gptLink(q)) + '" target="_blank" rel="noopener noreferrer">ask ChatGPT in a new tab</a>, with the same question and data.';
   }
   async function askSend(text) {
@@ -651,7 +634,8 @@
     C.turns.push(slot); askRefresh();
     const live = () => { const el = document.querySelector('#chat-log .msg.bot[data-i="' + (C.turns.length - 1) + '"]'), log = document.getElementById("chat-log"); if (el) { el.innerHTML = md(slot.content); if (log) log.scrollTop = log.scrollHeight; } };
     const run = async (engine, messages, maxTokens) => {
-      const stream = await engine.chat.completions.create({ messages: messages, stream: true, temperature: 0.3, max_tokens: maxTokens });
+      LLM.ctl = new AbortController();
+      const stream = await engine.createChatCompletion({ messages: messages, stream: true, temperature: 0.3, max_tokens: maxTokens, abortSignal: LLM.ctl.signal });
       let last = 0;
       for await (const ch of stream) {
         slot.content += (ch.choices && ch.choices[0] && ch.choices[0].delta && ch.choices[0].delta.content) || "";
@@ -665,23 +649,14 @@
       } catch (e1) {
         console.error("HarvestRadar assistant, first attempt:", e1);
         if (C.stop || slot.content) throw e1;
-        // second attempt: shorter context, no history; on a graphics error, the more compatible f32 build
-        // second attempt: on a graphics error (the GPU ran out of memory or was reset), the light model
-        // (0.5B, about 400 MB), kept for the next visits; otherwise the same model with a shorter context
-        const msg1 = String((e1 && e1.message) || e1);
-        let engine = eng;
-        if (/device|lost|instance|mapAsync|gpu|buffer|memory|shader|pipeline/i.test(msg1) && LLM.tier !== "light") {
-          slot.meta = "The graphics card is short of memory: switching to the light model.";
-          store.set("hr-llm-tier", "light");
-          engine = await loadEngine("light");
-        }
-        slot.content = ""; slot.meta = LLM.tier === "light" ? "Answered by the light model (" + modelLabel(LLM.model) + ")." : "";
-        await run(engine, [{ role: "system", content: contextText(false) }, { role: "user", content: text }], 350);
+        slot.content = "";  // second attempt: no history, a shorter answer
+        await run(eng, [{ role: "system", content: contextText(false) }, { role: "user", content: text }], 300);
       }
       if (C.stop) slot.meta = "Stopped.";
       if (!slot.content.trim()) slot.content = "No answer came back. Try a shorter question.";
     } catch (e) {
       console.error("HarvestRadar assistant:", e);
+      if (C.stop) { if (!slot.content) C.turns.pop(); else slot.meta = "Stopped."; return; }
       if (!slot.content) C.turns.pop(); else slot.meta = "Interrupted.";
       if (LLM.state === "loading") LLM.state = "failed";
       const detail = String((e && e.message) || e).split("\n")[0].slice(0, 220);
@@ -735,13 +710,13 @@
   }
   function askPanel(k) {
     const c = D.crops[k], qs = suggestions();
-    return panel("ASK ABOUT " + esc(c.label.toUpperCase()), '<div style="font-size:15px;color:var(--frost-2);line-height:1.55">The answer appears in the side panel. Free, no account: the assistant runs in your browser.</div><div class="chips" style="margin-top:12px">' +
+    return panel("ASK ABOUT " + esc(c.label.toUpperCase()), '<div style="font-size:15px;color:var(--frost-2);line-height:1.55">The answer appears in the side panel. Free, no account: the assistant runs in your browser (about 30 to 60 seconds per answer).</div><div class="chips" style="margin-top:12px">' +
       qs.map((q) => '<button class="chip" data-askopen="' + esc(q) + '">' + esc(q) + "</button>").join("") + '<button class="chip" data-askopen="">Write your own question</button></div>', "It reads this page's figures. Not investment advice.");
   }
 
   function viewAsk() {
     const html = '<div class="main c65"><div class="col"><section class="glass" style="padding:18px 20px"><div style="font-family:var(--display);font-weight:700;font-size:24px;margin-bottom:12px">Ask about today\'s signals</div><div id="ask-slot"></div></section></div>' +
-      '<div class="col">' + panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">The "Ask the assistant" button on every page opens this chat in a side panel, with that page as context: the crop, the readings on screen and, on the Fair value page, the scenario you set. The answers come from a small open model (Llama 3.2, 1 billion parameters) that runs in your browser with WebGPU: free, no account, and your questions stay on your computer. The first question downloads the model (about 900 MB, once); on a graphics card short of memory it switches to a lighter one (about 400 MB). Browsers without WebGPU get a link to ask ChatGPT instead.</div>') + "</div></div>";
+      '<div class="col">' + panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">The "Ask the assistant" button on every page opens this chat in a side panel, with that page as context: the crop, the readings on screen and, on the Fair value page, the scenario you set. The answers come from a small open model (Qwen 2.5, 0.5 billion parameters) that runs in your browser on the processor, so no graphics card is needed: free, no account, and your questions stay on your computer. The first question downloads the model (about 400 MB, once); each answer then takes about 30 to 60 seconds. If the model cannot load (for example inside Claude), a link offers to ask ChatGPT instead.</div>') + "</div></div>";
     return { html: html, after: null };
   }
 
