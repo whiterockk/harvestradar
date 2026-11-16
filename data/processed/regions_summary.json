@@ -1,0 +1,15 @@
+{
+  "maize": {
+    "regions": 312,
+    "coverage": 0.9
+  },
+  "coffee": {
+    "regions": 93,
+    "coverage": 0.9001
+  },
+  "cocoa": {
+    "regions": 65,
+    "coverage": 0.9002
+  },
+  "cells": 2016
+}

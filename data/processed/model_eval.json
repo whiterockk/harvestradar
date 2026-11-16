@@ -1,0 +1,652 @@
+{
+  "test_seasons": [
+    2012,
+    2024
+  ],
+  "target": {
+    "maize": "yield",
+    "coffee": "production",
+    "cocoa": "production"
+  },
+  "horizons": {
+    "pre": "last week before the first window",
+    "mid": "middle of the window(s)",
+    "end": "last week the season is tracked (after its windows)"
+  },
+  "by_commodity": {
+    "maize": {
+      "pre": {
+        "model": {
+          "n": 156,
+          "rmse": 0.14986944914178563,
+          "mae": 0.09808453259004012,
+          "spearman": 0.010426618935371397,
+          "sign_accuracy": 0.47435897435897434
+        },
+        "trend_only": {
+          "n": 156,
+          "rmse": 0.1397717560619584,
+          "mae": 0.09314964607218797,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 156,
+          "rmse": 0.19259035977270447,
+          "mae": 0.12222702482368544,
+          "spearman": 0.10134216731939591,
+          "sign_accuracy": 0.5512820512820513
+        },
+        "linear_3var": {
+          "n": 156,
+          "rmse": 0.1477223001563974,
+          "mae": 0.10060747583970461,
+          "spearman": 0.10966294822067174,
+          "sign_accuracy": 0.44871794871794873
+        },
+        "rmse_vs_trend_pct": 7.2,
+        "rmse_weighted": {
+          "model": 0.09222749859625622,
+          "trend_only": 0.09100787727909701
+        },
+        "rmse_vs_trend_weighted_pct": 1.3,
+        "band_coverage_p10_p90": 0.788
+      },
+      "mid": {
+        "model": {
+          "n": 156,
+          "rmse": 0.13998518025861872,
+          "mae": 0.09093472463299854,
+          "spearman": 0.28230626985506785,
+          "sign_accuracy": 0.6089743589743589
+        },
+        "trend_only": {
+          "n": 156,
+          "rmse": 0.1397717560619584,
+          "mae": 0.09314964607218797,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 156,
+          "rmse": 0.19575508277941556,
+          "mae": 0.1236775616391547,
+          "spearman": 0.06836939514153402,
+          "sign_accuracy": 0.5512820512820513
+        },
+        "linear_3var": {
+          "n": 156,
+          "rmse": 0.1354323724012385,
+          "mae": 0.092131848696203,
+          "spearman": 0.41815365649349623,
+          "sign_accuracy": 0.5576923076923077
+        },
+        "rmse_vs_trend_pct": 0.2,
+        "rmse_weighted": {
+          "model": 0.08549765515322241,
+          "trend_only": 0.09100787727909701
+        },
+        "rmse_vs_trend_weighted_pct": -6.1,
+        "band_coverage_p10_p90": 0.788
+      },
+      "end": {
+        "model": {
+          "n": 156,
+          "rmse": 0.1389155812271016,
+          "mae": 0.08930366571945603,
+          "spearman": 0.3268321980054053,
+          "sign_accuracy": 0.5961538461538461
+        },
+        "trend_only": {
+          "n": 156,
+          "rmse": 0.1397717560619584,
+          "mae": 0.09314964607218797,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 156,
+          "rmse": 0.19564392244997933,
+          "mae": 0.12209544838969166,
+          "spearman": 0.07114159725624693,
+          "sign_accuracy": 0.5641025641025641
+        },
+        "linear_3var": {
+          "n": 156,
+          "rmse": 0.13450988059040236,
+          "mae": 0.09076808582497148,
+          "spearman": 0.49529800382481703,
+          "sign_accuracy": 0.5769230769230769
+        },
+        "rmse_vs_trend_pct": -0.6,
+        "rmse_weighted": {
+          "model": 0.08429644527299435,
+          "trend_only": 0.09100787727909701
+        },
+        "rmse_vs_trend_weighted_pct": -7.4,
+        "band_coverage_p10_p90": 0.801
+      }
+    },
+    "coffee": {
+      "pre": {
+        "model": {
+          "n": 91,
+          "rmse": 0.16135483916387447,
+          "mae": 0.1283431776918861,
+          "spearman": 0.23659818442427138,
+          "sign_accuracy": 0.5164835164835165
+        },
+        "trend_only": {
+          "n": 91,
+          "rmse": 0.16848237110784225,
+          "mae": 0.12792570320909877,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 91,
+          "rmse": 0.20235778205460275,
+          "mae": 0.15300701412754877,
+          "spearman": 0.2666825927695493,
+          "sign_accuracy": 0.5824175824175825
+        },
+        "linear_3var": {
+          "n": 91,
+          "rmse": 0.1687897945070043,
+          "mae": 0.1349998027890983,
+          "spearman": 0.04135490762184594,
+          "sign_accuracy": 0.4835164835164835
+        },
+        "rmse_vs_trend_pct": -4.2,
+        "rmse_weighted": {
+          "model": 0.1432750080108387,
+          "trend_only": 0.14452796429545597
+        },
+        "rmse_vs_trend_weighted_pct": -0.9,
+        "band_coverage_p10_p90": 0.824
+      },
+      "mid": {
+        "model": {
+          "n": 91,
+          "rmse": 0.1620013605775431,
+          "mae": 0.12952449498396607,
+          "spearman": 0.2495938843764931,
+          "sign_accuracy": 0.5494505494505495
+        },
+        "trend_only": {
+          "n": 91,
+          "rmse": 0.16848237110784225,
+          "mae": 0.12792570320909877,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 91,
+          "rmse": 0.20235778205460275,
+          "mae": 0.15300701412754877,
+          "spearman": 0.2666825927695493,
+          "sign_accuracy": 0.5824175824175825
+        },
+        "linear_3var": {
+          "n": 91,
+          "rmse": 0.17360284574423324,
+          "mae": 0.13910346819635075,
+          "spearman": -0.03546743111960504,
+          "sign_accuracy": 0.46153846153846156
+        },
+        "rmse_vs_trend_pct": -3.8,
+        "rmse_weighted": {
+          "model": 0.14650546380889076,
+          "trend_only": 0.14452796429545597
+        },
+        "rmse_vs_trend_weighted_pct": 1.4,
+        "band_coverage_p10_p90": 0.802
+      },
+      "end": {
+        "model": {
+          "n": 91,
+          "rmse": 0.1566532868012644,
+          "mae": 0.12395957090280114,
+          "spearman": 0.33146997929606625,
+          "sign_accuracy": 0.5604395604395604
+        },
+        "trend_only": {
+          "n": 91,
+          "rmse": 0.16848237110784225,
+          "mae": 0.12792570320909877,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 91,
+          "rmse": 0.19063403511845126,
+          "mae": 0.14161474950170483,
+          "spearman": 0.3789934702978181,
+          "sign_accuracy": 0.6483516483516484
+        },
+        "linear_3var": {
+          "n": 91,
+          "rmse": 0.17217464894418583,
+          "mae": 0.1379204777672149,
+          "spearman": 0.020114667940754897,
+          "sign_accuracy": 0.4835164835164835
+        },
+        "rmse_vs_trend_pct": -7.0,
+        "rmse_weighted": {
+          "model": 0.13446427317279838,
+          "trend_only": 0.14452796429545597
+        },
+        "rmse_vs_trend_weighted_pct": -7.0,
+        "band_coverage_p10_p90": 0.824
+      }
+    },
+    "cocoa": {
+      "pre": {
+        "model": {
+          "n": 66,
+          "rmse": 0.16548605520316123,
+          "mae": 0.13066635943686974,
+          "spearman": 0.3407648631336997,
+          "sign_accuracy": 0.6666666666666666
+        },
+        "trend_only": {
+          "n": 66,
+          "rmse": 0.1675806112800981,
+          "mae": 0.13227798885875702,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 66,
+          "rmse": 0.17900115455693705,
+          "mae": 0.13705041945623,
+          "spearman": 0.47557615240823,
+          "sign_accuracy": 0.7272727272727273
+        },
+        "linear_3var": {
+          "n": 66,
+          "rmse": 0.17185926219302516,
+          "mae": 0.1376161618940931,
+          "spearman": -0.09277925667737089,
+          "sign_accuracy": 0.5
+        },
+        "rmse_vs_trend_pct": -1.2,
+        "rmse_weighted": {
+          "model": 0.1608443381534984,
+          "trend_only": 0.16443552600833247
+        },
+        "rmse_vs_trend_weighted_pct": -2.2,
+        "band_coverage_p10_p90": 0.712
+      },
+      "mid": {
+        "model": {
+          "n": 78,
+          "rmse": 0.15884839239789444,
+          "mae": 0.12650723672027622,
+          "spearman": 0.3269768206477067,
+          "sign_accuracy": 0.6410256410256411
+        },
+        "trend_only": {
+          "n": 78,
+          "rmse": 0.16272743262610728,
+          "mae": 0.12820364873278267,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 78,
+          "rmse": 0.1738336183891946,
+          "mae": 0.13261169076517534,
+          "spearman": 0.48911847646024853,
+          "sign_accuracy": 0.7307692307692307
+        },
+        "linear_3var": {
+          "n": 78,
+          "rmse": 0.16730618193074012,
+          "mae": 0.13287763994941126,
+          "spearman": 0.10198662097396273,
+          "sign_accuracy": 0.5384615384615384
+        },
+        "rmse_vs_trend_pct": -2.4,
+        "rmse_weighted": {
+          "model": 0.15296519070445388,
+          "trend_only": 0.15501403602045732
+        },
+        "rmse_vs_trend_weighted_pct": -1.3,
+        "band_coverage_p10_p90": 0.731
+      },
+      "end": {
+        "model": {
+          "n": 78,
+          "rmse": 0.15260597554671013,
+          "mae": 0.1198883993218308,
+          "spearman": 0.4868169804878665,
+          "sign_accuracy": 0.7051282051282052
+        },
+        "trend_only": {
+          "n": 78,
+          "rmse": 0.16272743262610728,
+          "mae": 0.12820364873278267,
+          "spearman": null,
+          "sign_accuracy": null
+        },
+        "persistence": {
+          "n": 78,
+          "rmse": 0.16068179312024106,
+          "mae": 0.10867265870983307,
+          "spearman": 0.6148408553471845,
+          "sign_accuracy": 0.7564102564102564
+        },
+        "linear_3var": {
+          "n": 78,
+          "rmse": 0.16747365357569488,
+          "mae": 0.13229092105811935,
+          "spearman": 0.11162255466052934,
+          "sign_accuracy": 0.5384615384615384
+        },
+        "rmse_vs_trend_pct": -6.2,
+        "rmse_weighted": {
+          "model": 0.14533799593629168,
+          "trend_only": 0.15501403602045732
+        },
+        "rmse_vs_trend_weighted_pct": -6.2,
+        "band_coverage_p10_p90": 0.795
+      }
+    }
+  },
+  "pooled": {
+    "pre": {
+      "model": {
+        "n": 313,
+        "rmse": 0.1566478387803314,
+        "mae": 0.11375206382377409,
+        "spearman": 0.17680180477654736,
+        "sign_accuracy": 0.5271565495207667
+      },
+      "trend_only": {
+        "n": 313,
+        "rmse": 0.15463331695464788,
+        "mae": 0.11151096180181239,
+        "spearman": null,
+        "sign_accuracy": null
+      },
+      "persistence": {
+        "n": 313,
+        "rmse": 0.19273768123896584,
+        "mae": 0.13430153943199055,
+        "spearman": 0.2431096486345336,
+        "sign_accuracy": 0.597444089456869
+      },
+      "linear_3var": {
+        "n": 313,
+        "rmse": 0.15933320000049772,
+        "mae": 0.11841027146904795,
+        "spearman": 0.03732485559149984,
+        "sign_accuracy": 0.4696485623003195
+      },
+      "rmse_vs_trend_pct": 1.3,
+      "rmse_weighted": {
+        "model": 0.13231000846812163,
+        "trend_only": 0.13379923848244987
+      },
+      "rmse_vs_trend_weighted_pct": -1.1,
+      "band_coverage_p10_p90": 0.783
+    },
+    "mid": {
+      "model": {
+        "n": 325,
+        "rmse": 0.15103087958581907,
+        "mae": 0.1102772632322161,
+        "spearman": 0.2864303567371052,
+        "sign_accuracy": 0.6
+      },
+      "trend_only": {
+        "n": 325,
+        "rmse": 0.15388556723813623,
+        "mae": 0.11129990270906573,
+        "spearman": null,
+        "sign_accuracy": null
+      },
+      "persistence": {
+        "n": 325,
+        "rmse": 0.19264372236933106,
+        "mae": 0.13403399932615,
+        "spearman": 0.23880237009071364,
+        "sign_accuracy": 0.6030769230769231
+      },
+      "linear_3var": {
+        "n": 325,
+        "rmse": 0.1547923663954598,
+        "mae": 0.11506289205701437,
+        "spearman": 0.1928645587541293,
+        "sign_accuracy": 0.5261538461538462
+      },
+      "rmse_vs_trend_pct": -1.9,
+      "rmse_weighted": {
+        "model": 0.13013986190711987,
+        "trend_only": 0.13188616770673775
+      },
+      "rmse_vs_trend_weighted_pct": -1.3,
+      "band_coverage_p10_p90": 0.778
+    },
+    "end": {
+      "model": {
+        "n": 325,
+        "rmse": 0.1473884300733018,
+        "mae": 0.10634765523536259,
+        "spearman": 0.377455123835492,
+        "sign_accuracy": 0.6123076923076923
+      },
+      "trend_only": {
+        "n": 325,
+        "rmse": 0.15388556723813623,
+        "mae": 0.11129990270906573,
+        "spearman": null,
+        "sign_accuracy": null
+      },
+      "persistence": {
+        "n": 325,
+        "rmse": 0.18639953990932256,
+        "mae": 0.12433938317788928,
+        "spearman": 0.32116546938632834,
+        "sign_accuracy": 0.6338461538461538
+      },
+      "linear_3var": {
+        "n": 325,
+        "rmse": 0.15400106645639286,
+        "mae": 0.11393623602475512,
+        "spearman": 0.2475346512156328,
+        "sign_accuracy": 0.5415384615384615
+      },
+      "rmse_vs_trend_pct": -4.2,
+      "rmse_weighted": {
+        "model": 0.1231065321879137,
+        "trend_only": 0.13188616770673775
+      },
+      "rmse_vs_trend_weighted_pct": -6.7,
+      "band_coverage_p10_p90": 0.806
+    }
+  },
+  "vintages": {
+    "1997": {
+      "trained_on_seasons_up_to": 1995,
+      "first_season": 1991,
+      "rows": 2865,
+      "country_seasons": 110
+    },
+    "1998": {
+      "trained_on_seasons_up_to": 1996,
+      "first_season": 1991,
+      "rows": 3441,
+      "country_seasons": 132
+    },
+    "1999": {
+      "trained_on_seasons_up_to": 1997,
+      "first_season": 1991,
+      "rows": 4015,
+      "country_seasons": 154
+    },
+    "2000": {
+      "trained_on_seasons_up_to": 1998,
+      "first_season": 1991,
+      "rows": 4591,
+      "country_seasons": 176
+    },
+    "2001": {
+      "trained_on_seasons_up_to": 1999,
+      "first_season": 1991,
+      "rows": 5163,
+      "country_seasons": 198
+    },
+    "2002": {
+      "trained_on_seasons_up_to": 2000,
+      "first_season": 1991,
+      "rows": 5787,
+      "country_seasons": 222
+    },
+    "2003": {
+      "trained_on_seasons_up_to": 2001,
+      "first_season": 1991,
+      "rows": 6444,
+      "country_seasons": 247
+    },
+    "2004": {
+      "trained_on_seasons_up_to": 2002,
+      "first_season": 1991,
+      "rows": 7094,
+      "country_seasons": 272
+    },
+    "2005": {
+      "trained_on_seasons_up_to": 2003,
+      "first_season": 1991,
+      "rows": 7744,
+      "country_seasons": 297
+    },
+    "2006": {
+      "trained_on_seasons_up_to": 2004,
+      "first_season": 1991,
+      "rows": 8398,
+      "country_seasons": 322
+    },
+    "2007": {
+      "trained_on_seasons_up_to": 2005,
+      "first_season": 1991,
+      "rows": 9049,
+      "country_seasons": 347
+    },
+    "2008": {
+      "trained_on_seasons_up_to": 2006,
+      "first_season": 1991,
+      "rows": 9700,
+      "country_seasons": 372
+    },
+    "2009": {
+      "trained_on_seasons_up_to": 2007,
+      "first_season": 1991,
+      "rows": 10350,
+      "country_seasons": 397
+    },
+    "2010": {
+      "trained_on_seasons_up_to": 2008,
+      "first_season": 1991,
+      "rows": 11008,
+      "country_seasons": 422
+    },
+    "2011": {
+      "trained_on_seasons_up_to": 2009,
+      "first_season": 1991,
+      "rows": 11662,
+      "country_seasons": 447
+    },
+    "2012": {
+      "trained_on_seasons_up_to": 2010,
+      "first_season": 1991,
+      "rows": 12312,
+      "country_seasons": 472
+    },
+    "2013": {
+      "trained_on_seasons_up_to": 2011,
+      "first_season": 1991,
+      "rows": 12962,
+      "country_seasons": 497
+    },
+    "2014": {
+      "trained_on_seasons_up_to": 2012,
+      "first_season": 1991,
+      "rows": 13617,
+      "country_seasons": 522
+    },
+    "2015": {
+      "trained_on_seasons_up_to": 2013,
+      "first_season": 1991,
+      "rows": 14269,
+      "country_seasons": 547
+    },
+    "2016": {
+      "trained_on_seasons_up_to": 2014,
+      "first_season": 1991,
+      "rows": 14919,
+      "country_seasons": 572
+    },
+    "2017": {
+      "trained_on_seasons_up_to": 2015,
+      "first_season": 1991,
+      "rows": 15571,
+      "country_seasons": 597
+    },
+    "2018": {
+      "trained_on_seasons_up_to": 2016,
+      "first_season": 1991,
+      "rows": 16224,
+      "country_seasons": 622
+    },
+    "2019": {
+      "trained_on_seasons_up_to": 2017,
+      "first_season": 1991,
+      "rows": 16875,
+      "country_seasons": 647
+    },
+    "2020": {
+      "trained_on_seasons_up_to": 2018,
+      "first_season": 1991,
+      "rows": 17525,
+      "country_seasons": 672
+    },
+    "2021": {
+      "trained_on_seasons_up_to": 2019,
+      "first_season": 1991,
+      "rows": 18183,
+      "country_seasons": 697
+    },
+    "2022": {
+      "trained_on_seasons_up_to": 2020,
+      "first_season": 1991,
+      "rows": 18837,
+      "country_seasons": 722
+    },
+    "2023": {
+      "trained_on_seasons_up_to": 2021,
+      "first_season": 1991,
+      "rows": 19487,
+      "country_seasons": 747
+    },
+    "2024": {
+      "trained_on_seasons_up_to": 2022,
+      "first_season": 1991,
+      "rows": 20137,
+      "country_seasons": 772
+    },
+    "2025": {
+      "trained_on_seasons_up_to": 2023,
+      "first_season": 1991,
+      "rows": 20787,
+      "country_seasons": 797
+    },
+    "2026": {
+      "trained_on_seasons_up_to": 2024,
+      "first_season": 1991,
+      "rows": 21444,
+      "country_seasons": 822
+    }
+  }
+}

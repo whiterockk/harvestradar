@@ -1,0 +1,75 @@
+{
+  "criterion": "share-weighted end-of-season RMSE vs trend only, vintages 2003-2011",
+  "results": [
+    {
+      "config": "15/10",
+      "weights": "equal",
+      "rmse_vs_trend_weighted_pct": 1.8,
+      "rmse_vs_trend_pct": -4.2,
+      "n": 221
+    },
+    {
+      "config": "15/10",
+      "weights": "sqrt",
+      "rmse_vs_trend_weighted_pct": 1.1,
+      "rmse_vs_trend_pct": -5.6,
+      "n": 221
+    },
+    {
+      "config": "15/10",
+      "weights": "share",
+      "rmse_vs_trend_weighted_pct": 3.2,
+      "rmse_vs_trend_pct": -3.8,
+      "n": 221
+    },
+    {
+      "config": "7/40",
+      "weights": "equal",
+      "rmse_vs_trend_weighted_pct": -4.4,
+      "rmse_vs_trend_pct": -7.7,
+      "n": 221
+    },
+    {
+      "config": "7/40",
+      "weights": "sqrt",
+      "rmse_vs_trend_weighted_pct": -7.9,
+      "rmse_vs_trend_pct": -8.3,
+      "n": 221
+    },
+    {
+      "config": "7/40",
+      "weights": "share",
+      "rmse_vs_trend_weighted_pct": -7.8,
+      "rmse_vs_trend_pct": -6.5,
+      "n": 221
+    },
+    {
+      "config": "5/80",
+      "weights": "equal",
+      "rmse_vs_trend_weighted_pct": -6.5,
+      "rmse_vs_trend_pct": -8.7,
+      "n": 221
+    },
+    {
+      "config": "5/80",
+      "weights": "sqrt",
+      "rmse_vs_trend_weighted_pct": -9.3,
+      "rmse_vs_trend_pct": -8.4,
+      "n": 221
+    },
+    {
+      "config": "5/80",
+      "weights": "share",
+      "rmse_vs_trend_weighted_pct": -8.5,
+      "rmse_vs_trend_pct": -6.8,
+      "n": 221
+    }
+  ],
+  "best": {
+    "config": "5/80",
+    "weights": "sqrt",
+    "rmse_vs_trend_weighted_pct": -9.3,
+    "rmse_vs_trend_pct": -8.4,
+    "n": 221
+  }
+}
