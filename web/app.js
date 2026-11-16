@@ -514,28 +514,37 @@
   const gptLink = (q) => { let p = contextText(true) + "\n\nMy question: " + q; if (encodeURIComponent(p).length > 7000) p = contextText(false) + "\n\nMy question: " + q; return GPT_URL + encodeURIComponent(p); };
 
   /* The model runs in the viewer's browser (WebLLM on WebGPU): free, no account, nothing leaves the computer
-     except the model download (about 1 GB from Hugging Face, once, then kept by the browser). */
+     except the model download (about 900 MB from Hugging Face, once, then kept by the browser). */
   const WEBLLM = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.87/+esm";
-  const LLM = { engine: null, loading: null, state: "idle", pct: 0, text: "", model: "", error: "" };
+  const LLM = { engine: null, loading: null, state: "idle", pct: 0, text: "", model: "", error: "", blocked: false };
   async function gpuAdapter() {
     if (!navigator.gpu) return null;
-    try { return await navigator.gpu.requestAdapter(); } catch (e) { return null; }
+    let a = null;
+    try { a = await navigator.gpu.requestAdapter(); } catch (e) { a = null; }
+    LLM.blocked = !a;  // WebGPU exists but gives no adapter: turned off, or blocked after a graphics reset
+    return a;
   }
-  const LIGHT = "Qwen2.5-0.5B-Instruct-q4f32_1-MLC";
+  // Models of the prebuilt WebLLM list, chosen for modest graphics cards (memory WebLLM states for 4,096 tokens):
+  // default Llama 3.2 1B (about 0.9 GB), light SmolLM2 360M (about 0.4 GB) after a graphics error.
+  const MODELS = { main: ["Llama-3.2-1B-Instruct-q4f16_1-MLC", "Llama-3.2-1B-Instruct-q4f32_1-MLC"],
+                   light: ["SmolLM2-360M-Instruct-q4f16_1-MLC", "Qwen2.5-0.5B-Instruct-q4f32_1-MLC"] };
+  const LABEL = { "Llama-3.2-1B": "Llama 3.2, 1B", "SmolLM2-360M": "SmolLM2, 360M", "Qwen2.5-0.5B": "Qwen 2.5, 0.5B" };
+  const modelLabel = (id) => LABEL[Object.keys(LABEL).find((k) => id.startsWith(k))] || id;
   const store = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } } };
-  function loadEngine(force) {
-    if (LLM.engine && !force) return Promise.resolve(LLM.engine);
-    if (LLM.loading && !force) return LLM.loading;
+  function loadEngine(tier) {
+    if (LLM.engine && !tier) return Promise.resolve(LLM.engine);
+    if (LLM.loading && !tier) return LLM.loading;
     LLM.loading = (async () => {
-      if (force && LLM.engine) { try { await LLM.engine.unload(); } catch (e) { /* device already gone */ } LLM.engine = null; }
+      if (tier && LLM.engine) { try { await LLM.engine.unload(); } catch (e) { /* device already gone */ } LLM.engine = null; }
       const a = await gpuAdapter();
-      if (!a) { LLM.state = "unsupported"; throw new Error("WebGPU is not available in this browser"); }
-      const f16 = a.features && a.features.has("shader-f16"), test = new URLSearchParams(location.search).get("llm");
-      LLM.model = force || (test === "small" || store.get("hr-llm") === "light" ? LIGHT  // ?llm=small: quick checks
-        : f16 ? "Qwen2.5-1.5B-Instruct-q4f16_1-MLC" : "Qwen2.5-1.5B-Instruct-q4f32_1-MLC");
+      if (!a) { LLM.state = "unsupported"; throw new Error("WebGPU is not available"); }
+      const f16 = a.features && a.features.has("shader-f16");
+      const t = tier || (new URLSearchParams(location.search).get("llm") === "small" || store.get("hr-llm-tier") === "light" ? "light" : "main");
+      LLM.tier = t; LLM.model = MODELS[t][f16 ? 0 : 1];
       LLM.state = "loading"; LLM.pct = 0; LLM.text = "Starting"; askRefresh();
       const webllm = await import(WEBLLM);
-      LLM.engine = await webllm.CreateMLCEngine(LLM.model, { initProgressCallback: (r) => { LLM.pct = r.progress || 0; LLM.text = r.text || ""; showProgress(); } });
+      LLM.engine = await webllm.CreateMLCEngine(LLM.model, { initProgressCallback: (r) => { LLM.pct = r.progress || 0; LLM.text = r.text || ""; showProgress(); } },
+                                                { context_window_size: 2048 });
       LLM.state = "ready"; askRefresh();
       return LLM.engine;
     })().catch((e) => {
@@ -549,7 +558,7 @@
   function showProgress() {
     const b = document.getElementById("llm-bar"), t = document.getElementById("llm-text");
     if (b) b.style.width = Math.round(100 * LLM.pct) + "%";
-    if (t) t.textContent = "Loading the model on this computer: " + Math.round(100 * LLM.pct) + "%. The first time it downloads about 1 GB, then your browser keeps it.";
+    if (t) t.textContent = "Loading the model on this computer: " + Math.round(100 * LLM.pct) + "%. The first time it downloads " + (LLM.tier === "light" ? "about 400 MB" : "about 900 MB") + ", then your browser keeps it.";
   }
 
   function md(src) {
@@ -581,7 +590,7 @@
       '<form class="composer" id="ask-form"><textarea id="ask-input" rows="2" placeholder="Ask about this page..." aria-label="Your question"></textarea><button class="btn primary" id="ask-send" type="submit">Send</button><button class="btn" id="ask-stop" type="button" hidden>Stop</button></form>' +
       '<div class="ctx-line" id="ask-ctx"></div>' +
       '<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--frost-2);font-size:14px">What the assistant receives</summary><pre id="gpt-preview" class="mono" style="white-space:pre-wrap;font-size:13px;color:var(--muted);line-height:1.5;margin:8px 0 0"></pre></details>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px"><span class="source" style="margin:0">Free, no account: a small open model (Qwen 2.5, 1.5B) runs in your browser. It can be wrong: check figures on the page. Not investment advice.</span><button class="btn sm" id="ask-clear" type="button">Clear</button></div>';
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px"><span class="source" style="margin:0">Free, no account: a small open model (Llama 3.2, 1B) runs in your browser. It can be wrong: check figures on the page. Not investment advice.</span><button class="btn sm" id="ask-clear" type="button">Clear</button></div>';
     chatEl.querySelector("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); askSend(chatEl.querySelector("#ask-input").value); });
     chatEl.querySelector("#ask-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(e.target.value); } });
     chatEl.querySelector("#ask-stop").addEventListener("click", () => { S.chat.stop = true; if (LLM.engine) LLM.engine.interruptGenerate(); });
@@ -601,7 +610,7 @@
     const st = document.getElementById("llm-status");
     if (st) {
       if (LLM.state === "loading") st.innerHTML = '<div style="margin-bottom:10px"><div style="height:6px;border-radius:3px;background:var(--line)"><div id="llm-bar" style="height:6px;border-radius:3px;background:var(--signal);width:0"></div></div><div class="ctx-line" id="llm-text" style="margin-top:6px"></div></div>';
-      else if (LLM.state === "idle") st.innerHTML = '<div class="ctx-line" style="margin:0 0 10px">The first question downloads the model (' + (store.get("hr-llm") === "light" ? "about 400 MB" : "about 1 GB") + ', once). It then runs on this computer.</div>';
+      else if (LLM.state === "idle") st.innerHTML = '<div class="ctx-line" style="margin:0 0 10px">The first question downloads the model (' + (store.get("hr-llm-tier") === "light" ? "about 400 MB" : "about 900 MB") + ', once). It then runs on this computer.</div>';
       else st.innerHTML = "";
       if (LLM.state === "loading") showProgress();
     }
@@ -610,12 +619,14 @@
     const sug = document.getElementById("ask-suggest");
     if (sug) { sug.hidden = C.turns.length > 0; sug.innerHTML = suggestions().map((x) => '<button class="chip" data-ask="' + esc(x) + '">' + esc(x) + "</button>").join(""); }
     const cx = document.getElementById("ask-ctx"); if (cx) cx.textContent = "The assistant sees: " + ctxLabel() + ", data of " + dLong(D.asOf);
-    const pv = document.getElementById("gpt-preview"); if (pv) pv.textContent = contextText(true);
+    const pv = document.getElementById("gpt-preview"); if (pv) pv.textContent = contextText(false);
     const dl = document.getElementById("drawer-ctx"); if (dl) dl.textContent = ctxLabel();
     document.querySelectorAll("[data-ask]").forEach((b) => { b.disabled = C.busy; });
   }
   function fallbackHtml(q) {
-    const why = LLM.state === "unsupported" ? "This browser cannot run the assistant: it needs WebGPU (a recent Chrome or Edge on a computer)." : "The model could not be loaded here" + (LLM.error ? " (" + esc(LLM.error) + ")" : "") + ".";
+    const why = LLM.state !== "unsupported" ? "The model could not be loaded here" + (LLM.error ? " (" + esc(LLM.error) + ")" : "") + "."
+      : LLM.blocked ? "The browser does not give this page access to the graphics card (WebGPU). It works by default in Chrome or Edge on Windows and Mac. If the assistant worked before, the browser turned it off after a graphics reset: close every browser window, reopen it and try again."
+      : "This browser cannot run the assistant: it needs WebGPU (a recent Chrome or Edge on a computer).";
     return why + ' You can still <a href="' + esc(gptLink(q)) + '" target="_blank" rel="noopener noreferrer">ask ChatGPT in a new tab</a>, with the same question and data.';
   }
   async function askSend(text) {
@@ -628,14 +639,14 @@
     let eng;
     try { eng = await loadEngine(); } catch (e) { C.busy = false; C.error = fallbackHtml(text); askRefresh(); return; }
     const history = [];
-    C.turns.slice(-7, -1).forEach((t) => {
+    C.turns.slice(-5, -1).forEach((t) => {
       if (!t.content) return;
-      const m = { role: t.role, content: t.content.slice(0, 1200) };
+      const m = { role: t.role, content: t.content.slice(0, 800) };
       if (history.length && history[history.length - 1].role === m.role) history[history.length - 1] = m; else history.push(m);
     });
     while (history.length && history[0].role !== "user") history.shift();
     if (history.length && history[history.length - 1].role === "user") history.pop();
-    const msgs = [{ role: "system", content: contextText(true) }].concat(history, [{ role: "user", content: text }]);
+    const msgs = [{ role: "system", content: contextText(false) }].concat(history, [{ role: "user", content: text }]);
     const slot = { role: "assistant", content: "" };
     C.turns.push(slot); askRefresh();
     const live = () => { const el = document.querySelector('#chat-log .msg.bot[data-i="' + (C.turns.length - 1) + '"]'), log = document.getElementById("chat-log"); if (el) { el.innerHTML = md(slot.content); if (log) log.scrollTop = log.scrollHeight; } };
@@ -659,12 +670,12 @@
         // (0.5B, about 400 MB), kept for the next visits; otherwise the same model with a shorter context
         const msg1 = String((e1 && e1.message) || e1);
         let engine = eng;
-        if (/device|lost|instance|mapAsync|gpu|buffer|memory|shader|pipeline/i.test(msg1) && LLM.model !== LIGHT) {
-          slot.meta = "This computer's graphics memory is short: switching to the light model.";
-          store.set("hr-llm", "light");
-          engine = await loadEngine(LIGHT);
+        if (/device|lost|instance|mapAsync|gpu|buffer|memory|shader|pipeline/i.test(msg1) && LLM.tier !== "light") {
+          slot.meta = "The graphics card is short of memory: switching to the light model.";
+          store.set("hr-llm-tier", "light");
+          engine = await loadEngine("light");
         }
-        slot.content = ""; slot.meta = LLM.model === LIGHT ? "Answered by the light model (0.5B)." : "";
+        slot.content = ""; slot.meta = LLM.tier === "light" ? "Answered by the light model (" + modelLabel(LLM.model) + ")." : "";
         await run(engine, [{ role: "system", content: contextText(false) }, { role: "user", content: text }], 350);
       }
       if (C.stop) slot.meta = "Stopped.";
@@ -730,7 +741,7 @@
 
   function viewAsk() {
     const html = '<div class="main c65"><div class="col"><section class="glass" style="padding:18px 20px"><div style="font-family:var(--display);font-weight:700;font-size:24px;margin-bottom:12px">Ask about today\'s signals</div><div id="ask-slot"></div></section></div>' +
-      '<div class="col">' + panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">The "Ask the assistant" button on every page opens this chat in a side panel, with that page as context: the crop, the readings on screen and, on the Fair value page, the scenario you set. The answers come from a small open model (Qwen 2.5, 1.5 billion parameters) that runs in your browser with WebGPU: free, no account, and your questions stay on your computer. The first question downloads the model (about 1 GB, once). Browsers without WebGPU get a link to ask ChatGPT instead.</div>') + "</div></div>";
+      '<div class="col">' + panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">The "Ask the assistant" button on every page opens this chat in a side panel, with that page as context: the crop, the readings on screen and, on the Fair value page, the scenario you set. The answers come from a small open model (Llama 3.2, 1 billion parameters) that runs in your browser with WebGPU: free, no account, and your questions stay on your computer. The first question downloads the model (about 900 MB, once); on a graphics card short of memory it switches to a lighter one (about 400 MB). Browsers without WebGPU get a link to ask ChatGPT instead.</div>') + "</div></div>";
     return { html: html, after: null };
   }
 

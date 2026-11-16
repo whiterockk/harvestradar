@@ -55,9 +55,11 @@ root-zone soil moisture with the same dekad in 2001-2020.
   (clear or small gain, caught, too late, missed, significant or not), credits.
 - **Assistant**: a button on every page ("Ask the assistant") opens a side panel with suggested questions for
   that page and a chat box; the Commodity page has "Ask about <crop>" and the pricing tool "Ask the assistant
-  about this scenario". The answer appears in the panel. It comes from a small open model (Qwen 2.5,
-  1.5 billion parameters) that runs in the browser with WebGPU (WebLLM): free, no account, the questions stay
-  on the computer. The first question downloads the model (about 1 GB, once; the browser keeps it). Browsers
+  about this scenario". The answer appears in the panel. It comes from a small open model (Llama 3.2,
+  1 billion parameters) that runs in the browser with WebGPU (WebLLM): free, no account, the questions stay
+  on the computer. The first question downloads the model (about 900 MB, once; the browser keeps it). If
+  the graphics card runs short of memory, the assistant switches to a lighter model (about 400 MB) and
+  remembers it. Browsers
   without WebGPU (and the page published inside Claude, which cannot download the model) get a link to ask
   ChatGPT in a new tab instead. In the Streamlit app, the Commodity page answers with the same local model as
   the daily notes. "What the assistant receives" shows the exact text given to the model. The model can be
