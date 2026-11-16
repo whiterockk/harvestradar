@@ -103,6 +103,14 @@ def index_daily() -> None:
     build_daily(_cfg())
 
 
+@index_app.command("price")
+def index_price() -> None:
+    """Price reaction, climate fair value and index-price co-movement (fast; run after each data update)."""
+    from harvestradar.pipeline import build_price_layers
+
+    build_price_layers(_cfg())
+
+
 @report_app.command("notes")
 def report_notes(days: int = typer.Option(None, help="Number of latest working days"),
                  deterministic: bool = typer.Option(False, help="Skip the LLM, use the template"),

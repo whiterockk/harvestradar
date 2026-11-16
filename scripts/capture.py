@@ -24,6 +24,7 @@ SHOTS = {
     "06_stress_map_cocoa": "page=stress&crop=cocoa",
     "07_replay_frost_2021": "page=replay&episode=brazil_frost_2021",
     "08_replay_cocoa": "page=replay&episode=cocoa_2023_2024",
+    "09_fair_value": "page=fair&crop=maize",
 }
 
 

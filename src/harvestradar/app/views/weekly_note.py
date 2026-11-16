@@ -67,20 +67,18 @@ def render() -> None:
                 k = f"{pd.Timestamp(wk):%Y-%m-%d}|{r.commodity}"
                 active = st.session_state.note_sel == k
                 tp = int(getattr(r, "template_paragraphs", 0) or 0)
-                label = ("FIXED TEMPLATE" if r.model == "deterministic-template"
-                         else (f"{tp} OF 3 FROM TEMPLATE" if tp else ""))
-                tag = ('<div style="margin-top:6px"><span class="hr-chip" style="padding:3px 8px;font-size:13px">'
-                       f'{label}</span></div>' if label else "")
+                label = ("Fixed template" if r.model == "deterministic-template"
+                         else (f"{tp} of 3 paragraphs from the template" if tp else "Written by the AI model"))
                 bg = "background:rgba(255,181,71,.08);border-color:rgba(255,181,71,.6);" if active else ""
+                gk = data.meta()["commodities"][r.commodity]["glyph"]
                 st.markdown(
-                    f'<div class="hr-glass" style="height:104px;padding:12px 16px;display:flex;gap:14px;{bg}">'
-                    f'<span style="border-radius:10px;overflow:hidden;display:inline-flex;flex:none;height:40px">'
-                    f'{C.mark_on_signal(40)}</span><div style="flex:1;min-width:0">'
-                    f'<div style="display:flex;justify-content:space-between"><span style="font-weight:600;font-size:16px">'
-                    f'HarvestRadar Daily</span><span class="hr-mono" style="font-size:13px;color:{T["muted"]}">'
-                    f'{pd.Timestamp(wk):%d %b}, 07:00</span></div>'
-                    f'<div style="font-size:15px;color:{T["frost_2"]};white-space:nowrap;overflow:hidden;'
-                    f'text-overflow:ellipsis">{H.escape(r.title)}</div>{tag}</div></div>', unsafe_allow_html=True)
+                    f'<div class="hr-glass" style="height:64px;padding:10px 14px;display:flex;gap:12px;align-items:center;'
+                    f'border-radius:14px;{bg}">{C.glyph(gk, 22, T["frost_2"])}<div style="flex:1;min-width:0">'
+                    f'<div style="display:flex;justify-content:space-between;gap:8px"><span style="font-weight:600;'
+                    f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{H.escape(r.title)}</span>'
+                    f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]};flex:none">07:00</span></div>'
+                    f'<div style="font-size:13px;color:{T["muted"]};margin-top:2px">{label}</div></div></div>',
+                    unsafe_allow_html=True)
                 st.button(f"Open {r.title}", key=f"pickn_{k}", on_click=_select, args=(k,), use_container_width=True)
     wk_s, key = st.session_state.note_sel.split("|")
     sel = n[(n.week == pd.Timestamp(wk_s)) & (n.commodity == key)]
@@ -98,12 +96,16 @@ def render() -> None:
                 f'{H.escape(row.title)}</div><div style="font-size:16px;color:{T["muted"]}">HarvestRadar Daily &middot; '
                 f'{pd.Timestamp(p["week"]).day} {pd.Timestamp(p["week"]):%B %Y}</div></div></div>',
                 unsafe_allow_html=True)
+            d0 = pd.Timestamp(p["week"])
+            day_txt = f"{d0.day} {d0:%B %Y}".upper()
+            st.markdown(f'<div class="hr-caps" style="margin-bottom:4px">RISK INDEX ON {day_txt}</div>',
+                        unsafe_allow_html=True)
             cols = st.columns(3)
             for col, (k2, rd) in zip(cols, p.get("readings", {}).items()):
                 s = data.risk_series(k2, 26, pd.Timestamp(rd["date"]))
                 with col:
                     st.markdown(C.ticker_card(rd["display"], rd["glyph"], rd["text"], s["risk_z"].tolist(), k2 == key,
-                                              rd["value"] >= 2, spark_w=96), unsafe_allow_html=True)
+                                              rd["value"] >= 2, spark_w=96, suffix=""), unsafe_allow_html=True)
             st.markdown(f'<div style="margin-top:10px">{body_html(row.template, p)}</div>', unsafe_allow_html=True)
             checks = (C.badge("Numbers checked", bool(row.numbers_ok)) + C.badge("Context checked", bool(row.context_ok))
                       + C.badge("Claims checked", bool(row.claims_ok)))
@@ -113,7 +115,7 @@ def render() -> None:
                    else f"Written by a small AI model running locally ({m['llm']['display_name']})"
                    + (f"; {tp} of 3 paragraphs from the fixed template" if tp else ""))
             st.markdown(f'<div style="display:flex;flex-wrap:wrap;align-items:center">{checks}'
-                        f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]};margin-left:6px">{who} '
+                        f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]};margin-left:6px">{who}'
                         f'. Every figure is inserted by the software, with its source.</span></div>', unsafe_allow_html=True)
             b1, b2, _ = st.columns([0.2, 0.24, 0.56])
             with b1:

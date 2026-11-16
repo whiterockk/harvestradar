@@ -12,6 +12,7 @@ from harvestradar.app import components as C
 from harvestradar.app import data
 from harvestradar.app.theme import T
 from harvestradar.app.views.common import ticker
+from harvestradar.app.views.fair_value import comove_panel, gap_words
 
 SHAP_LABELS = {
     "shap_hdd_z": "Heat (degree days)", "shap_tmax_z": "Daytime heat", "shap_sm_pre_z": "Soil moisture before window",
@@ -86,6 +87,12 @@ def price_panel(key: str) -> str:
             f'<span class="hr-mono">{pi["low_pct"]:+.1f}%</span> and <span class="hr-mono">{pi["high_pct"]:+.1f}%</span> '
             f'(8 chances in 10). Since {y0}, each 1% of world supply missing came with about '
             f'<span class="hr-mono">{-pi["slope_pct_per_pct"]:+.1f}%</span> on the {m["label"].lower()} price.</div>')
+    fv = data.jsonfile("price_impact.json").get("fair_value", {}).get(key)
+    if fv:
+        body += (f'<div style="font-size:16px;color:{T["frost_2"]};margin-top:12px;padding-top:12px;line-height:1.6;'
+                 f'border-top:1px solid {T["line"]}">Climate fair value today: <span class="hr-mono" style="color:'
+                 f'{T["signal"]}">{fmt_price(key, fv["fair"])}</span>. The price (<span class="hr-mono">'
+                 f'{fmt_price(key, fv["close"])}</span>) is {gap_words(fv["gap_to_fair_pct"])}. See the Fair value page.</div>')
     return C.panel("WHAT IT MEANS FOR THE PRICE", body,
                    f'Based on {pi["n"]} marketing years, {y0}-{y1}; the supply gap explains {100 * pi["r2"]:.0f}% of the '
                    f'yearly price changes. A rough guide, not a price forecast.')
@@ -125,6 +132,7 @@ def render() -> None:
                         f'line rises when the model expects less {m["label"].lower()} than usual for this time of year. '
                         f'The shaded band is the {m["main_country_name"]} critical window, when weather matters most '
                         f'for the harvest. The white line is the price, for comparison.</div>', unsafe_allow_html=True)
+        st.markdown(comove_panel(key), unsafe_allow_html=True)
     with right:
         st.markdown(price_panel(key), unsafe_allow_html=True)
         contribs = r["contributors"]

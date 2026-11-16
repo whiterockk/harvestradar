@@ -1,6 +1,6 @@
 """HarvestRadar app (Streamlit). Offline: reads data/demo only.
 
-URL state for filming: ?page=stress|commodity|replay|note|method&crop=maize|coffee|cocoa
+URL state for filming: ?page=stress|commodity|fair|replay|note|method&crop=maize|coffee|cocoa
 &date=YYYY-MM-DD&dekad=YYYY-MM-DD&episode=us_drought_2012&week=YYYY-MM-DD&country=USA&capture=1
 """
 
@@ -17,11 +17,11 @@ st.set_page_config(layout="wide", page_title="HarvestRadar", page_icon=str(HERE 
 
 from harvestradar.app import components as C  # noqa: E402
 from harvestradar.app import data, theme  # noqa: E402
-from harvestradar.app.views import commodity, method, replay, stress_map, weekly_note  # noqa: E402
+from harvestradar.app.views import commodity, fair_value, method, replay, stress_map, weekly_note  # noqa: E402
 
-PAGES = {"stress": "Stress map", "commodity": "Commodity", "replay": "Replay", "note": "Daily note",
-         "method": "Method"}
-ALIASES = {"stress-map": "stress", "map": "stress", "weekly-note": "note", "notes": "note", "episode": "replay"}
+PAGES = {"stress": "Stress map", "commodity": "Commodity", "fair": "Fair value", "replay": "Replay",
+         "note": "Daily note", "method": "Method"}
+ALIASES = {"fair-value": "fair", "pricing": "fair", "stress-map": "stress", "map": "stress", "weekly-note": "note", "notes": "note", "episode": "replay"}
 CROPS = ("maize", "coffee", "cocoa")
 
 
@@ -85,7 +85,7 @@ def main() -> None:
         st.markdown(C.status(f"{asof.day} {asof.strftime('%b %Y')}"), unsafe_allow_html=True)
     st.markdown('<div class="hr-rule"></div>', unsafe_allow_html=True)
     page = st.session_state.page
-    {"stress": stress_map.render, "commodity": commodity.render, "replay": replay.render,
+    {"stress": stress_map.render, "commodity": commodity.render, "fair": fair_value.render, "replay": replay.render,
      "note": weekly_note.render, "method": method.render}[page]()
     _sync_url()
 

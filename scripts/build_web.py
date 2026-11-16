@@ -24,6 +24,29 @@ def r(x, n=3):
     return None if x is None or (isinstance(x, float) and not np.isfinite(x)) else round(float(x), n)
 
 
+def fair_block(data, key: str, today: pd.Timestamp) -> dict | None:
+    """Price vs climate fair value: daily for the last 2 years, weekly (Friday) since 2006, plus the
+    scenario parameters the pricing tool needs."""
+    fv = data.fair_value(key)
+    if fv.empty:
+        return None
+    pi = data.jsonfile("price_impact.json")
+    fx, sm = pi["commodities"].get(key), pi.get("fair_value", {}).get(key)
+    if fx is None or sm is None:
+        return None
+    d2 = fv[fv.date >= today - pd.Timedelta(days=740)]
+    wk = fv.set_index("date").resample("W-FRI").last().dropna(subset=["fair"]).reset_index()
+    cols = ("close", "anchor", "fair", "fair_lo", "fair_hi")
+    ser = lambda f: {"d": f.date.dt.strftime("%Y-%m-%d").tolist(), **{c: [r(x, 2) for x in f[c]] for c in cols}}  # noqa: E731
+    lr = data.risk_daily()
+    lr = lr[lr.commodity == key].dropna(subset=["risk_z"]).iloc[-1]
+    return {"recent": ser(d2), "long": ser(wk), "now": sm,
+            "flex": {k: fx[k] for k in ("slope_pct_per_pct", "se", "p_value", "r2", "n", "years", "points",
+                                         "marketing_year_start_month")},
+            "mu": r(lr.mu_pct, 3), "sigma": r(lr.sigma_pct, 3),
+            "comove": pi.get("comovement", {}).get(key)}
+
+
 def main() -> None:
     import logging
 
@@ -83,6 +106,7 @@ def main() -> None:
             "lastPrice": {"date": px.date.iloc[-1].strftime("%Y-%m-%d"), "close": r(px.close.iloc[-1], 2)},
             "windows": [[s.strftime("%Y-%m-%d"), e.strftime("%Y-%m-%d"), st] for s, e, st in spans],
             "shap": shap,
+            "fair": fair_block(data, key, today),
             "map": {"regions": regs, "borders": borders, "frames": frames,
                     "start": len(frames) - 1, "dekad": dk.strftime("%Y-%m-%d"),
                     "top5": [{"rank": i + 1, "name": t.adm1_name, "iso": t.country_name,

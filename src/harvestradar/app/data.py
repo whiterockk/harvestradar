@@ -45,6 +45,17 @@ def risk_daily() -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
+def fair_value(key: str | None = None) -> pd.DataFrame:
+    """Climate fair value every trading day (empty frame if the snapshot predates it)."""
+    p = DATA / "fair_value_daily.parquet"
+    if not p.exists():
+        return pd.DataFrame(columns=["commodity", "date", "close", "anchor", "fair", "fair_lo", "fair_hi"])
+    f = pd.read_parquet(p)
+    f["date"] = pd.to_datetime(f["date"])
+    return f[f.commodity == key].sort_values("date") if key else f
+
+
+@st.cache_data(show_spinner=False)
 def today() -> pd.Timestamp:
     """The app's "today": the latest date in data/demo (never the clock)."""
     return risk_daily()["date"].max()

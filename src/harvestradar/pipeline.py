@@ -202,7 +202,6 @@ def build_daily(cfg: Settings) -> None:
     import joblib
 
     from harvestradar.features.aggregate import to_country_season
-    from harvestradar.signal.price_impact import implied_move, price_flexibility
     from harvestradar.signal.risk_index import build_risk_index
 
     oni = pd.read_parquet(PROCESSED / "oni.parquet")
@@ -226,11 +225,23 @@ def build_daily(cfg: Settings) -> None:
     clim = pd.read_parquet(PROCESSED / "model_climatology.parquet")
     risk = build_risk_index(cfg, preds, targets, fao, clim)
     risk.to_parquet(PROCESSED / "risk_index_daily.parquet", index=False)
-    # price reaction implied by the expected supply gap (descriptive, small sample)
+    last = risk[risk.date == risk.date.max()][["commodity", "risk_z", "delta_prod_pct"]]
+    print("[daily] latest:", last.round(3).to_dict("records"))
+    build_price_layers(cfg)
+
+
+def build_price_layers(cfg: Settings) -> None:
+    """Price reaction implied by the expected supply gap (descriptive, small sample), the climate fair value
+    every trading day, and how closely index and price moved together. Re-run on every data update."""
+    from harvestradar.signal.fair_value import build_fair_value, comovement, summary
+    from harvestradar.signal.price_impact import implied_move, price_flexibility
+
+    targets = pd.read_parquet(PROCESSED / "targets.parquet")
+    risk = pd.read_parquet(PROCESSED / "risk_index_daily.parquet")
+    weekly = pd.read_parquet(PROCESSED / "risk_index.parquet")
     prices = {k: pd.read_parquet(PROCESSED / f"prices_{k}.parquet") for k in cfg.commodities}
     flex = price_flexibility(cfg, targets, prices)
     events = json.loads((PROCESSED / "events.json").read_text())
-    weekly = pd.read_parquet(PROCESSED / "risk_index.parquet")
     out = {"method": "price change of the average futures price over the marketing year, regressed on the realised "
                      "world supply gap of that year (FAOSTAT), 2002 onwards; applied to the model's expected gap",
            "commodities": {}, "episodes": {}}
@@ -249,10 +260,13 @@ def build_daily(cfg: Settings) -> None:
         out["episodes"][name] = {"date": day, "delta_prod_pct": round(dp, 2), "reliable": fx["p_value"] < 0.10,
                                  **implied_move(fx, dp), "actual_pct": ev.get("price_change_pct"),
                                  "actual_window": [ev.get("price_from_date"), ev.get("price_to_date")]}
+    fv = build_fair_value(cfg, flex, weekly, risk, prices)
+    fv.to_parquet(PROCESSED / "fair_value_daily.parquet", index=False)
+    out["fair_value"] = summary(fv, flex)
+    out["comovement"] = comovement(weekly, prices)
     (PROCESSED / "price_impact.json").write_text(json.dumps(out, indent=2))
-    last = risk[risk.date == risk.date.max()][["commodity", "risk_z", "delta_prod_pct"]]
-    print("[daily] latest:", last.round(3).to_dict("records"))
-    print("[price] now:", {k: (v["implied_pct"], v["reliable"]) for k, v in out["commodities"].items()})
+    print("[price] implied move now:", {k: (v["implied_pct"], v["reliable"]) for k, v in out["commodities"].items()})
+    print("[price] fair value now:", {k: (v["fair"], v["close"], v["gap_to_fair_pct"]) for k, v in out["fair_value"].items()})
 
 
 def run_all(cfg: Settings, skip_download: bool = False, deterministic_notes: bool = False) -> None:

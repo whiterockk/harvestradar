@@ -88,13 +88,13 @@ def sparkline(values: list[float], w: int = 120, h: int = 40, color: str = T["si
 
 
 def ticker_card(display: str, glyph_kind: str, value: str, series: list[float], selected: bool,
-                glow: bool, spark_w: int = 132) -> str:
+                glow: bool, spark_w: int = 132, suffix: str = " &middot; RISK INDEX") -> str:
     border = "border-color:rgba(255,181,71,.55);box-shadow:0 0 0 1px rgba(255,181,71,.25), 0 20px 60px rgba(0,0,0,.35);" \
         if selected else ""
     g = "hr-glow" if glow else ""
     return (f'<div class="hr-glass" style="height:88px;padding:14px 20px;display:flex;align-items:center;gap:16px;{border}">'
             f'{glyph(glyph_kind, 26, T["frost_2"])}'
-            f'<div style="flex:1;min-width:0"><div class="hr-caps" style="white-space:nowrap">{E(display)} &middot; RISK INDEX</div>'
+            f'<div style="flex:1;min-width:0"><div class="hr-caps" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{E(display)}{suffix}</div>'
             f'<div class="hr-mono {g}" style="font-size:32px;line-height:40px;color:{T["signal"]};font-weight:500">{E(value)}</div></div>'
             f'{sparkline(series, spark_w, 46)}</div>')
 
@@ -200,12 +200,24 @@ def chip(text: str, amber: bool = False) -> str:
     return f'<span class="hr-chip{" amber" if amber else ""}">{E(text)}</span>'
 
 
+TONES = {"good": ("#7EB0FF", "rgba(126,176,255,.45)", "rgba(63,116,216,.14)"),
+         "warn": (T["signal"], "rgba(255,181,71,.5)", "rgba(255,181,71,.10)"),
+         "bad": (T["heat"], "rgba(255,90,54,.5)", "rgba(255,90,54,.10)"),
+         "neutral": (T["muted"], T["line_strong"], "rgba(19,28,39,.7)")}
+
+
+def tag(text: str, tone: str = "neutral", plain: bool = False) -> str:
+    """Status tag: a coloured dot and a word (verdicts, checks). No tick or cross symbols."""
+    color, border, bg = TONES.get(tone, TONES["neutral"])
+    font = ("font-family:Inter,sans-serif;font-size:14px;" if plain else
+            "font-family:JetBrains Mono,monospace;font-size:13px;letter-spacing:.08em;text-transform:uppercase;")
+    return (f'<span style="display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:8px;'
+            f'border:1px solid {border};background:{bg};color:{color};white-space:nowrap;{font}margin:0 8px 8px 0">'
+            f'<i style="width:7px;height:7px;border-radius:50%;background:{color};display:inline-block"></i>{E(text)}</span>')
+
+
 def badge(text: str, ok: bool) -> str:
-    icon = "&#10003;" if ok else "&#10005;"
-    color = T["frost_2"] if ok else T["heat"]
-    return (f'<span style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;'
-            f'border:1px solid {T["line_strong"]};background:rgba(19,28,39,.7);font-size:15px;color:{color};'
-            f'margin:0 8px 8px 0"><span style="color:{T["signal"] if ok else T["heat"]}">{icon}</span>{E(text)}</span>')
+    return tag(text if ok else f"{text}: failed", "good" if ok else "bad", plain=True)
 
 
 def glass_open(extra: str = "") -> str:

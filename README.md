@@ -32,9 +32,11 @@ that leaves localhost. `make screenshots` captures every page at 1920 x 1080 (de
 |---|---|---|
 | Stress map | Live ticker, producing regions on a NASA Blue Marble base (Equal Earth), dekad scrubber with play, hotspot rings, top 5 regions by stress x share of world supply, El Nino context, Friday note status | `stress_<crop>.parquet`, `regions_<crop>.geojson`, `risk_index.parquet`, `oni.parquet`, `notes.parquet` |
 | Commodity | Harvest-risk index, expected world supply vs normal, futures price, what it means for the price (implied move and range), index vs price over 64 weeks with the critical windows of the main producer, which countries drive today's reading, which weather drives each country's forecast (SHAP) | `risk_index.parquet`, `prices_<crop>.parquet`, `shap_latest.parquet`, `config/commodities.yaml` |
+| Fair value | Futures price vs climate fair value (12-month average moved by the price reaction implied by the expected world supply), 80 % range, pricing tool with scenarios (index 0, +2, +3, -2), how the price reaction is measured, why the index and the price do not move together | `fair_value_daily.parquet`, `price_impact.json` |
 | Replay | US drought 2012, Brazil frost 2021, cocoa 2023-2024: dekad stress film strip, first crossing of +2, index path, price | `events.json`, `stress_<crop>.parquet` |
 | Daily note | Inbox of the last five working days, the note with figure pills, the three checks, the data given to the model, **Download as email** | `notes.parquet` |
-| Method | Pipeline in four steps, out-of-sample evaluation, the honest record, credits | `model_eval.json`, `events.json`, `backtest.json` |
+| Method | Pipeline in four steps, out-of-sample evaluation, the honest record with a verdict per test, credits | `model_eval.json`, `events.json`, `backtest.json` |
+| Ask Claude (web edition) | Chat about today's signals, run on the viewer's own Claude plan when the page is opened in Claude | the page's data snapshot |
 
 URL state for filming: `?page=commodity&crop=maize&date=2026-11-13&dekad=2012-06-10&episode=us_drought_2012`,
 plus `&capture=1` to freeze animations and turn off hovers, `&play=1` to start the map playing, `&data=1` to
@@ -88,7 +90,7 @@ Advanced AI Algorithms, ESSEC Business School.
 
 ## Web edition (no Python needed)
 
-`python scripts/build_web.py` writes `dist/web/index.html`: one self-contained page (about 3 MB) with the five
-pages, the same data snapshot and the same map code, for viewing in a browser or publishing as a page.
+`python scripts/build_web.py` writes `dist/web/index.html`: one self-contained page (about 4 MB) with the seven
+pages (the six of the app plus Ask Claude), the same data snapshot and the same map code, for viewing in a browser or publishing as a page.
 Differences with the Streamlit app: the weekly email is shown in the page instead of downloaded, and fonts
 load from Google Fonts.

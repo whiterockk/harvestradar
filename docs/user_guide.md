@@ -35,14 +35,27 @@ root-zone soil moisture with the same dekad in 2001-2020.
   2002 (a rough guide with an 80 % range; for arabica no reliable link was found, so none is shown). "Who drives this week" gives each country's contribution
   in percentage points of world supply (amber raises risk, blue lowers it). Pick a country to see the four
   largest SHAP contributions of its forecast.
+- **Fair value**: the futures price against its climate fair value: the average close of the last 12 months,
+  moved by the price reaction that today's expected world supply implies (same measured slope as "What it means
+  for the price"). The 80 % range covers the uncertainty of that slope. The pricing tool recomputes the fair
+  value for a scenario: pick "Index +2" or "Index +3" (the supply gap that would give that index today), move
+  the supply gap, the price reaction or the anchor price. "Why the index and the price do not move together"
+  gives the measured correlations since 2006. For arabica no reliable price reaction was found, which the page
+  says: the fair value then stays close to the 12-month average.
 - **Replay**: pick an episode. The chip says which seasons the model had seen. The film strip shows six
   dekads; the event card gives the first week with `risk_z` at or above +2, or the peak if it never got there.
 - **Daily note**: one note per commodity for each of the last five working days. Figures are amber pills;
   hover one to see its source. "Data given to the model" lists every figure with its source and date. A note
-  tagged `FIXED TEMPLATE` means the model failed the checks for every paragraph; `n OF 3 FROM TEMPLATE` means
-  that n paragraphs were replaced by the fixed template after failing the checks.
-- **Method**: pipeline, out-of-sample evaluation, the honest record (what the index caught and missed, the
-  trading-rule test), credits.
+  tagged "Fixed template" means the model failed the checks for every paragraph; "n of 3 paragraphs from the
+  template" means that n paragraphs were replaced by the fixed template after failing the checks. The three
+  checks show as tags (blue: passed, red: failed).
+- **Method**: pipeline, out-of-sample evaluation, the honest record as a table with a verdict for each test
+  (clear or small gain, caught, too late, missed, significant or not), credits.
+- **Ask Claude** (web edition only): a chat about today's signals. With each question the page sends Claude
+  the data snapshot shown on the page (index, contributors, SHAP factors, prices, fair value, price reaction,
+  correlations, today's notes, El Nino, track record) and the conversation. It runs on the viewer's own Claude
+  plan when the page is opened in Claude (claude.ai or the Claude app): no API key, nothing to pay on top.
+  Elsewhere the tab says it is not available. Answers are research and education, not investment advice.
 
 ## 4. Exporting the daily note as an email
 

@@ -11,7 +11,8 @@
 | Stress map: satellite base, ramp with opacity rule, top-5 regions from data, hotspot rings, scrubber | Done (Equal Earth projection on NASA Blue Marble, SVG, animation in the browser). |
 | Commodity: hero number, index vs price with windows from config, contributors and SHAP from data | Done. |
 | Episode replay: all three episodes play; 2012 date and prices from data | Done. 2012 first above +2 on 2012-07-06 (not 8 June: the storyboard value is illustrative). See `docs/storyboard_facts.md`. |
-| Weekly note: figure pills, data panel, fallback tag, Download as email | Done (tags `DETERMINISTIC-TEMPLATE` or `TEMPLATE n/3`). |
+| Weekly note: figure pills, data panel, fallback tag, Download as email | Done (daily; "Fixed template" or "n of 3 paragraphs from the template"; checks as tags, no symbols). |
+| Fair value and pricing tool (round 3) | Done: `signal/fair_value.py`, Fair value page in both editions, `tests/test_fair_value.py`. |
 | `harvestradar report email --week latest` writes valid `.eml` and `.html` for 3 commodities; tests | Done (`reports/notes/`, `tests/test_email.py`). |
 | Query parameters and `?capture=1` | Done (`page, crop, date, dekad, episode, week, country, capture, play, data`). |
 | One screenshot of each page at 1920 x 1080 | `docs/img/` (`make screenshots` for device scale factor 2). |

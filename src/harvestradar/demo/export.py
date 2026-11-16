@@ -44,6 +44,9 @@ def export_demo(cfg: Settings) -> None:
     shutil.copy(PROCESSED / "oni.parquet", DEMO / "oni.parquet")
     if (PROCESSED / "notes.parquet").exists():
         shutil.copy(PROCESSED / "notes.parquet", DEMO / "notes.parquet")
+    if (PROCESSED / "fair_value_daily.parquet").exists():
+        fv = pd.read_parquet(PROCESSED / "fair_value_daily.parquet")
+        fv[fv.date >= "2006-01-01"].round(4).to_parquet(DEMO / "fair_value_daily.parquet", index=False)
     for name in ["events.json", "model_eval.json", "backtest.json", "price_impact.json"]:
         shutil.copy(PROCESSED / name, DEMO / name)
     summary = json.loads((PROCESSED / "regions_summary.json").read_text())

@@ -1,10 +1,11 @@
-/* HarvestRadar static web edition: renders the five pages from the embedded data snapshot. */
+/* HarvestRadar static web edition: renders the seven pages from the embedded data snapshot. */
 (function () {
   "use strict";
   const D = JSON.parse(document.getElementById("data").textContent);
   const CROPS = ["maize", "coffee", "cocoa"];
-  const VIEWS = { stress: "Stress map", commodity: "Commodity", replay: "Replay", note: "Daily note", method: "Method" };
-  const S = { crop: "maize", episode: Object.keys(D.episodes)[0], note: null, shap: {}, email: false };
+  const VIEWS = { stress: "Stress map", commodity: "Commodity", fair: "Fair value", replay: "Replay", note: "Daily note", method: "Method", ask: "Ask Claude" };
+  const S = { crop: "maize", episode: Object.keys(D.episodes)[0], note: null, shap: {}, email: false, range: "recent", calc: {},
+              chat: { turns: [], busy: false, ctl: null, error: "" } };
   let mapHandle = null;
 
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -14,7 +15,7 @@
   const dLabel = (s) => { const d = new Date(s + "T00:00:00Z"); return d.getUTCDate() + " " + MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
   const MONTH = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const dLong = (s) => { const d = new Date(s + "T00:00:00Z"); return d.getUTCDate() + " " + MONTH[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
-  const pct = (x, n = 1) => sg(x, n) + "%";
+  const pct = (x, n = 1) => (x != null && Math.abs(x) < 0.5 * Math.pow(10, -n) ? (0).toFixed(n) : sg(x, n)) + "%";
   const glyph = (k, size = 22) => '<span class="gl">' + D.glyphs[k].replace(/width="\d+" height="\d+"/, 'width="' + size + '" height="' + size + '"') + "</span>";
 
   function sparkline(values, w = 132, h = 46, color = "var(--signal)") {
@@ -33,7 +34,8 @@
 
   const panel = (title, body, source, extra = "") => '<section class="glass" style="' + extra + '"><div class="caps" style="margin-bottom:12px">' + title + "</div>" + body + (source ? '<div class="source">' + source + "</div>" : "") + "</section>";
   const chip = (t, amber) => '<span class="chip' + (amber ? " amber" : "") + '">' + esc(t) + "</span>";
-  const badge = (t, ok) => '<span class="badge"><span style="color:' + (ok ? "var(--signal)" : "var(--heat)") + '">' + (ok ? "&#10003;" : "&#10005;") + "</span>" + esc(t) + "</span>";
+  const badge = (t, ok) => '<span class="tag plain ' + (ok ? "good" : "bad") + '">' + esc(t) + (ok ? "" : ": failed") + "</span>";
+  const tag = (t, tone) => '<span class="tag ' + (tone || "") + '">' + esc(t) + "</span>";
 
   function barRows(rows, unit, labelW) {
     if (!rows.length) return '<p style="color:var(--muted)">No data.</p>';
@@ -50,7 +52,7 @@
     return '<div class="grid3">' + CROPS.map((k) => {
       const c = D.crops[k], z = c.latest.z, s = c.risk.z.slice(-26);
       return '<button class="glass tick-card' + (k === S.crop ? " sel" : "") + '" data-crop="' + k + '" aria-label="Select ' + esc(c.label) + '">' + glyph(c.glyph, 26) +
-        '<div style="min-width:0"><div class="caps" style="white-space:nowrap">' + esc(c.display) + ' &middot; RISK INDEX</div><div class="val' + (z >= 2 ? " glow" : "") + '">' + sg(z) + "</div></div>" + sparkline(s) + "</button>";
+        '<div style="min-width:0"><div class="caps" style="white-space:nowrap">' + esc(c.display) + '<span class="hide-sm"> &middot; RISK INDEX</span></div><div class="val' + (z >= 2 ? " glow" : "") + '">' + sg(z) + "</div></div>" + sparkline(s) + "</button>";
     }).join("") + "</div>";
   }
 
@@ -78,7 +80,7 @@
     const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6)); return out;
   }
   function indexChart(key) {
-    const c = D.crops[key], W = 1000, H = 480, m = { l: 62, r: 78, t: 40, b: 34 };
+    const small = window.innerWidth < 700, c = D.crops[key], W = small ? Math.max(300, window.innerWidth - 72) : 1000, H = small ? 320 : 480, m = { l: small ? 44 : 62, r: small ? 52 : 78, t: 40, b: 34 };
     const end = new Date(c.latest.date + "T00:00:00Z"), start = new Date(end.getTime() - 64 * 7 * 864e5);
     const R = c.riskRecent.d.map((d, i) => [new Date(d + "T00:00:00Z"), c.riskRecent.z[i]]).filter((p) => p[0] >= start && p[1] != null);
     const P = c.pricesRecent.d.map((d, i) => [new Date(d + "T00:00:00Z"), c.pricesRecent.c[i]]).filter((p) => p[0] >= start);
@@ -91,13 +93,13 @@
     c.windows.forEach(([s0, e0, st]) => {
       const xs = x(new Date(s0 + "T00:00:00Z")), xe = x(new Date(e0 + "T00:00:00Z"));
       g += '<rect x="' + xs + '" y="' + m.t + '" width="' + Math.max(1, xe - xs) + '" height="' + (H - m.t - m.b) + '" fill="rgba(255,181,71,.07)"/>' +
-        '<text x="' + (xs + xe) / 2 + '" y="' + (m.t - 10) + '" text-anchor="middle" font-size="13" fill="#8A9AAB">' + esc((c.mainCountry + " " + st + " window").toUpperCase()) + "</text>";
+        '<text x="' + (xs + xe) / 2 + '" y="' + (m.t - 10) + '" text-anchor="middle" font-size="13" fill="#8A9AAB">' + esc((small ? st : c.mainCountry + " " + st + " window").toUpperCase()) + "</text>";
     });
     niceTicks(lo, hi, 7).forEach((v) => { g += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 0 ? "#2A3646" : "#1E2935") + '"/><text x="' + (m.l - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="13" fill="#FFB547">' + (v > 0 ? "+" : "") + v + "</text>"; });
     niceTicks(plo, phi, 6).forEach((v) => { g += '<text x="' + (W - m.r + 8) + '" y="' + (y2(v) + 4) + '" font-size="13" fill="#C7D1DB">' + (key === "cocoa" ? Math.round(v).toLocaleString("en-US") : v) + "</text>"; });
-    g += '<text transform="translate(16,' + (m.t + (H - m.t - m.b) / 2) + ') rotate(-90)" text-anchor="middle" font-size="13" fill="#FFB547">RISK INDEX (0 = NORMAL)</text>';
-    g += '<text transform="translate(' + (W - 12) + "," + (m.t + (H - m.t - m.b) / 2) + ') rotate(90)" text-anchor="middle" font-size="13" fill="#C7D1DB">' + esc(c.priceUnit.toUpperCase()) + "</text>";
-    for (let k = 0; k < 16; k++) { const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1 + 2 * k, 1)); if (d > end) break; g += '<text x="' + x(d) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="13" fill="#8A9AAB">' + MON[d.getUTCMonth()] + " " + d.getUTCFullYear() + "</text>"; }
+    if (!small) g += '<text transform="translate(16,' + (m.t + (H - m.t - m.b) / 2) + ') rotate(-90)" text-anchor="middle" font-size="13" fill="#FFB547">RISK INDEX (0 = NORMAL)</text>';
+    if (!small) g += '<text transform="translate(' + (W - 12) + "," + (m.t + (H - m.t - m.b) / 2) + ') rotate(90)" text-anchor="middle" font-size="13" fill="#C7D1DB">' + esc(c.priceUnit.toUpperCase()) + "</text>";
+    for (let k = 0; k < 16; k++) { const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1 + (small ? 5 : 2) * k, 1)); if (d > end) break; g += '<text x="' + x(d) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="13" fill="#8A9AAB">' + MON[d.getUTCMonth()] + " " + d.getUTCFullYear() + "</text>"; }
     g += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(2) + '" y2="' + y(2) + '" stroke="#F5A93A" stroke-dasharray="6 6" stroke-width="1.2"/><text x="' + (m.l + 6) + '" y="' + (y(2) - 6) + '" font-size="13" fill="#F5A93A">+2: RARE</text>';
     const pl = P.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + "," + y2(p[1]).toFixed(1)).join(" ");
     const il = R.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + "," + y(p[1]).toFixed(1)).join(" ");
@@ -150,9 +152,10 @@
     if (!pi.reliable) {
       return panel("WHAT IT MEANS FOR THE PRICE", '<div style="font-size:17px;color:var(--frost-2);line-height:1.6">No reliable link between world supply gaps and the ' + esc(c.label.toLowerCase()) + " price since " + pi.years[0] + " (" + pi.n + " years). No price estimate is shown.</div>", "Marketing-year average futures price against the realised world supply gap, " + pi.years[0] + "-" + pi.years[1] + ".");
     }
-    const per = -pi.slope_pct_per_pct;
+    const per = -pi.slope_pct_per_pct, fv = c.fair && c.fair.now;
+    const fvLine = fv ? '<div style="font-size:16px;color:var(--frost-2);margin-top:12px;line-height:1.6;padding-top:12px;border-top:1px solid var(--line)">Climate fair value today: <span class="mono" style="color:var(--signal)">' + fmtPrice(k, fv.fair) + "</span>. The price (" + '<span class="mono">' + fmtPrice(k, fv.close) + "</span>) is " + gapWords(fv.gap_to_fair_pct) + '. <a href="#fair">Open the pricing tool &rarr;</a></div>' : "";
     return panel("WHAT IT MEANS FOR THE PRICE", '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span class="mono" style="font-size:40px;color:var(--signal)">' + pct(pi.implied_pct) + '</span><span style="color:var(--frost-2)">expected move of the futures price over the marketing year</span></div>' +
-      '<div style="font-size:16px;color:var(--frost-2);margin-top:8px;line-height:1.6">Likely between <span class="mono">' + pct(pi.low_pct) + '</span> and <span class="mono">' + pct(pi.high_pct) + "</span> (8 chances in 10). Since " + pi.years[0] + ", each 1% of world supply missing came with about <span class=\"mono\">" + pct(per) + "</span> on the " + esc(c.label.toLowerCase()) + " price.</div>",
+      '<div style="font-size:16px;color:var(--frost-2);margin-top:8px;line-height:1.6">Likely between <span class="mono">' + pct(pi.low_pct) + '</span> and <span class="mono">' + pct(pi.high_pct) + "</span> (8 chances in 10). Since " + pi.years[0] + ", each 1% of world supply missing came with about <span class=\"mono\">" + pct(per) + "</span> on the " + esc(c.label.toLowerCase()) + " price.</div>" + fvLine,
       "Based on " + pi.n + " marketing years, " + pi.years[0] + "-" + pi.years[1] + "; the supply gap explains " + Math.round(100 * pi.r2) + "% of the yearly price changes. A rough guide, not a price forecast.");
   }
 
@@ -169,12 +172,167 @@
       '<section class="glass" style="min-height:164px"><div class="caps">EXPECTED WORLD SUPPLY VS NORMAL</div><div class="mono" style="font-size:34px;margin-top:12px">' + pct(L.dp) + '</div><div class="source">Likely between ' + pct(L.lo) + " and " + pct(L.hi) + " (8 chances in 10), from the model's forecasts by country.</div></section>" +
       '<section class="glass" style="min-height:164px"><div class="caps">' + esc(c.priceLabel) + '</div><div class="mono" style="font-size:34px;margin-top:12px">' + fmtPrice(k, c.lastPrice.close) + '</div><div class="source">' + esc(c.priceUnit.charAt(0).toUpperCase() + c.priceUnit.slice(1)) + ", nearest contract, close on " + dLong(c.lastPrice.date) + ".</div></section></div>" +
       '<section class="glass" style="padding:16px 18px"><div style="display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;margin-bottom:6px"><span style="font-family:var(--display);font-weight:700;font-size:20px">Risk index and futures price, last 64 weeks</span><span style="display:inline-flex;align-items:center;gap:8px;color:var(--frost-2);font-size:14px"><i style="width:22px;height:3px;background:#FFB547;display:inline-block;border-radius:2px"></i>Risk index, left scale</span><span style="display:inline-flex;align-items:center;gap:8px;color:var(--frost-2);font-size:14px"><i style="width:22px;height:2px;background:#EAF0F5;display:inline-block;border-radius:2px"></i>' + esc(c.priceName) + ', right scale</span></div>' + indexChart(k) +
-      '<div style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px">How to read it: the orange line rises when the model expects less ' + esc(c.label.toLowerCase()) + " than usual for this time of year. The shaded band is the " + esc(c.mainCountry) + " critical window, when weather matters most for the harvest. The white line is the price, for comparison.</div></section></div>" +
+      '<div style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px">How to read it: the orange line rises when the model expects less ' + esc(c.label.toLowerCase()) + " than usual for this time of year. The shaded band is the " + esc(c.mainCountry) + " critical window, when weather matters most for the harvest. The white line is the price, for comparison.</div></section>" +
+      comovePanel(k, true) + "</div>" +
       '<div class="col">' + priceCard(k) + panel("WHICH COUNTRIES DRIVE TODAY'S READING", barRows(rows, "", 240), "In points of world supply: each country's share of world output times its expected harvest gap. Amber raises the risk, blue lowers it.") +
       '<div class="chips" role="group" aria-label="Country">' + countries.map((iso) => '<button class="chip' + (iso === sel ? " on" : "") + '" data-shap="' + iso + '">' + esc(name(iso)) + "</button>").join("") + "</div>" +
       panel("WHICH WEATHER DRIVES THE FORECAST <span style='float:right;color:var(--signal)'>" + esc(name(sel).toUpperCase()) + "</span>", barRows(shapRows, "", 220), "In points of " + c.target + " vs normal. Contribution of each weather factor to the forecast for the " + (sh ? sh.season : "") + " harvest (SHAP values).") +
       "</div></div>";
     return { html: html, after: null };
+  }
+
+  /* ---------- climate fair value and pricing tool ---------- */
+  function gapWords(g) {
+    if (g == null || !isFinite(g)) return "not comparable";
+    if (Math.abs(g) < 1) return "in line with it";
+    return Math.abs(g).toFixed(1) + "% " + (g < 0 ? "below" : "above") + " it";
+  }
+  const corrWord = (r) => (r == null ? "n/a" : Math.abs(r) < 0.1 ? "no link" : Math.abs(r) < 0.3 ? "weak link" : Math.abs(r) < 0.5 ? "moderate link" : "strong link");
+
+  function comovePanel(k, compact) {
+    const c = D.crops[k], cm = c.fair && c.fair.comove;
+    if (!cm) return "";
+    const tile = (v, lab) => '<div class="stat"><div class="mono">' + (v == null ? "n/a" : sg(v)) + '</div><div class="lab">' + lab + " <span style=\"color:var(--muted)\">(" + corrWord(v) + ")</span></div></div>";
+    const tiles = '<div class="grid3" style="margin-top:4px">' + tile(cm.weekly_changes, "Week-to-week changes of the index and of the price") +
+      tile(cm.weekly_changes_in_windows, "Same, only in critical weather windows (" + cm.weeks_in_windows + " weeks)") +
+      tile(cm.index_vs_next_13_weeks, "Index level vs the price change over the next 13 weeks") + "</div>";
+    const text = '<div style="font-size:15px;color:var(--frost-2);line-height:1.65;margin-top:12px">The index measures how much ' + esc(c.label.toLowerCase()) +
+      " the world should harvest compared with normal for the time of year. It is not a price model. Prices also move with demand, stocks, the dollar, fund positions, other origins and the official crop reports, and traders often price a weather scare before it shows up in harvest forecasts. " +
+      "So the two lines can diverge for weeks. Read the index for the supply side, then use the " + (compact ? '<a href="#fair">climate fair value</a>' : "climate fair value") + " to turn it into a price.</div>";
+    return '<section class="glass"><div class="caps" style="margin-bottom:12px">WHY THE INDEX AND THE PRICE DO NOT MOVE TOGETHER</div>' + tiles + text +
+      '<div class="source">Correlations, weekly data since ' + cm.from.slice(0, 4) + " (" + cm.weeks + " weeks). 0 means no link, 1 means the two move as one.</div></section>";
+  }
+
+  function fairChart(k, mode) {
+    const f = D.crops[k].fair, s = mode === "long" ? f.long : f.recent, small = window.innerWidth < 700;
+    const W = small ? Math.max(300, window.innerWidth - 72) : 1000, H = small ? 300 : 440, m = { l: small ? 46 : 70, r: small ? 10 : 128, t: 18, b: 34 };
+    const T = s.d.map((d) => new Date(d + "T00:00:00Z"));
+    const vals = [].concat(s.close, s.fair_lo, s.fair_hi, s.anchor).filter((v) => v != null && isFinite(v));
+    let lo = Math.min(...vals), hi = Math.max(...vals); const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
+    const t0 = T[0], t1 = T[T.length - 1];
+    const x = (d) => m.l + ((d - t0) / (t1 - t0)) * (W - m.l - m.r);
+    const y = (v) => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
+    const line = (arr) => arr.map((v, i) => (i ? "L" : "M") + x(T[i]).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
+    let g = "";
+    niceTicks(lo, hi, 6).forEach((v) => { g += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#1E2935"/><text x="' + (m.l - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="13" fill="#8A9AAB">' + (k === "cocoa" ? Math.round(v).toLocaleString("en-US") : v) + "</text>"; });
+    if (mode === "long") {
+      const step = small ? 5 : 2;
+      for (let yr = t0.getUTCFullYear() + 1; yr <= t1.getUTCFullYear(); yr++) if (yr % step === 0) { const d = new Date(Date.UTC(yr, 0, 1)); g += '<text x="' + x(d) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="13" fill="#8A9AAB">' + yr + "</text>"; }
+    } else {
+      const step = small ? 6 : 3;
+      for (let d = new Date(Date.UTC(t0.getUTCFullYear(), t0.getUTCMonth() + 1, 1)); d <= t1; d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1))) if (d.getUTCMonth() % step === 0) g += '<text x="' + x(d) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="13" fill="#8A9AAB">' + MON[d.getUTCMonth()] + " " + d.getUTCFullYear() + "</text>";
+    }
+    const band = s.fair_hi.map((v, i) => (i ? "L" : "M") + x(T[i]).toFixed(1) + "," + y(v).toFixed(1)).join(" ") + " " +
+      s.fair_lo.map((v, i) => [i, v]).reverse().map(([i, v]) => "L" + x(T[i]).toFixed(1) + "," + y(v).toFixed(1)).join(" ") + " Z";
+    g += '<path d="' + band + '" fill="rgba(255,181,71,.16)"/>';
+    g += '<path d="' + line(s.anchor) + '" fill="none" stroke="#8A9AAB" stroke-width="1.3" stroke-dasharray="5 6"/>';
+    g += '<path d="' + line(s.close) + '" fill="none" stroke="#EAF0F5" stroke-opacity=".85" stroke-width="1.6"/>';
+    g += '<path d="' + line(s.fair) + '" fill="none" stroke="#FFB547" stroke-width="2.6" stroke-linejoin="round"/>';
+    const n = T.length - 1, xf = x(T[n]);
+    let yf = y(s.fair[n]), yp = y(s.close[n]);
+    g += '<circle cx="' + xf + '" cy="' + yf + '" r="4.5" fill="#FFB547"/><circle cx="' + xf + '" cy="' + yp + '" r="4" fill="#EAF0F5"/>';
+    if (!small) {
+      if (Math.abs(yf - yp) < 34) { const mid = (yf + yp) / 2, up = yf < yp ? -1 : 1; yf = mid + up * 17; yp = mid - up * 17; }
+      g += '<text x="' + (xf + 10) + '" y="' + (yf - 2) + '" font-size="13" fill="#FFB547">FAIR VALUE</text><text x="' + (xf + 10) + '" y="' + (yf + 14) + '" font-size="13" fill="#FFB547">' + fmtPrice(k, s.fair[n]) + "</text>";
+      g += '<text x="' + (xf + 10) + '" y="' + (yp - 2) + '" font-size="13" fill="#EAF0F5">PRICE</text><text x="' + (xf + 10) + '" y="' + (yp + 14) + '" font-size="13" fill="#EAF0F5">' + fmtPrice(k, s.close[n]) + "</text>";
+    }
+    g += '<line class="cross" x1="0" x2="0" y1="' + m.t + '" y2="' + (H - m.b) + '" stroke="#C7D1DB" stroke-opacity=".5" visibility="hidden"/>';
+    return '<div class="chart-wrap" data-chart="fair" data-mode="' + mode + '" data-w="' + W + '" data-l="' + m.l + '" data-r="' + m.r + '"><svg viewBox="0 0 ' + W + " " + H + '" width="100%" role="img" aria-label="Futures price and climate fair value">' + g + '</svg><div class="chart-tip"></div></div>';
+  }
+
+  function hookFairChart() {
+    const wrap = document.querySelector('[data-chart="fair"]');
+    if (!wrap) return;
+    const k = S.crop, f = D.crops[k].fair, s = wrap.dataset.mode === "long" ? f.long : f.recent;
+    const W = +wrap.dataset.w, L = +wrap.dataset.l, R = +wrap.dataset.r, svg = wrap.querySelector("svg"), tip = wrap.querySelector(".chart-tip"), cross = svg.querySelector(".cross");
+    const T = s.d.map((d) => Date.parse(d + "T00:00:00Z")), t0 = T[0], t1 = T[T.length - 1];
+    const move = (e) => {
+      const b = svg.getBoundingClientRect(), vx = ((e.clientX - b.left) / b.width) * W;
+      const t = t0 + ((vx - L) / (W - L - R)) * (t1 - t0);
+      let lo = 0, hi = T.length - 1; while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (T[mid] < t) lo = mid; else hi = mid; }
+      const i = Math.abs(T[lo] - t) < Math.abs(T[hi] - t) ? lo : hi, cx = L + ((T[i] - t0) / (t1 - t0)) * (W - L - R);
+      cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
+      const gp = 100 * (s.close[i] / s.fair[i] - 1);
+      tip.innerHTML = '<div style="color:var(--frost);font-weight:600;margin-bottom:2px">' + dLong(s.d[i]) + '</div><div><span class="k">Price</span><span class="mono">' + fmtPrice(k, s.close[i]) + '</span></div><div><span class="k" style="color:var(--signal)">Fair value</span><span class="mono">' + fmtPrice(k, s.fair[i]) +
+        '</span></div><div><span class="k">80% range</span><span class="mono">' + fmtPrice(k, s.fair_lo[i]) + " to " + fmtPrice(k, s.fair_hi[i]) + '</span></div><div><span class="k">12-month average</span><span class="mono">' + fmtPrice(k, s.anchor[i]) + '</span></div><div><span class="k">Price vs fair value</span><span class="mono">' + pct(gp) + "</span></div>";
+      const px = (cx / W) * b.width, wb = wrap.getBoundingClientRect();
+      tip.style.left = Math.min(wb.width - tip.offsetWidth - 4, Math.max(4, px + 14)) + "px"; tip.style.top = "8px"; tip.style.opacity = 1;
+    };
+    svg.addEventListener("mousemove", move);
+    svg.addEventListener("mouseleave", () => { tip.style.opacity = 0; cross.setAttribute("visibility", "hidden"); });
+  }
+
+  function flexChart(k) {
+    const small = window.innerWidth < 700, f = D.crops[k].fair, fx = f.flex, P = fx.points, W = small ? Math.max(300, window.innerWidth - 72) : 600, H = small ? 300 : 380, m = { l: 58, r: 16, t: 16, b: 52 };
+    const xs = P.map((p) => p[1]), ys = P.map((p) => p[2]), gNow = f.now.supply_gap_pct;
+    const xr = Math.max(2, ...xs.map(Math.abs), Math.abs(gNow)) * 1.12, yr = Math.max(10, ...ys.map(Math.abs)) * 1.1;
+    const x = (v) => m.l + ((v + xr) / (2 * xr)) * (W - m.l - m.r), y = (v) => m.t + (1 - (v + yr) / (2 * yr)) * (H - m.t - m.b);
+    const mx = xs.reduce((a, b) => a + b, 0) / xs.length, my = ys.reduce((a, b) => a + b, 0) / ys.length, b = fx.slope_pct_per_pct, a = my - b * mx;
+    let g = "";
+    niceTicks(-yr, yr, 5).forEach((v) => { g += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (v === 0 ? "#2A3646" : "#1E2935") + '"/><text x="' + (m.l - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="13" fill="#8A9AAB">' + (v > 0 ? "+" : "") + v + "</text>"; });
+    niceTicks(-xr, xr, 6).forEach((v) => { g += '<line x1="' + x(v) + '" x2="' + x(v) + '" y1="' + m.t + '" y2="' + (H - m.b) + '" stroke="' + (v === 0 ? "#2A3646" : "#1E2935") + '"/><text x="' + x(v) + '" y="' + (H - m.b + 18) + '" text-anchor="middle" font-size="13" fill="#8A9AAB">' + (v > 0 ? "+" : "") + v + "</text>"; });
+    g += '<text x="' + ((m.l + W - m.r) / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="13" fill="#C7D1DB">WORLD SUPPLY VS NORMAL (%)</text>';
+    g += '<text transform="translate(14,' + ((m.t + H - m.b) / 2) + ') rotate(-90)" text-anchor="middle" font-size="13" fill="#C7D1DB">PRICE CHANGE IN THE YEAR (%)</text>';
+    g += '<line x1="' + x(-xr) + '" y1="' + y(a - b * xr) + '" x2="' + x(xr) + '" y2="' + y(a + b * xr) + '" stroke="#FFB547" stroke-width="2.4"/>';
+    g += '<line x1="' + x(gNow) + '" x2="' + x(gNow) + '" y1="' + m.t + '" y2="' + (H - m.b) + '" stroke="#FFB547" stroke-dasharray="5 5" stroke-opacity=".8"/><text x="' + (x(gNow) + (gNow > 0 ? -6 : 6)) + '" y="' + (H - m.b - 8) + '" text-anchor="' + (gNow > 0 ? "end" : "start") + '" font-size="13" fill="#FFB547">TODAY</text>';
+    P.forEach((p) => { g += '<circle cx="' + x(p[1]).toFixed(1) + '" cy="' + y(p[2]).toFixed(1) + '" r="5" fill="#C7D1DB" fill-opacity=".75"><title>' + p[0] + ": supply " + pct(p[1]) + ", price " + pct(p[2]) + "</title></circle>"; });
+    return '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" role="img" aria-label="World supply gap and price change, one dot per marketing year">' + g + "</svg>";
+  }
+
+  function calcDefaults(k) {
+    const f = D.crops[k].fair;
+    return { gap: f.now.supply_gap_pct, r: -f.flex.slope_pct_per_pct, anchor: f.now.anchor };
+  }
+  function calcResult(k, st) {
+    const f = D.crops[k].fair, se = f.flex.se, e = (r) => Math.exp((r * -st.gap) / 100), d0 = calcDefaults(k), nw = f.now;
+    if (st.gap === d0.gap && st.r === d0.r && st.anchor === d0.anchor) return { fair: nw.fair, lo: nw.fair_lo, hi: nw.fair_hi, prem: nw.premium_pct, vs: nw.gap_to_fair_pct, z: D.crops[k].latest.z };
+    const fair = st.anchor * e(st.r), a = st.anchor * e(st.r - 1.2816 * se), b = st.anchor * e(st.r + 1.2816 * se);
+    return { fair: fair, lo: Math.min(a, b), hi: Math.max(a, b), prem: 100 * (e(st.r) - 1), vs: 100 * (f.now.close / fair - 1), z: (f.mu - st.gap) / f.sigma };
+  }
+  function calcPanel(k) {
+    const f = D.crops[k].fair, st = S.calc[k] || (S.calc[k] = calcDefaults(k)), fx = f.flex;
+    const scen = [["Today", null], ["Normal season (index 0)", 0], ["Rare (index +2)", 2], ["Extreme (index +3)", 3], ["Good harvest (index -2)", -2]];
+    const gmin = Math.floor(Math.min(-6, f.mu - 4 * f.sigma)), gmax = Math.ceil(Math.max(6, f.mu + 4 * f.sigma));
+    return '<section class="glass calc" id="calc"><div class="caps">PRICING TOOL &middot; ' + esc(D.crops[k].display) + "</div>" +
+      '<div style="font-size:15px;color:var(--frost-2);margin-top:8px;line-height:1.55">Move the expected world supply, or pick a scenario, to see the fair value it would justify.</div>' +
+      '<div class="chips" style="margin-top:12px" role="group" aria-label="Scenario">' + scen.map(([l, z]) => '<button class="chip" data-scen="' + (z == null ? "today" : z) + '">' + l + "</button>").join("") + "</div>" +
+      '<label for="i-gap"><span>Expected world supply vs normal</span><output id="o-gap"></output></label><input type="range" id="i-gap" min="' + gmin + '" max="' + gmax + '" step="0.05" value="' + st.gap + '"><div class="hint" id="o-z"></div>' +
+      '<label for="i-r"><span>Price reaction to 1% of world supply missing</span><output id="o-r"></output></label><input type="range" id="i-r" min="0" max="8" step="0.05" value="' + st.r + '"><div class="hint">Measured ' + fx.years[0] + "-" + fx.years[1] + ": " + (-fx.slope_pct_per_pct).toFixed(2) + "% (uncertainty " + fx.se.toFixed(2) + ")</div>" +
+      '<label for="i-anchor"><span>Anchor price, ' + esc(D.crops[k].priceUnit) + '</span></label><input type="number" id="i-anchor" step="any" value="' + (+st.anchor.toFixed(2)) + '"><div class="hint">Default: average close of the last 12 months (' + fmtPrice(k, f.now.anchor) + ")</div>" +
+      '<div class="result"><div class="caps">FAIR VALUE IN THIS SCENARIO</div><div class="mono glow" id="o-fair" style="font-size:44px;color:var(--signal);margin-top:6px"></div><div id="o-range" style="font-size:15px;color:var(--frost-2);line-height:1.6"></div><div id="o-vs" style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px"></div></div>' +
+      '<div style="margin-top:14px"><button class="btn" id="calc-reset">Reset to today</button></div>' +
+      '<div class="source">Fair value = anchor &times; exp(reaction &times; supply missing / 100). The 80% range comes from the uncertainty of the measured reaction. Research tool, not investment advice.</div></section>';
+  }
+  function calcUpdate() {
+    const k = S.crop, st = S.calc[k], el = (id) => document.getElementById(id);
+    if (!el("o-fair")) return;
+    const r = calcResult(k, st), c = D.crops[k];
+    el("o-gap").textContent = pct(st.gap, 2); el("o-r").textContent = st.r.toFixed(2) + "%";
+    el("o-z").textContent = "Same as a risk index of " + sg(r.z) + " today";
+    el("o-fair").textContent = fmtPrice(k, r.fair);
+    el("o-range").textContent = "Likely between " + fmtPrice(k, r.lo) + " and " + fmtPrice(k, r.hi) + " (8 chances in 10). Climate premium " + pct(r.prem) + " on the anchor.";
+    el("o-vs").textContent = "Last close " + fmtPrice(k, c.fair.now.close) + " (" + dLong(c.fair.now.date) + ") is " + gapWords(r.vs) + ".";
+  }
+
+  function viewFair() {
+    const k = S.crop, c = D.crops[k], f = c.fair;
+    if (!f) return { html: ticker() + '<section class="glass" style="margin-top:16px">No fair value in this data snapshot. Run <span class="mono">harvestradar index price</span>.</section>', after: null };
+    const nw = f.now, fx = f.flex, unreliable = !nw.reliable;
+    const warn = unreliable ? '<div class="warnbox" style="margin-top:16px">No reliable link between world supply gaps and the ' + esc(c.label.toLowerCase()) + " price was found over " + fx.years[0] + "-" + fx.years[1] + " (" + Math.round(100 * fx.p_value) + "% chance that the measured slope is pure luck). The fair value therefore stays close to the 12-month average whatever the weather. Use it with care.</div>" : "";
+    const cards = '<div class="cards3">' +
+      '<section class="glass' + (unreliable ? "" : " amber") + '" style="min-height:170px"><div class="caps">CLIMATE FAIR VALUE</div><div class="mono glow hero-val" style="font-size:56px;line-height:1.1;color:var(--signal);margin-top:8px">' + fmtPrice(k, nw.fair) + '</div><div class="source">Likely between ' + fmtPrice(k, nw.fair_lo) + " and " + fmtPrice(k, nw.fair_hi) + ". The price that today's expected supply justifies on its own.</div></section>" +
+      '<section class="glass" style="min-height:170px"><div class="caps">' + esc(c.priceLabel) + '</div><div class="mono" style="font-size:34px;margin-top:12px">' + fmtPrice(k, nw.close) + '</div><div style="margin-top:10px">' + tag(Math.abs(nw.gap_to_fair_pct) < 1 ? "In line with fair value" : Math.abs(nw.gap_to_fair_pct).toFixed(1) + "% " + (nw.gap_to_fair_pct < 0 ? "below" : "above") + " fair value", nw.gap_to_fair_pct < 0 ? "good" : "warn") + '</div><div class="source">Close on ' + dLong(nw.date) + ".</div></section>" +
+      '<section class="glass" style="min-height:170px"><div class="caps">CLIMATE PREMIUM</div><div class="mono" style="font-size:34px;margin-top:12px">' + pct(nw.premium_pct) + '</div><div class="source">On the 12-month average of ' + fmtPrice(k, nw.anchor) + ", for an expected world supply of " + pct(nw.supply_gap_pct, 2) + " vs normal.</div></section></div>";
+    const rng = '<div class="chips" role="group" aria-label="Period">' + [["recent", "2 years"], ["long", "Since 2006"]].map(([v, l]) => '<button class="chip' + (S.range === v ? " on" : "") + '" data-range="' + v + '">' + l + "</button>").join("") + "</div>";
+    const chart = '<section class="glass" style="padding:16px 18px"><div style="display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-family:var(--display);font-weight:700;font-size:20px">Futures price and climate fair value</span>' + rng + "</div>" +
+      '<div class="legend-row" style="margin-bottom:6px"><span><i style="background:#FFB547"></i>Climate fair value</span><span><i style="background:rgba(255,181,71,.35);height:10px"></i>80% range</span><span><i style="background:#EAF0F5"></i>' + esc(c.priceName) + '</span><span><i style="background:repeating-linear-gradient(90deg,#8A9AAB 0 5px,transparent 5px 10px)"></i>12-month average (anchor)</span></div>' +
+      fairChart(k, S.range) +
+      '<div style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px">How to read it: the orange line is the 12-month average price moved up or down by what the expected world supply implies. When the white price line is below it, the market prices less weather risk than the supply forecast suggests; above it, more. The gap is what other drivers explain (demand, stocks, the dollar, funds). Hover the chart for the values of each day.</div>' +
+      '<div class="source">' + (S.range === "long" ? "Weekly (Fridays) since 2006" : "Every trading day, last 2 years") + ". Updated with every data run. The price reaction is measured on " + fx.years[0] + "-" + fx.years[1] + ", so values before " + (fx.years[1] + 1) + " are in-sample.</div></section>";
+    const scatter = panel("HOW THE PRICE REACTION IS MEASURED", flexChart(k) + '<div style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:8px">One dot per marketing year: the realised world supply vs normal (FAOSTAT) and the change of the average futures price. The orange line is the fitted reaction: ' + (-fx.slope_pct_per_pct).toFixed(2) + "% on the price for each 1% of world supply missing.</div>",
+      fx.n + " marketing years, " + fx.years[0] + "-" + fx.years[1] + ". Share of yearly price changes explained: " + Math.round(100 * fx.r2) + "%. Chance the link is pure luck: " + (fx.p_value < 0.01 ? "under 1%" : Math.round(100 * fx.p_value) + "%") + ".");
+    const html = ticker() + warn + '<div class="main c65"><div class="col">' + cards + chart + comovePanel(k, false) + '</div><div class="col">' + calcPanel(k) + scatter + "</div></div>";
+    return { html: html, after: () => { hookFairChart(); calcUpdate(); } };
   }
 
   function viewReplay() {
@@ -218,18 +376,18 @@
     const n = D.notes.find((x) => keyOf(x) === S.note) || D.notes[0];
     let lastDay = "";
     const inbox = D.notes.map((x) => {
-      const tag = x.model === "deterministic-template" ? "FIXED TEMPLATE" : (x.templateParagraphs ? x.templateParagraphs + " OF 3 FROM TEMPLATE" : "");
+      const tag = x.model === "deterministic-template" ? "Fixed template" : (x.templateParagraphs ? x.templateParagraphs + " of 3 paragraphs from the template" : "Written by the AI model");
       const head = x.week !== lastDay ? '<div class="caps" style="margin:8px 4px 0">' + dLong(x.week) + "</div>" : "";
       lastDay = x.week;
-      return head + '<button class="glass inbox-item' + (keyOf(x) === keyOf(n) ? " on" : "") + '" data-note="' + keyOf(x) + '"><span style="border-radius:10px;overflow:hidden;display:inline-flex;flex:none;height:40px">' + D.marks.signal + '</span><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:8px"><span style="font-weight:600">HarvestRadar Daily</span><span class="mono" style="font-size:13px;color:var(--muted)">07:00</span></div><div style="font-size:15px;color:var(--frost-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x.title) + "</div>" + (tag ? '<div style="margin-top:6px"><span class="chip" style="padding:3px 8px">' + tag + "</span></div>" : "") + "</div></button>";
+      return head + '<button class="glass inbox-item' + (keyOf(x) === keyOf(n) ? " on" : "") + '" data-note="' + keyOf(x) + '">' + glyph(D.crops[x.commodity].glyph, 22) + '<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x.title) + '</span><span class="mono" style="font-size:13px;color:var(--muted);flex:none">07:00</span></div><div style="font-size:13px;color:var(--muted);margin-top:2px">' + tag + "</div></div></button>";
     }).join("");
-    const readings = '<div class="grid3">' + Object.keys(n.readings).map((k) => {
+    const readings = '<div><div class="caps" style="margin-bottom:8px">RISK INDEX ON ' + dLong(n.week).toUpperCase() + '</div><div class="grid3">' + Object.keys(n.readings).map((k) => {
       const r = n.readings[k], s = D.crops[k].riskRecent, i = s.d.indexOf(r.date), series = s.z.slice(Math.max(0, i - 25), i + 1);
-      return '<div class="glass tick-card' + (k === n.commodity ? " sel" : "") + '" style="cursor:default">' + glyph(r.glyph, 26) + '<div style="min-width:0"><div class="caps" style="white-space:nowrap">' + esc(r.display) + ' &middot; RISK INDEX</div><div class="val' + (r.value >= 2 ? " glow" : "") + '">' + esc(r.text) + "</div></div>" + sparkline(series, 96) + "</div>";
-    }).join("") + "</div>";
+      return '<div class="glass tick-card' + (k === n.commodity ? " sel" : "") + '" style="cursor:default">' + glyph(r.glyph, 26) + '<div style="min-width:0"><div class="caps" style="white-space:nowrap">' + esc(r.display) + '</div><div class="val' + (r.value >= 2 ? " glow" : "") + '">' + esc(r.text) + "</div></div>" + sparkline(series, 96) + "</div>";
+    }).join("") + "</div></div>";
     const who = n.model === "deterministic-template" ? "Written from the fixed template (the AI model failed the checks)" : "Written by a small AI model running locally (" + esc(D.meta.llm.display_name) + ")" + (n.templateParagraphs ? "; " + n.templateParagraphs + " of 3 paragraphs from the fixed template" : "");
     const figs = Object.values(n.slots).filter((s) => s.kind === "figure").map((s) => '<div class="glass" style="padding:14px 16px"><div class="mono" style="font-size:22px;color:var(--signal)">' + esc(s.text) + '</div><div style="font-size:15px;color:var(--frost-2);margin-top:4px">' + esc(s.label) + '</div><div class="source" style="margin-top:6px">Source: ' + esc(s.source) + "<br>" + esc(s.date) + (s.detail ? ", " + esc(s.detail) : "") + "</div></div>").join("");
-    const html = '<div class="main c30"><div class="col"><div style="display:flex;justify-content:space-between;align-items:baseline;margin:4px 4px 0"><span style="font-family:var(--display);font-weight:700;font-size:28px">Inbox</span><span class="caps">EVERY WORKING DAY, 07:00</span></div>' + inbox + "</div>" +
+    const html = '<div class="main c30"><div class="col"><div style="display:flex;justify-content:space-between;align-items:baseline;margin:4px 4px 0"><span style="font-family:var(--display);font-weight:700;font-size:28px">Inbox</span><span class="caps">EVERY WORKING DAY, 07:00</span></div><div class="inbox-list">' + inbox + "</div></div>" +
       '<div class="col"><section class="glass" style="padding:22px 24px;display:flex;flex-direction:column;gap:16px"><div style="display:flex;gap:16px;align-items:center"><span style="border-radius:12px;overflow:hidden;display:inline-flex;flex:none">' + D.marks.signal.replace(/width="40" height="40"/, 'width="52" height="52"') + '</span><div><div style="font-family:var(--display);font-weight:700;font-size:30px;line-height:1.15">' + esc(n.title) + '</div><div style="color:var(--muted)">HarvestRadar Daily &middot; ' + dLong(n.week) + "</div></div></div>" + readings +
       '<div class="note-body">' + noteBody(n) + '</div><div class="chips">' + badge("Numbers checked", n.checks[0]) + badge("Context checked", n.checks[1]) + badge("Claims checked", n.checks[2]) + "</div>" +
       '<div style="font-size:14px;color:var(--muted)">' + who + ". Every figure is inserted by the software, with its source; hover a figure to see it.</div>" +
@@ -249,15 +407,17 @@
     const card = (num, t, big, sub, extra, on) => '<section class="glass' + (on ? " amber" : "") + '" style="min-height:290px"><div class="mono" style="font-size:13px;color:' + (on ? "var(--signal)" : "var(--muted)") + '">STEP ' + num + '</div><div style="font-family:var(--display);font-weight:700;font-size:28px;margin-top:6px">' + t + '</div><div class="mono" style="font-size:40px;margin-top:8px">' + big + '</div><div style="color:var(--frost-2)">' + sub + "</div>" + (extra || "") + "</section>";
     const strip = '<div style="display:flex;gap:3px;margin-top:22px">' + M.strip.values.map((v) => '<i style="flex:1;height:22px;border-radius:3px;background:' + ramp(v) + '"></i>').join("") + '</div><div class="source">' + esc(M.strip.name) + ", summer 2012, every 10 days</div>";
     const bars = shares.map((x) => '<div style="display:grid;grid-template-columns:110px minmax(0,1fr) 46px;gap:10px;align-items:center;margin-top:8px"><span style="color:var(--frost-2);font-size:15px">' + esc(x.name) + '</span><div style="height:6px;border-radius:3px;background:var(--line)"><div style="height:6px;border-radius:3px;width:' + Math.min(100, 2 * x.share_pct).toFixed(0) + '%;background:var(--frost-2)"></div></div><span class="mono" style="font-size:13px;color:var(--muted);text-align:right">' + Math.round(x.share_pct) + "%</span></div>").join("");
-    const row = (ok, t, f, v) => '<div class="ledger"><span style="font-size:22px;color:' + (ok ? "var(--frost)" : "var(--muted)") + '">' + (ok ? "&#10003;" : "&#10005;") + '</span><span class="t" style="color:' + (ok ? "var(--frost)" : "var(--frost-2)") + '">' + t + '</span><span class="f">' + f + '</span><span class="caps" style="text-align:right;color:var(--frost-2)">' + v + "</span></div>";
-    const word = (x) => (x <= -10 ? "CLEAR GAIN" : x < 0 ? "SMALL GAIN" : "NO GAIN");
-    let ledger = row(rmW < 0, "Forecast error vs a simple trend, harvests " + ev.test[0] + " to " + ev.test[1], pct(rmW), word(rmW)) + row(rmU < 0, "Same, every country counted equally", pct(rmU), word(rmU));
+    const row = (t, f, v, tone) => '<tr><td class="t">' + t + '</td><td class="f">' + f + '</td><td class="v">' + tag(v, tone) + "</td></tr>";
+    const gain = (x) => (x <= -10 ? ["Clear gain", "good"] : x < 0 ? ["Small gain", "good"] : ["No gain", "bad"]);
+    const errTxt = (x) => Math.abs(x).toFixed(1) + "% " + (x < 0 ? "smaller" : "larger") + " error than the trend";
+    let ledger = row("Harvest forecasts vs a simple trend, " + ev.test[0] + " to " + ev.test[1] + ", weighted by world share", errTxt(rmW), ...gain(rmW)) + row("Same, every country counted equally", errTxt(rmU), ...gain(rmU));
     Object.values(M.events).forEach((e) => {
-      const f = e.first_above_2 ? "above +2 on " + dLong(e.first_above_2) + (e.verdict === "late" ? ", after the price peak" : ", before the price peak") : "highest " + sg(e.peak_risk_z) + ", never above +2";
-      ledger += row(e.verdict === "caught", esc(e.label), f, { caught: "CAUGHT", late: "TOO LATE", missed: "MISSED" }[e.verdict]);
+      const f = e.first_above_2 ? "Above +2 on " + dLong(e.first_above_2) + (e.verdict === "late" ? ", after the price peak" : ", before the price peak") : "Highest " + sg(e.peak_risk_z) + ", never above +2";
+      ledger += row(esc(e.label), f, ...({ caught: ["Caught", "good"], late: ["Too late", "warn"], missed: ["Missed", "bad"] }[e.verdict]));
     });
-    const bt = M.backtest;
-    ledger += row(bt.best_rule_p_corrected < 0.05, "Trading on the index, after costs", Math.round(100 * bt.best_rule_p_corrected) + "% chance it is luck", bt.best_rule_p_corrected < 0.05 ? "REAL GAIN" : "NO RELIABLE GAIN");
+    const bt = M.backtest, sig = bt.best_rule_p_corrected < 0.05;
+    ledger += row("Trading on the index, after costs", Math.round(100 * bt.best_rule_p_corrected) + "% chance the gain is luck", sig ? "Significant" : "Not significant", sig ? "good" : "neutral");
+    ledger = '<section class="glass"><table class="ledger"><thead><tr><th>TEST</th><th>RESULT</th><th class="r">VERDICT</th></tr></thead><tbody>' + ledger + "</tbody></table></section>";
     const trs = Object.entries(ev.byCrop).map(([k, b]) => { const m = b.model || {}, t = b.trend_only || {}; return "<tr><td>" + esc(D.crops[k].label) + "</td><td>" + m.n + "</td><td>" + (100 * m.rmse).toFixed(1) + "</td><td>" + (100 * t.rmse).toFixed(1) + "</td><td>" + sg(m.spearman || 0) + "</td><td>" + Math.round(100 * (m.sign_accuracy || 0)) + "%</td></tr>"; }).join("");
     const html = '<h1 class="ttl">Under the hood, four steps.</h1><div class="grid4">' +
       card("1", "Crop maps", totalR.toLocaleString("en-US"), "producing regions, covering 90% of world output of each crop (MapSPAM 2020)", '<div style="display:flex;gap:14px;margin-top:26px">' + glyph("maize", 26) + glyph("arabica", 26) + glyph("cocoa", 26) + "</div>") +
@@ -265,13 +425,163 @@
       card("3", "Model", pct(rmW), "smaller harvest-forecast error than a simple trend, on harvests the model had never seen, weighted by world share", '<div class="chips" style="margin-top:20px">' + chip("Gradient boosting") + chip("Explained factor by factor", true) + "</div>", true) +
       card("4", "World index", sg(maize.z), "maize today: country forecasts weighted by their share of world output", bars) + "</div>" +
       '<div class="chips" style="margin-top:16px"><span class="caps" style="margin-right:8px">BEYOND THE COURSE</span>' + ["Weather weighted by where crops grow", "Testing without peeking at the future", "Explanations by weather factor (SHAP)", "Local AI writer with fact checks", "Trading test against luck"].map((t) => chip(t)).join("") + "</div>" +
-      '<div class="main c65" style="margin-top:8px"><div class="col"><h2 class="ttl">Tested like sceptics.</h2><div>' + ledger + '</div><div class="source">HarvestRadar is a radar, not a crystal ball. "Caught" means the index went above +2 before the futures price peaked.</div></div>' +
-      '<div class="col"><h2 class="ttl">Forecast errors at the end of each season</h2><section class="glass scroll-x"><table class="ev"><thead><tr><th>CROP</th><th>HARVESTS</th><th>MODEL ERROR</th><th>TREND ERROR</th><th>RANK MATCH</th><th>RIGHT DIRECTION</th></tr></thead><tbody>' + trs + '</tbody></table><div class="source">Typical error, in percentage points of yield (maize) or production (tree crops) vs normal, harvests ' + ev.test[0] + " to " + ev.test[1] + ". Rank match: how well the model orders good and bad harvests (1 = perfectly). Each year is forecast by a model trained only on harvests published before it.</div></section>" +
+      '<div class="main c65" style="margin-top:8px"><div class="col"><h2 class="ttl">Tested like sceptics.</h2>' + ledger + '<div class="source">HarvestRadar is a radar, not a crystal ball. "Caught" means the index went above +2 before the futures price peaked.</div></div>' +
+      '<div class="col"><h2 class="ttl">Forecast errors by crop</h2><section class="glass scroll-x"><table class="ev"><thead><tr><th>CROP</th><th>HARVESTS</th><th>MODEL ERROR</th><th>TREND ERROR</th><th>RANK MATCH</th><th>RIGHT DIRECTION</th></tr></thead><tbody>' + trs + '</tbody></table><div class="source">Typical error, in percentage points of yield (maize) or production (tree crops) vs normal, harvests ' + ev.test[0] + " to " + ev.test[1] + ". Rank match: how well the model orders good and bad harvests (1 = perfectly). Each year is forecast by a model trained only on harvests published before it.</div></section>" +
       '<section class="glass"><div class="caps" style="margin-bottom:8px">CREDITS</div><div style="font-size:15px;line-height:1.7;color:var(--frost-2)"><b>Data</b>: NASA POWER weather, MapSPAM 2020 crop maps (IFPRI), geoBoundaries regions, FAOSTAT harvests, NOAA El Ni&ntilde;o index, futures prices via Yahoo Finance, Natural Earth.<br><b>Imagery</b>: NASA Blue Marble (public domain).<br><b>Model</b>: LightGBM gradient boosting, SHAP explanations; daily note by ' + esc(D.meta.llm.display_name) + " (Hugging Face), run locally.<br><b>Fonts</b>: Space Grotesk, Inter, JetBrains Mono.</div></section></div></div>";
     return { html: html, after: null };
   }
 
-  const RENDER = { stress: viewStress, commodity: viewCommodity, replay: viewReplay, note: viewNote, method: viewMethod };
+  /* ---------- Ask Claude: runs on the viewer's own Claude plan through the artifact "sample" capability ---------- */
+  const ASK = { fn: undefined, state: "connecting" };
+  function connectClaude() {
+    if (ASK.fn !== undefined) return;
+    ASK.fn = null;
+    if (!window.claude || typeof window.claude.use !== "function") { ASK.state = "absent"; return; }
+    window.claude.use("sample").then((fn) => { ASK.fn = fn; ASK.state = fn ? "ready" : "absent"; if (current() === "ask") askRefresh(); })
+      .catch(() => { ASK.state = "absent"; if (current() === "ask") askRefresh(); });
+  }
+  const NOTE_TEXT = (n) => n.template.replace(/\{([A-Z][A-Z0-9_]*)\}/g, (all, k) => (n.slots[k] ? n.slots[k].text : all));
+  function claudeContext() {
+    const L = ["HARVESTRADAR DATA SNAPSHOT (data as of " + dLong(D.asOf) + ")", "",
+      "What the numbers mean: the harvest-risk index compares the model's expected world supply of a crop with what is normal for the same time of year (0 = normal, positive = less supply than normal, above +2 = rare). Expected world supply vs normal is the sum over producing countries of share of world output times the forecast harvest gap. Climate fair value = 12-month average futures close x exp(-reaction x supply gap / 100), where the reaction is the measured % change of the marketing-year average futures price per 1% of world supply (OLS on FAOSTAT world supply gaps, 2002 onwards). The model sees weather, not stocks, demand, positioning or news.", ""];
+    CROPS.forEach((k) => {
+      const c = D.crops[k], la = c.latest, f = c.fair, pi = (D.priceImpact.commodities || {})[k];
+      L.push("## " + c.label + " (" + c.priceName + ", " + c.priceUnit + ")");
+      L.push("- Risk index: " + sg(la.z) + " on " + dLong(la.date) + ". Weeks above +2 since 2001: " + (c.above2 != null ? c.above2 + "%" : "n/a") + ".");
+      const rs = c.riskRecent, i5 = Math.max(0, rs.z.length - 6), i20 = Math.max(0, rs.z.length - 21);
+      L.push("- Index 5 working days ago: " + sg(rs.z[i5]) + "; 20 working days ago: " + sg(rs.z[i20]) + ".");
+      L.push("- Expected world supply vs normal: " + pct(la.dp, 2) + " (model range " + pct(la.lo) + " to " + pct(la.hi) + ", a deliberately wide worst-case range).");
+      L.push("- Countries driving it (points of world supply): " + la.contributors.map((x) => x.name + " " + sg(x.contrib_pct) + " (" + x.season + " harvest " + pct(x.pred_anom_pct) + " vs normal, " + Math.round(x.share_pct) + "% of world output" + (x.window_open ? ", critical window open" : "") + ")").join("; ") + ".");
+      const sh = c.shap[la.contributors[0] && la.contributors[0].country];
+      if (sh) L.push("- Weather factors behind the " + (la.contributors[0].name) + " forecast (SHAP, points of " + c.target + "): " + sh.rows.map((r) => r[0] + " " + sg(r[1])).join(", ") + ".");
+      if (c.windows.length) L.push("- " + c.mainCountry + " critical windows in the last 64 weeks: " + c.windows.map((w) => w[2] + " " + dLong(w[0]) + " to " + dLong(w[1])).join("; ") + ".");
+      L.push("- Last futures close: " + fmtPrice(k, c.lastPrice.close) + " on " + dLong(c.lastPrice.date) + ".");
+      const pw = c.pricesWeekly.c, n = pw.length;
+      if (n > 53) L.push("- Price change: 4 weeks " + pct(100 * (pw[n - 1] / pw[n - 5] - 1)) + ", 13 weeks " + pct(100 * (pw[n - 1] / pw[n - 14] - 1)) + ", 52 weeks " + pct(100 * (pw[n - 1] / pw[n - 53] - 1)) + ".");
+      if (f) {
+        const nw = f.now, fx = f.flex;
+        L.push("- Climate fair value: " + fmtPrice(k, nw.fair) + " (80% range " + fmtPrice(k, nw.fair_lo) + " to " + fmtPrice(k, nw.fair_hi) + "); 12-month average " + fmtPrice(k, nw.anchor) + "; climate premium " + pct(nw.premium_pct) + "; price vs fair value " + pct(nw.gap_to_fair_pct) + ".");
+        L.push("- Measured price reaction: " + (-fx.slope_pct_per_pct).toFixed(2) + "% per 1% of world supply missing (standard error " + fx.se.toFixed(2) + ", p-value " + fx.p_value + ", R2 " + fx.r2 + ", " + fx.n + " marketing years " + fx.years[0] + "-" + fx.years[1] + ")" + (nw.reliable ? "." : ". NOT statistically reliable.") + " Index level that would mean a scenario: supply gap = " + f.mu + " - index x " + f.sigma + " (%).");
+        if (f.comove) L.push("- Correlation since 2006: weekly index change vs weekly price change " + f.comove.weekly_changes + " (in critical windows " + f.comove.weekly_changes_in_windows + "); index level vs price change over next 13 weeks " + f.comove.index_vs_next_13_weeks + ".");
+      }
+      if (pi) L.push("- Implied move of the marketing-year average price: " + pct(pi.implied_pct) + " (" + pct(pi.low_pct) + " to " + pct(pi.high_pct) + ").");
+      const note = D.notes.find((x) => x.week === D.asOf && x.commodity === k);
+      if (note) L.push("- Today's daily note: " + NOTE_TEXT(note).replace(/\s+/g, " "));
+      L.push("");
+    });
+    const o = D.oni;
+    L.push("## Background\n- El Nino index (ONI): " + sg(o.value) + " C, " + o.strength + ", " + o.period + " (published " + dLong(o.available_at) + "). Context only, not in the index.");
+    L.push("- Track record: forecast error vs a simple trend " + pct(D.method.eval.pooled.rmse_vs_trend_weighted_pct) + " on harvests " + D.method.eval.test[0] + "-" + D.method.eval.test[1] + "; " + Object.values(D.method.events).map((e) => e.label + ": " + e.verdict).join("; ") + "; trading on the index alone after costs: " + Math.round(100 * D.method.backtest.best_rule_p_corrected) + "% chance the gain is luck (not significant).");
+    return L.join("\n");
+  }
+  const RULES = "You are the HarvestRadar trading assistant, built into a research dashboard on weather risk for maize, arabica coffee and cocoa futures. Help the user think through commodity trades: reading the signals, scenarios, fair value, what is priced in, risks, hedging, position sizing principles and what would invalidate a view.\n\n" +
+    "Rules:\n- Every HarvestRadar figure must come from the data snapshot below; quote it with its date. If something is not in it (stocks, positioning, spreads, live news, options), say so plainly instead of inventing it.\n- You may add general market knowledge, flagged as background that may be out of date.\n- Be concrete and brief: short paragraphs or bullet lists, numbers with units. A trade idea states direction, instrument, entry logic, invalidation level, main risks and what to watch next.\n- Frame trade ideas as scenarios for discussion. Add one short line that this is not personalised investment advice when you give one.\n- The index is a supply signal with weak short-term correlation to prices: never present it as a price forecast.\n- No em dashes. Reply in the language the user writes in.\n\n";
+
+  function md(src) {
+    const inline = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>");
+    const lines = src.replace(/\s*\u2014\s*/g, ", ").replace(/\r/g, "").split("\n"), out = [];
+    let list = null, para = [];
+    const flush = () => { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } if (list) { out.push("</" + list + ">"); list = null; } };
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      if (/^\s*\|.*\|\s*$/.test(ln) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+        flush();
+        const cells = (r) => r.trim().replace(/^\||\|$/g, "").split("|").map((x) => x.trim());
+        let t = "<table><thead><tr>" + cells(ln).map((h) => "<th>" + inline(h) + "</th>").join("") + "</tr></thead><tbody>";
+        i += 2;
+        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { t += "<tr>" + cells(lines[i]).map((h) => "<td>" + inline(h) + "</td>").join("") + "</tr>"; i++; }
+        i--; out.push(t + "</tbody></table>"); continue;
+      }
+      let m;
+      if ((m = /^\s*#{1,6}\s+(.*)$/.exec(ln))) { flush(); out.push("<h4>" + inline(m[1]) + "</h4>"); }
+      else if ((m = /^\s*[-*•]\s+(.*)$/.exec(ln))) { if (para.length) { const l = list; list = null; flush(); list = l; } if (list !== "ul") { if (list) out.push("</" + list + ">"); out.push("<ul>"); list = "ul"; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(ln))) { if (para.length) { const l = list; list = null; flush(); list = l; } if (list !== "ol") { if (list) out.push("</" + list + ">"); out.push("<ol>"); list = "ol"; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else if (!ln.trim()) flush();
+      else { if (list) { out.push("</" + list + ">"); list = null; } para.push(ln); }
+    }
+    flush();
+    return out.join("");
+  }
+
+  const SUGGEST = ["Summarise today's signals across the three crops for a trader.", "Is maize cheap or expensive against its climate fair value, and what could close the gap?",
+    "Build a cocoa trade idea from today's data: direction, entry logic, invalidation and risks.", "What would make the maize index wrong this month?", "How should I size a weather trade given this level of uncertainty?"];
+  const ERR = { not_granted: "Access to Claude was not allowed for this page. Reload the page to be asked again.", sampling_disabled: "Claude is not available for this account.", rate_limited: "Too many questions at once, or your Claude usage limit is reached. Try again later.",
+    session_expired: "Your Claude session has expired. Sign in again, then retry.", refused: "Claude declined this request. Try rephrasing it.", empty_completion: "No answer came back. Try a shorter question.", prompt_too_large: "The conversation is too long. Clear it and ask again.",
+    capability_disabled: "Claude is not available in this view.", not_declared: "This page is not allowed to use Claude.", capability_removed: "Claude is not available in this view." };
+
+  function askRefresh() {
+    const log = document.getElementById("chat-log");
+    if (!log) return;
+    const C = S.chat;
+    let h = C.turns.length ? "" : '<div class="msg bot"><p>Ask anything about today\'s maize, coffee and cocoa signals: what they mean for prices, trade ideas, scenarios or risks. Claude reads the HarvestRadar data listed under What Claude sees and your conversation, nothing else.</p></div>';
+    C.turns.forEach((t, i) => { h += t.role === "user" ? '<div class="msg user">' + esc(t.content) + "</div>" : '<div class="msg bot" data-i="' + i + '">' + md(t.content) + (t.meta ? '<div class="meta">' + esc(t.meta) + "</div>" : "") + "</div>"; });
+    if (C.busy && (!C.turns.length || C.turns[C.turns.length - 1].role === "user")) h += '<div class="msg bot" id="live"><span class="thinking">Thinking...</span></div>';
+    if (C.error) h += '<div class="warnbox">' + esc(C.error) + "</div>";
+    log.innerHTML = h;
+    log.scrollTop = log.scrollHeight;
+    const st = document.getElementById("ask-state"), ok = ASK.state === "ready";
+    if (st) st.innerHTML = ok ? tag("Connected to Claude", "good") : ASK.state === "connecting" ? tag("Connecting", "neutral") : tag("Not available here", "bad");
+    const off = document.getElementById("ask-off");
+    if (off) off.hidden = ok || ASK.state === "connecting";
+    ["ask-send", "ask-input"].forEach((id) => { const e = document.getElementById(id); if (e) e.disabled = !ok || C.busy; });
+    const stop = document.getElementById("ask-stop"); if (stop) stop.hidden = !C.busy;
+    const sug = document.getElementById("ask-suggest"); if (sug) sug.hidden = C.turns.length > 0;
+    document.querySelectorAll("[data-ask]").forEach((b) => { b.disabled = !ok || C.busy; });
+  }
+
+  async function askSend(text) {
+    const C = S.chat;
+    text = (text || "").trim();
+    if (!text || C.busy || !ASK.fn) return;
+    C.error = ""; C.turns.push({ role: "user", content: text }); C.busy = true;
+    const inp = document.getElementById("ask-input"); if (inp) inp.value = "";
+    askRefresh();
+    const history = C.turns.slice(-12).map((t) => ({ role: t.role, content: t.content }));
+    while (history.length && history[0].role !== "user") history.shift();
+    const input = [{ role: "user", content: RULES + claudeContext() }].concat(history);
+    const ctl = new AbortController(); C.ctl = ctl;
+    let slot = null;
+    try {
+      const res = await ASK.fn(input, { cache: false, signal: ctl.signal, onText: ({ text: t }) => {
+        if (!slot) { slot = { role: "assistant", content: "" }; C.turns.push(slot); }
+        slot.content = t;
+        const live = document.querySelector("#chat-log .msg.bot:last-of-type"), log = document.getElementById("chat-log");
+        if (live && live.dataset.i == C.turns.length - 1) { live.innerHTML = md(t); if (log) log.scrollTop = log.scrollHeight; } else askRefresh();
+      } });
+      if (!slot) { slot = { role: "assistant", content: res.text }; C.turns.push(slot); }
+      slot.content = res.text;
+      if (res.truncated) slot.meta = "Answer cut short. Ask for less at a time.";
+    } catch (e) {
+      const code = e && e.code;
+      if (slot && e && e.text) { slot.content = e.text; slot.meta = code === "cancelled" ? "Stopped." : "Interrupted."; }
+      else if (slot && (!e || !e.text)) { C.turns.pop(); }
+      if (code !== "cancelled") C.error = ERR[code] || "Connection problem. Try again.";
+      if (code === "not_granted" || code === "sampling_disabled" || code === "not_declared" || code === "capability_disabled" || code === "capability_removed") ASK.state = "absent";
+    } finally { C.busy = false; C.ctl = null; askRefresh(); }
+  }
+
+  function viewAsk() {
+    connectClaude();
+    const seen = CROPS.map((k) => { const c = D.crops[k], f = c.fair; return '<div style="display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)">' + glyph(c.glyph, 22) + '<div style="min-width:0"><div style="font-weight:600">' + esc(c.label) + '</div><div class="mono" style="font-size:14px;color:var(--frost-2);line-height:1.6">Risk index ' + sg(c.latest.z) + ", supply " + pct(c.latest.dp, 2) + "<br>Price " + fmtPrice(k, c.lastPrice.close) + (f ? ", fair value " + fmtPrice(k, f.now.fair) : "") + "</div></div></div>"; }).join("");
+    const html = '<div class="main c65"><div class="col"><section class="glass" style="padding:18px 20px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><span style="font-family:var(--display);font-weight:700;font-size:24px">Ask Claude about today\'s signals</span><span id="ask-state"></span></div>' +
+      '<div class="warnbox" id="ask-off" hidden style="margin-bottom:12px">The assistant works when this page is opened inside Claude (claude.ai or the Claude app) while you are signed in. It then uses your own Claude plan: no API key and no extra cost.</div>' +
+      '<div class="chat-log" id="chat-log" aria-live="polite"></div>' +
+      '<div class="chips" id="ask-suggest" style="margin-top:10px">' + SUGGEST.map((q) => '<button class="chip" data-ask="' + esc(q) + '">' + esc(q) + "</button>").join("") + "</div>" +
+      '<form class="composer" id="ask-form"><textarea id="ask-input" rows="2" placeholder="Ask about maize, coffee or cocoa..." aria-label="Your question"></textarea><button class="btn primary" id="ask-send" type="submit">Send</button><button class="btn" id="ask-stop" type="button" hidden>Stop</button></form>' +
+      '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px"><span class="source" style="margin:0">Claude can be wrong. Research and education, not investment advice.</span><button class="btn" id="ask-clear" type="button" style="min-height:36px;padding:0 14px;font-size:14px">Clear conversation</button></div></section></div>' +
+      '<div class="col">' + panel("WHAT CLAUDE SEES", '<div style="font-size:15px;color:var(--frost-2);line-height:1.55;margin-bottom:6px">With each question, the page sends Claude this data snapshot (' + dLong(D.asOf) + ") and your conversation:</div>" + seen +
+        '<div style="font-size:14px;color:var(--muted);line-height:1.55;border-top:1px solid var(--line);padding-top:10px">Plus the countries and weather factors behind each reading, price changes, the measured price reaction, today\'s daily notes, El Ni&ntilde;o and the track record. No live news, stocks or positioning.</div>') +
+      panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">Free to use inside Claude: answers run on your own Claude plan, so the page needs no API key. The first question asks you to allow it. The page keeps the conversation only while it is open.</div>') + "</div></div>";
+    return { html: html, after: () => {
+      askRefresh();
+      document.getElementById("ask-form").addEventListener("submit", (e) => { e.preventDefault(); askSend(document.getElementById("ask-input").value); });
+      document.getElementById("ask-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(e.target.value); } });
+      document.getElementById("ask-stop").addEventListener("click", () => { if (S.chat.ctl) S.chat.ctl.abort(); });
+      document.getElementById("ask-clear").addEventListener("click", () => { if (S.chat.ctl) S.chat.ctl.abort(); S.chat.turns = []; S.chat.error = ""; askRefresh(); });
+    } };
+  }
+
+  const RENDER = { stress: viewStress, commodity: viewCommodity, fair: viewFair, replay: viewReplay, note: viewNote, method: viewMethod, ask: viewAsk };
   function current() { const v = location.hash.slice(1); return RENDER[v] ? v : "stress"; }
   function render() {
     const v = current();
@@ -280,19 +590,37 @@
     const out = RENDER[v]();
     document.getElementById("view").innerHTML = out.html;
     if (out.after) out.after();
+    if (window.innerWidth < 700) { const on = document.querySelector(".tab.on"), tb = document.getElementById("tabs"); if (on && tb) tb.scrollLeft = on.offsetLeft - (tb.clientWidth - on.offsetWidth) / 2; }
   }
 
   document.getElementById("brand").innerHTML = D.marks.small + "<span>Harvest<b>Radar</b></span>";
   document.getElementById("status").textContent = "DATA AS OF " + D.weekLabel;
   document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-crop],[data-shap],[data-episode],[data-note],#email-btn,[data-crop-link]");
+    const t = e.target.closest("[data-crop],[data-shap],[data-episode],[data-note],#email-btn,[data-crop-link],[data-range],[data-scen],#calc-reset,[data-ask]");
     if (!t) return;
+    if (t.dataset.ask) { askSend(t.dataset.ask); return; }
+    if (t.dataset.range) { S.range = t.dataset.range; render(); return; }
+    if (t.dataset.scen) {
+      const f = D.crops[S.crop].fair, st = S.calc[S.crop] || (S.calc[S.crop] = calcDefaults(S.crop));
+      st.gap = t.dataset.scen === "today" ? f.now.supply_gap_pct : f.mu - +t.dataset.scen * f.sigma;
+      const g = document.getElementById("i-gap"); if (g) g.value = st.gap;
+      calcUpdate(); return;
+    }
+    if (t.id === "calc-reset") { S.calc[S.crop] = calcDefaults(S.crop); render(); return; }
     if (t.dataset.crop) { S.crop = t.dataset.crop; render(); }
     else if (t.dataset.shap) { S.shap[S.crop] = t.dataset.shap; render(); }
     else if (t.dataset.episode) { S.episode = t.dataset.episode; render(); }
     else if (t.dataset.note) { S.note = t.dataset.note; render(); }
     else if (t.id === "email-btn") { S.email = !S.email; render(); }
     else if (t.dataset.cropLink) { S.crop = t.dataset.cropLink; }
+  });
+  document.addEventListener("input", (e) => {
+    const id = e.target.id, st = S.calc[S.crop];
+    if (!st || !["i-gap", "i-r", "i-anchor"].includes(id)) return;
+    const v = parseFloat(e.target.value);
+    if (!isFinite(v)) return;
+    if (id === "i-gap") st.gap = v; else if (id === "i-r") st.r = v; else if (v > 0) st.anchor = v;
+    calcUpdate();
   });
   window.addEventListener("hashchange", render);
   let rw = window.innerWidth;

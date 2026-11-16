@@ -17,21 +17,27 @@ CHIPS = ["WEATHER WEIGHTED BY WHERE CROPS GROW", "TESTING WITHOUT PEEKING AT THE
 
 def _card(num: str, title: str, big: str, sub: str, extra: str = "", active: bool = False) -> str:
     border = "border-color:rgba(255,181,71,.75);" if active else ""
-    return (f'<div class="hr-glass" style="height:304px;padding:20px 24px;{border}">'
+    return (f'<div class="hr-glass" style="min-height:330px;padding:20px 24px;{border}">'
             f'<div class="hr-mono" style="font-size:13px;color:{T["signal"] if active else T["muted"]}">STEP {num}</div>'
             f'<div style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:28px;margin-top:6px">{title}</div>'
             f'<div class="hr-mono" style="font-size:40px;color:{T["frost"]};margin-top:8px">{big}</div>'
             f'<div style="font-size:16px;color:{T["frost_2"]}">{sub}</div>{extra}</div>')
 
 
-def _ledger_row(ok: bool, text: str, figure: str, verdict: str) -> str:
-    icon = f'<span style="color:{T["frost"]};font-size:22px">&#10003;</span>' if ok else \
-        f'<span style="color:{T["muted"]};font-size:22px">&#10005;</span>'
-    return (f'<div style="display:grid;grid-template-columns:40px 1fr 360px 150px;align-items:center;'
-            f'padding:16px 4px;border-bottom:1px solid {T["line"]}">{icon}'
-            f'<span style="font-size:22px;color:{T["frost"] if ok else T["frost_2"]}">{H.escape(text)}</span>'
-            f'<span class="hr-mono" style="font-size:22px;text-align:right;color:{T["frost_2"]}">{H.escape(figure)}</span>'
-            f'<span class="hr-caps" style="text-align:right;color:{T["frost_2"]}">{verdict}</span></div>')
+def _ledger_row(text: str, figure: str, verdict: str, tone: str) -> str:
+    return (f'<tr><td style="padding:14px 10px;border-top:1px solid {T["line"]};font-size:17px;line-height:1.45;'
+            f'color:{T["frost"]}">{H.escape(text)}</td>'
+            f'<td class="hr-mono" style="padding:14px 10px;border-top:1px solid {T["line"]};font-size:15px;'
+            f'color:{T["frost_2"]}">{H.escape(figure)}</td>'
+            f'<td style="padding:14px 10px 6px;border-top:1px solid {T["line"]};text-align:right;white-space:nowrap">'
+            f'{C.tag(verdict, tone)}</td></tr>')
+
+
+def _ledger(rows: list[str]) -> str:
+    th = f'font-family:JetBrains Mono,monospace;font-size:13px;letter-spacing:.12em;color:{T["muted"]};font-weight:400;padding:0 10px 10px'
+    return (f'<div class="hr-glass" style="padding:18px 20px"><table class="hr-plain" style="width:100%;border-collapse:collapse">'
+            f'<thead><tr><th style="{th};text-align:left">TEST</th><th style="{th};text-align:left">RESULT</th>'
+            f'<th style="{th};text-align:right">VERDICT</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>')
 
 
 def render() -> None:
@@ -93,31 +99,36 @@ def render() -> None:
         rows = []
         if rm is not None:
             t0, t1 = ev.get("test_seasons", ["", ""])
-            def word(x):
-                return "CLEAR GAIN" if x <= -10 else ("SMALL GAIN" if x < 0 else "NO GAIN")
-            rows.append(_ledger_row(rm < 0, f"Forecast error vs a simple trend, harvests {t0} to {t1}",
-                                    f"{rm:+.1f}%", word(rm)))
+
+            def gain(x):
+                return ("Clear gain", "good") if x <= -10 else (("Small gain", "good") if x < 0 else ("No gain", "bad"))
+
+            def err(x):
+                return f"{abs(x):.1f}% {'smaller' if x < 0 else 'larger'} error than the trend"
+
+            rows.append(_ledger_row(f"Harvest forecasts vs a simple trend, {t0} to {t1}, weighted by world share",
+                                    err(rm), *gain(rm)))
             if rm_unw is not None:
-                rows.append(_ledger_row(rm_unw < 0, "Same, every country counted equally", f"{rm_unw:+.1f}%",
-                                        word(rm_unw)))
+                rows.append(_ledger_row("Same, every country counted equally", err(rm_unw), *gain(rm_unw)))
         for e in events.values():
             if e.get("first_above_2"):
                 d = pd.Timestamp(e["first_above_2"])
-                fig = f"above +2 on {d.day} {d:%B %Y}" + (", after the price peak" if e["verdict"] == "late" else "")
+                fig = f"Above +2 on {d.day} {d:%B %Y}, " + ("after the price peak" if e["verdict"] == "late"
+                                                              else "before the price peak")
             else:
-                fig = f"highest {e['peak_risk_z']:+.2f}, never above +2"
-            rows.append(_ledger_row(e["verdict"] == "caught", e["label"], fig,
-                                    {"caught": "CAUGHT", "late": "TOO LATE", "missed": "MISSED"}[e["verdict"]]))
+                fig = f"Highest {e['peak_risk_z']:+.2f}, never above +2"
+            rows.append(_ledger_row(e["label"], fig, *{"caught": ("Caught", "good"), "late": ("Too late", "warn"),
+                                                       "missed": ("Missed", "bad")}[e["verdict"]]))
         if bt:
-            bp, bc = bt.get("best_rule_p"), bt.get("best_rule_p_corrected")
-            rows.append(_ledger_row(bc is not None and bc < 0.05, "Trading on the index, after costs",
-                                    f"{100 * bc:.0f}% chance it is luck" if bc is not None else "n/a",
-                                    "REAL GAIN" if bc is not None and bc < 0.05 else "NO RELIABLE GAIN"))
-            _ = bp
-        st.markdown("".join(rows) + '<div class="hr-source">HarvestRadar is a radar, not a crystal ball. "Caught" '
+            bc = bt.get("best_rule_p_corrected")
+            sig = bc is not None and bc < 0.05
+            rows.append(_ledger_row("Trading on the index, after costs",
+                                    f"{100 * bc:.0f}% chance the gain is luck" if bc is not None else "n/a",
+                                    "Significant" if sig else "Not significant", "good" if sig else "neutral"))
+        st.markdown(_ledger(rows) + '<div class="hr-source">HarvestRadar is a radar, not a crystal ball. "Caught" '
                     'means the index went above +2 before the futures price peaked.</div>', unsafe_allow_html=True)
     with right:
-        st.markdown('<h2 style="font-size:30px;margin:18px 0 6px 0">Forecast errors at the end of each season</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 style="font-size:30px;margin:18px 0 6px 0">Forecast errors by crop</h2>', unsafe_allow_html=True)
         trs = []
         for k, block in ev.get("by_commodity", {}).items():
             e = block.get("end", {})
@@ -130,7 +141,7 @@ def render() -> None:
                        f'<td class="hr-mono" style="text-align:right">{100 * tt["rmse"]:.1f}</td>'
                        f'<td class="hr-mono" style="text-align:right">{(mm.get("spearman") or 0):+.2f}</td>'
                        f'<td class="hr-mono" style="text-align:right">{100 * (mm.get("sign_accuracy") or 0):.0f}%</td></tr>')
-        st.markdown(f'<div class="hr-glass"><table style="width:100%;border-collapse:collapse;font-size:16px;'
+        st.markdown(f'<div class="hr-glass"><table class="hr-plain" style="width:100%;border-collapse:collapse;font-size:16px;'
                     f'color:{T["frost_2"]}"><thead><tr class="hr-caps"><th style="text-align:left;padding:6px">CROP</th>'
                     f'<th style="text-align:right">HARVESTS</th><th style="text-align:right">MODEL ERROR</th>'
                     f'<th style="text-align:right">TREND ERROR</th><th style="text-align:right">RANK MATCH</th>'

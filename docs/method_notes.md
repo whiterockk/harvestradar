@@ -65,6 +65,40 @@ Results: maize -3.1 % of price per 1 % of supply (p = 0.01, R2 0.15), cocoa -1.9
 arabica no reliable link (p = 0.90), so the app shows no estimate for arabica. It is a rough guide, not a price
 forecast.
 
+## 6b. Climate fair value and the pricing tool
+
+`signal/fair_value.py`, re-run by `harvestradar index price` (and by `harvestradar all`) on every data update.
+For each crop and trading day t: anchor A = average close of the last 252 trading days; G = expected world
+supply vs normal, latest index value known on day t (weekly index before 1 August 2025, daily after);
+fair value F = A x exp(b x G / 100) with b the price reaction of section 6; 80 % range with b +/- 1.28 se.
+The index's own 80 % range of world supply is not used for the band: it sums country ranges (a worst case)
+and would give a range of +/- 20 % that says nothing. Values before 2025 are in-sample for b.
+
+Today (2026-11-13): maize fair value 466.31 (range 459.57 to 473.15),
+close 445.5 (-4.5 %); cocoa 4,944, close 5,119
+(+3.5 %); arabica 316.93 but no reliable reaction (p = 0.90), so the fair value is
+the 12-month average in practice and the page says so.
+
+What it is: the climate component of a fair value. What it is not: a full valuation model. Demand, stocks,
+the dollar, fund positioning and the other origins move prices too; the distance between price and fair value
+is what they explain.
+
+## 6c. Why the index and the price do not move together
+
+Correlations, weekly, 2006 to 2026 (1089 weeks), computed by `comovement()` and shown in the app:
+
+| | Weekly changes | Weekly changes, critical windows | Index vs price change over next 13 weeks |
+|---|---|---|---|
+| Maize | +0.08 | +0.15 | -0.16 |
+| Arabica | -0.01 | -0.01 | +0.11 |
+| Cocoa | -0.01 | +0.00 | +0.03 |
+
+The index measures the expected harvest against normal for the time of year; it is not a price model. The link
+is weak and shows up mainly in the critical windows of maize. The negative 13-week figure for maize says that
+by the time the index is high the market has usually moved already. This is why the app turns the supply gap
+into a fair value instead of drawing the index as a price signal, and why the trading rule of section 7 is not
+significant.
+
 ## 7. Trading rule
 
 Pre-registered rule (SPEC 9.1), 5 bps per trade, 1,000 permutations. Three commodities are tested, so the

@@ -133,13 +133,16 @@ iframe {{ color-scheme: dark; }}
   border:1px solid rgba(255,181,71,.55); border-radius:7px; padding:1px 7px; white-space:nowrap;
   font-variant-numeric: tabular-nums; }}
 
+table.hr-plain, table.hr-plain tr, table.hr-plain th, table.hr-plain td {{ border-left: 0 !important; border-right: 0 !important;
+  border-bottom: 0 !important; background: transparent !important; }}
+table.hr-plain thead th {{ border-top: 0 !important; }}
 [class*="st-key-glass"] {{ {GLASS} padding: 14px 18px 14px 18px; gap: 6px; }}
 
 /* invisible click targets laid over HTML cards */
 [class*="st-key-pick_"] {{ margin-top: -104px; height: 88px; margin-bottom: 10px; position: relative; z-index: 3; }}
 [class*="st-key-pick_"] button {{ width:100%; height:88px; opacity:0; cursor:pointer; }}
-[class*="st-key-pickn_"] {{ margin-top: -120px; height: 104px; margin-bottom: 0; position: relative; z-index: 3; }}
-[class*="st-key-pickn_"] button {{ width:100%; height:104px; opacity:0; cursor:pointer; }}
+[class*="st-key-pickn_"] {{ margin-top: -80px; height: 64px; margin-bottom: 0; position: relative; z-index: 3; }}
+[class*="st-key-pickn_"] button {{ width:100%; height:64px; opacity:0; cursor:pointer; }}
 .st-key-glass_note {{ gap: 14px !important; padding: 20px 24px !important; }}
 [class*="st-key-pick"] button:focus-visible {{ opacity:1; background:transparent !important;
   border:2px solid {t['signal']} !important; color:transparent !important; }}

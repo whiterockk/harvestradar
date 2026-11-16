@@ -447,5 +447,78 @@
         "2024-12-31"
       ]
     }
+  },
+  "fair_value": {
+    "cocoa": {
+      "date": "2026-11-13",
+      "close": 5119.0,
+      "anchor": 4780.78,
+      "supply_gap_pct": -1.77,
+      "premium_pct": 3.41,
+      "fair": 4943.78,
+      "fair_lo": 4849.16,
+      "fair_hi": 5040.24,
+      "gap_to_fair_pct": 3.54,
+      "slope_pct_per_pct": -1.89,
+      "se": 0.85,
+      "reliable": true,
+      "anchor_days": 252
+    },
+    "coffee": {
+      "date": "2026-11-13",
+      "close": 278.65,
+      "anchor": 317.04,
+      "supply_gap_pct": 0.39,
+      "premium_pct": -0.04,
+      "fair": 316.93,
+      "fair_lo": 315.75,
+      "fair_hi": 318.11,
+      "gap_to_fair_pct": -12.08,
+      "slope_pct_per_pct": -0.09,
+      "se": 0.74,
+      "reliable": false,
+      "anchor_days": 252
+    },
+    "maize": {
+      "date": "2026-11-13",
+      "close": 445.5,
+      "anchor": 452.87,
+      "supply_gap_pct": -0.95,
+      "premium_pct": 2.97,
+      "fair": 466.31,
+      "fair_lo": 459.57,
+      "fair_hi": 473.15,
+      "gap_to_fair_pct": -4.46,
+      "slope_pct_per_pct": -3.09,
+      "se": 1.2,
+      "reliable": true,
+      "anchor_days": 252
+    }
+  },
+  "comovement": {
+    "maize": {
+      "from": "2006-01-01",
+      "weeks": 1089,
+      "weeks_in_windows": 186,
+      "weekly_changes": 0.08,
+      "weekly_changes_in_windows": 0.15,
+      "index_vs_next_13_weeks": -0.16
+    },
+    "coffee": {
+      "from": "2006-01-01",
+      "weeks": 1089,
+      "weeks_in_windows": 823,
+      "weekly_changes": -0.01,
+      "weekly_changes_in_windows": -0.01,
+      "index_vs_next_13_weeks": 0.11
+    },
+    "cocoa": {
+      "from": "2006-01-01",
+      "weeks": 1089,
+      "weeks_in_windows": 725,
+      "weekly_changes": -0.01,
+      "weekly_changes_in_windows": 0.0,
+      "index_vs_next_13_weeks": 0.03
+    }
   }
 }
