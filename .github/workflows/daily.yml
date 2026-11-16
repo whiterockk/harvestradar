@@ -1,0 +1,108 @@
+# Daily update of HarvestRadar, every working day.
+# New data only (NASA POWER weather, futures closes, El Nino), then index, climate fair value, daily notes,
+# and the web edition published on GitHub Pages. The heavy data (weather since 1981, models) lives in the
+# Actions cache; if the cache is empty, it is restored from the git ref refs/data/state (a snapshot that
+# plain clones do not download) and the missing days are fetched again.
+name: Daily update
+
+on:
+  # The schedule is switched on once the data snapshot (refs/data/state) is on GitHub:
+  # schedule:
+  #   - cron: "17 5 * * 1-5"   # 05:17 UTC (06:17 or 07:17 in Paris), Monday to Friday
+  workflow_dispatch:
+    inputs:
+      deterministic_notes:
+        description: "Write the notes from the fixed template (skip the AI model)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: daily-update
+  cancel-in-progress: false
+
+env:
+  STATE_PATHS: data/raw/power data/processed models_store
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.lock
+            requirements-llm.lock
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock -r requirements-llm.lock
+          pip install -e . --no-deps
+          pip install pytest
+
+      - name: Restore data state (cache)
+        id: state
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/raw/power
+            data/processed
+            models_store
+          key: state-v1-${{ github.run_id }}
+          restore-keys: state-v1-
+
+      - name: Restore data state (git ref refs/data/state, if the cache is empty)
+        if: steps.state.outputs.cache-matched-key == ''
+        run: |
+          git fetch --depth=1 origin +refs/data/state:refs/data/state
+          git checkout refs/data/state -- $STATE_PATHS
+          git reset -q
+
+      - name: Restore the AI model (cache)
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-qwen2.5-1.5b-instruct-v1
+
+      - name: Update
+        run: harvestradar update ${{ inputs.deterministic_notes && '--deterministic-notes' || '' }}
+
+      - name: Tests on the new snapshot
+        run: pytest -q
+
+      - name: Save data state (cache)
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/raw/power
+            data/processed
+            models_store
+          key: state-v1-${{ github.run_id }}
+
+      - name: Build the web edition
+        run: |
+          python scripts/build_web.py
+          mkdir -p _site
+          cp dist/web/index.html _site/index.html
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

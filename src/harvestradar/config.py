@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -93,7 +94,9 @@ class Settings(BaseModel):
 
     @property
     def as_of_end(self) -> dt.date:
-        return dt.date.fromisoformat(str(self.dates["as_of_end"]))
+        """Last day of data. HARVESTRADAR_AS_OF_END (YYYY-MM-DD) overrides settings.yaml: the daily job sets it."""
+        env = os.environ.get("HARVESTRADAR_AS_OF_END")
+        return dt.date.fromisoformat(env or str(self.dates["as_of_end"]))
 
     @property
     def index_start(self) -> dt.date:

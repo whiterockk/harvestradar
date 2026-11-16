@@ -652,7 +652,7 @@
       "source": "NOAA CPC ONI",
       "url": "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt",
       "licence": "Public domain (NOAA)",
-      "collected_at": "2026-11-15T11:47:08Z",
+      "collected_at": "2026-11-16T09:14:38Z",
       "sha256": "118c563331335c8649cdc2677e6be7ae89d1259d901345fcddbc2857af280f7f",
       "bytes": 23050
     },
@@ -660,7 +660,7 @@
       "source": "Yahoo Finance via yfinance (CC=F)",
       "url": "https://finance.yahoo.com/quote/CC=F",
       "licence": "Yahoo terms: personal or research use",
-      "collected_at": "2026-11-15T11:47:10Z",
+      "collected_at": "2026-11-16T09:14:41Z",
       "sha256": "014705ddc0b30711c8feb4e019760556418f93f1dce4339865772ea9550b3ca2",
       "bytes": 336903
     },
@@ -668,7 +668,7 @@
       "source": "Yahoo Finance via yfinance (KC=F)",
       "url": "https://finance.yahoo.com/quote/KC=F",
       "licence": "Yahoo terms: personal or research use",
-      "collected_at": "2026-11-15T11:47:10Z",
+      "collected_at": "2026-11-16T09:14:40Z",
       "sha256": "803f6518bc98c328cc2089f3239a08d533f2d2b9beaf6e21549369b0f2a0bf73",
       "bytes": 397174
     },
@@ -676,7 +676,7 @@
       "source": "Yahoo Finance via yfinance (ZC=F)",
       "url": "https://finance.yahoo.com/quote/ZC=F",
       "licence": "Yahoo terms: personal or research use",
-      "collected_at": "2026-11-15T11:47:09Z",
+      "collected_at": "2026-11-16T09:14:40Z",
       "sha256": "9edede998a19c13c09bf0f5684b034478f9c81fd7637de08852b0a43f735ed6d",
       "bytes": 324788
     },
@@ -710,9 +710,9 @@
       "source": "NASA POWER daily point API (MERRA-2)",
       "url": "https://power.larc.nasa.gov/api/temporal/daily/point",
       "licence": "NASA open data, free of charge",
-      "collected_at": "2026-11-15T12:50:14Z",
+      "collected_at": "2026-11-16T09:14:37Z",
       "files": 2478,
-      "note": "1981-01-01 to 2026-11-13, parameters T2M_MAX,T2M_MIN,PRECTOTCORR,GWETROOT,GWETTOP"
+      "note": "incremental update to 2026-11-13, parameters T2M_MAX,T2M_MIN,PRECTOTCORR,GWETROOT,GWETTOP"
     }
   }
 }

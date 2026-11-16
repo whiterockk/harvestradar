@@ -1,4 +1,4 @@
-"""Weekly note page: inbox of notes, the selected note with figure pills (from its own payload), the three
+"""Daily note page: inbox of notes, the selected note with figure pills (from its own payload), the three
 checks, the data given to the model, and the email export."""
 
 from __future__ import annotations

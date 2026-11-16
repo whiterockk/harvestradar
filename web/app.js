@@ -174,7 +174,7 @@
       '<section class="glass" style="padding:16px 18px"><div style="display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;margin-bottom:6px"><span style="font-family:var(--display);font-weight:700;font-size:20px">Risk index and futures price, last 64 weeks</span><span style="display:inline-flex;align-items:center;gap:8px;color:var(--frost-2);font-size:14px"><i style="width:22px;height:3px;background:#FFB547;display:inline-block;border-radius:2px"></i>Risk index, left scale</span><span style="display:inline-flex;align-items:center;gap:8px;color:var(--frost-2);font-size:14px"><i style="width:22px;height:2px;background:#EAF0F5;display:inline-block;border-radius:2px"></i>' + esc(c.priceName) + ', right scale</span></div>' + indexChart(k) +
       '<div style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px">How to read it: the orange line rises when the model expects less ' + esc(c.label.toLowerCase()) + " than usual for this time of year. The shaded band is the " + esc(c.mainCountry) + " critical window, when weather matters most for the harvest. The white line is the price, for comparison.</div></section>" +
       comovePanel(k, true) + "</div>" +
-      '<div class="col">' + priceCard(k) + panel("WHICH COUNTRIES DRIVE TODAY'S READING", barRows(rows, "", 240), "In points of world supply: each country's share of world output times its expected harvest gap. Amber raises the risk, blue lowers it.") +
+      '<div class="col">' + priceCard(k) + askPanel(k) + panel("WHICH COUNTRIES DRIVE TODAY'S READING", barRows(rows, "", 240), "In points of world supply: each country's share of world output times its expected harvest gap. Amber raises the risk, blue lowers it.") +
       '<div class="chips" role="group" aria-label="Country">' + countries.map((iso) => '<button class="chip' + (iso === sel ? " on" : "") + '" data-shap="' + iso + '">' + esc(name(iso)) + "</button>").join("") + "</div>" +
       panel("WHICH WEATHER DRIVES THE FORECAST <span style='float:right;color:var(--signal)'>" + esc(name(sel).toUpperCase()) + "</span>", barRows(shapRows, "", 220), "In points of " + c.target + " vs normal. Contribution of each weather factor to the forecast for the " + (sh ? sh.season : "") + " harvest (SHAP values).") +
       "</div></div>";
@@ -300,7 +300,7 @@
       '<label for="i-gap"><span>Expected world supply vs normal</span><output id="o-gap"></output></label><input type="range" id="i-gap" min="' + gmin + '" max="' + gmax + '" step="0.05" value="' + st.gap + '"><div class="hint" id="o-z"></div>' +
       '<label for="i-r"><span>Price reaction to 1% of world supply missing</span><output id="o-r"></output></label><input type="range" id="i-r" min="0" max="8" step="0.05" value="' + st.r + '"><div class="hint">Measured ' + fx.years[0] + "-" + fx.years[1] + ": " + (-fx.slope_pct_per_pct).toFixed(2) + "% (uncertainty " + fx.se.toFixed(2) + ")</div>" +
       '<label for="i-anchor"><span>Anchor price, ' + esc(D.crops[k].priceUnit) + '</span></label><input type="number" id="i-anchor" step="any" value="' + (+st.anchor.toFixed(2)) + '"><div class="hint">Default: average close of the last 12 months (' + fmtPrice(k, f.now.anchor) + ")</div>" +
-      '<div class="result"><div class="caps">FAIR VALUE IN THIS SCENARIO</div><div class="mono glow" id="o-fair" style="font-size:44px;color:var(--signal);margin-top:6px"></div><div id="o-range" style="font-size:15px;color:var(--frost-2);line-height:1.6"></div><div id="o-vs" style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px"></div></div>' +
+      '<div class="result"><div class="caps">FAIR VALUE IN THIS SCENARIO</div><div class="mono glow" id="o-fair" style="font-size:44px;color:var(--signal);margin-top:6px"></div><div id="o-range" style="font-size:15px;color:var(--frost-2);line-height:1.6"></div><div id="o-vs" style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px"></div><button class="btn sm" style="margin-top:12px" data-askopen="Explain the scenario I set in the pricing tool and what would have to happen for it to play out.">Ask Claude about this scenario</button></div>' +
       '<div class="source">Fair value = anchor &times; exp(reaction &times; supply missing / 100). The 80% range comes from the uncertainty of the measured reaction. Research tool, not investment advice.</div></section>';
   }
   const snap = (st) => ({ gap: st.gap, r: st.r, anchor: st.anchor, scen: st.scen });
@@ -450,8 +450,10 @@
     if (ASK.fn !== undefined) return;
     ASK.fn = null;
     if (!window.claude || typeof window.claude.use !== "function") { ASK.state = "absent"; return; }
-    window.claude.use("sample").then((fn) => { ASK.fn = fn; ASK.state = fn ? "ready" : "absent"; if (current() === "ask") askRefresh(); })
-      .catch(() => { ASK.state = "absent"; if (current() === "ask") askRefresh(); });
+    window.claude.use("sample").then((fn) => {
+      ASK.fn = fn; ASK.state = fn ? "ready" : "absent"; askRefresh();
+      if (fn && S.queued) { const q = S.queued; S.queued = null; askSend(q); }
+    }).catch(() => { ASK.state = "absent"; S.queued = null; askRefresh(); });
   }
   const NOTE_TEXT = (n) => n.template.replace(/\{([A-Z][A-Z0-9_]*)\}/g, (all, k) => (n.slots[k] ? n.slots[k].text : all));
   function claudeContext() {
@@ -516,42 +518,96 @@
     return out.join("");
   }
 
-  const SUGGEST = ["Summarise today's signals across the three crops for a trader.", "Is maize cheap or expensive against its climate fair value, and what could close the gap?",
-    "Build a cocoa trade idea from today's data: direction, entry logic, invalidation and risks.", "What would make the maize index wrong this month?", "How should I size a weather trade given this level of uncertainty?"];
+  /* What the viewer is looking at: added to every question, so Claude answers about this page. */
+  function viewContext() {
+    const v = current(), k = S.crop, c = D.crops[k], L = ["## What the user is looking at now", "- Page: " + VIEWS[v] + (v === "ask" || v === "method" ? "" : ", crop: " + c.label) + "."];
+    if (v === "commodity") {
+      const cs = c.latest.contributors.map((x) => x.country).filter((iso) => c.shap[iso]), sel = S.shap[k] && cs.includes(S.shap[k]) ? S.shap[k] : cs[0], sh = c.shap[sel];
+      L.push("- On screen: the " + c.label + " risk index (" + sg(c.latest.z) + "), expected world supply (" + pct(c.latest.dp, 2) + "), the last close (" + fmtPrice(k, c.lastPrice.close) + "), the index against the price over 64 weeks, what it means for the price, the countries behind the reading and the weather factors" + (sh ? " for " + ((c.latest.contributors.find((x) => x.country === sel) || {}).name || sel) + " (" + sh.rows.map((r) => r[0] + " " + sg(r[1])).join(", ") + ")" : "") + ".");
+    } else if (v === "fair" && c.fair) {
+      const st = S.calc[k] || calcDefaults(k), r = calcResult(k, st);
+      L.push("- On screen: " + c.label + " futures price vs climate fair value (" + (S.range === "long" ? "since 2006" : "last 2 years") + ").");
+      L.push("- Pricing tool scenario set by the user: " + (st.scen === "today" ? "today's values" : st.scen != null ? "risk index " + sg(+st.scen, 0) : "custom") + "; expected world supply " + pct(st.gap, 2) + " (same as a risk index of " + sg(r.z) + "), price reaction " + st.r.toFixed(2) + "% per 1% missing, anchor " + fmtPrice(k, st.anchor) + " -> fair value " + fmtPrice(k, r.fair) + " (80% range " + fmtPrice(k, r.lo) + " to " + fmtPrice(k, r.hi) + "); last close is " + gapWords(r.vs) + ".");
+    } else if (v === "stress") {
+      L.push("- On screen: the " + c.label + " stress map for the 10 days to " + dLong(c.map.dekad) + ". Most stressed regions weighted by output: " + c.map.top5.map((r) => r.name + " (" + r.iso + ")").join(", ") + ".");
+    } else if (v === "replay") {
+      const e = D.episodes[S.episode], pi = (D.priceImpact.episodes || {})[S.episode];
+      L.push("- On screen: the replay of " + e.label + ": " + (e.first_above_2 ? "index first above +2 on " + dLong(e.first_above_2) + " (" + ({ caught: "before", late: "after" }[e.verdict] || "") + " the price peak)" : "index never above +2, highest " + sg(e.peak_risk_z)) + "; futures " + pct(e.price_change_pct) + " from " + dLong(e.price_from_date) + " to " + dLong(e.price_to_date) + (pi && pi.reliable ? "; move expected from the supply gap " + pct(pi.implied_pct) : "") + ".");
+    } else if (v === "note") {
+      const n = D.notes.find((x) => x.week + "|" + x.commodity === S.note) || D.notes[0];
+      L.push("- On screen: the daily note of " + dLong(n.week) + " on " + D.crops[n.commodity].label + ": " + NOTE_TEXT(n).replace(/\s+/g, " "));
+    }
+    return L.join("\n");
+  }
+
+  function suggestions() {
+    const v = current(), c = D.crops[S.crop], lab = c.label.toLowerCase(), e = D.episodes[S.episode];
+    return ({
+      commodity: ["What drives the " + lab + " risk index today, and how much does it matter for the price?", "Build a " + lab + " trade idea from this page: direction, entry logic, invalidation and risks.", "Which country or weather factor could change the " + lab + " reading most in the coming weeks?"],
+      fair: ["Is " + lab + " cheap or expensive against its climate fair value, and what could close the gap?", "Explain the scenario I set in the pricing tool and what would have to happen for it to play out.", "How reliable is this fair value, and how should I use it in a trade?"],
+      stress: ["Which regions matter most for " + lab + " right now, and why?", "Is the stress on this map already in the " + lab + " price?", "What weather should I watch next for " + lab + "?"],
+      replay: ["What can a trader learn from " + e.label + "?", "Would trading on the index have worked in " + e.label + "?", "Why did the price move more or less than the supply gap suggests?"],
+      note: ["Summarise this note for a trader in three bullet points.", "What should I watch tomorrow for " + lab + "?", "Does this note change the trade idea on " + lab + "?"],
+      method: ["How much should I trust this model, given its track record?", "What are the main weaknesses of this approach?", "How should I combine this index with other information in a trade?"],
+    })[v] || ["Summarise today's signals across the three crops for a trader.", "Is maize cheap or expensive against its climate fair value, and what could close the gap?",
+      "Build a cocoa trade idea from today's data: direction, entry logic, invalidation and risks.", "What would make the maize index wrong this month?", "How should I size a weather trade given this level of uncertainty?"];
+  }
+  const ctxLabel = () => { const v = current(); return v === "ask" || v === "method" ? "all three crops" : VIEWS[v] + " · " + D.crops[S.crop].label; };
   const ERR = { not_granted: "Access to Claude was not allowed for this page. Reload the page to be asked again.", sampling_disabled: "Claude is not available for this account.", rate_limited: "Too many questions at once, or your Claude usage limit is reached. Try again later.",
     session_expired: "Your Claude session has expired. Sign in again, then retry.", refused: "Claude declined this request. Try rephrasing it.", empty_completion: "No answer came back. Try a shorter question.", prompt_too_large: "The conversation is too long. Clear it and ask again.",
     capability_disabled: "Claude is not available in this view.", not_declared: "This page is not allowed to use Claude.", capability_removed: "Claude is not available in this view." };
+
+  /* One chat widget, moved between the Ask Claude page and the side panel, so the conversation follows the viewer. */
+  let chatEl = null;
+  function chatWidget() {
+    if (chatEl) return chatEl;
+    chatEl = document.createElement("div");
+    chatEl.className = "chat-widget";
+    chatEl.innerHTML = '<div class="warnbox" id="ask-off" hidden style="margin-bottom:12px">The assistant works when this page is opened inside Claude (claude.ai or the Claude app) while you are signed in. It then runs on your own Claude plan: no API key and nothing to pay on top.</div>' +
+      '<div class="chat-log" id="chat-log" aria-live="polite"></div><div class="chips" id="ask-suggest" style="margin-top:10px"></div>' +
+      '<div class="ctx-line" id="ask-ctx"></div>' +
+      '<form class="composer" id="ask-form"><textarea id="ask-input" rows="2" placeholder="Ask about this page..." aria-label="Your question"></textarea><button class="btn primary" id="ask-send" type="submit">Send</button><button class="btn" id="ask-stop" type="button" hidden>Stop</button></form>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px"><span class="source" style="margin:0">Claude can be wrong. Research and education, not investment advice.</span><button class="btn sm" id="ask-clear" type="button">Clear conversation</button></div>';
+    chatEl.querySelector("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); askSend(chatEl.querySelector("#ask-input").value); });
+    chatEl.querySelector("#ask-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(e.target.value); } });
+    chatEl.querySelector("#ask-stop").addEventListener("click", () => { if (S.chat.ctl) S.chat.ctl.abort(); });
+    chatEl.querySelector("#ask-clear").addEventListener("click", () => { if (S.chat.ctl) S.chat.ctl.abort(); S.chat.turns = []; S.chat.error = ""; askRefresh(); });
+    return chatEl;
+  }
 
   function askRefresh() {
     const log = document.getElementById("chat-log");
     if (!log) return;
     const C = S.chat;
-    let h = C.turns.length ? "" : '<div class="msg bot"><p>Ask anything about today\'s maize, coffee and cocoa signals: what they mean for prices, trade ideas, scenarios or risks. Claude reads the HarvestRadar data listed under What Claude sees and your conversation, nothing else.</p></div>';
-    C.turns.forEach((t, i) => { h += t.role === "user" ? '<div class="msg user">' + esc(t.content) + "</div>" : '<div class="msg bot" data-i="' + i + '">' + md(t.content) + (t.meta ? '<div class="meta">' + esc(t.meta) + "</div>" : "") + "</div>"; });
+    let h = C.turns.length ? "" : '<div class="msg bot"><p>Ask anything about what you see: what it means for prices, trade ideas, scenarios or risks. Claude reads this page (' + esc(ctxLabel()) + "), the HarvestRadar data of " + dLong(D.asOf) + " and your conversation, nothing else.</p></div>";
+    C.turns.forEach((t, i) => { h += t.role === "user" ? '<div class="msg user">' + esc(t.content) + (t.where ? '<div class="meta">' + esc(t.where) + "</div>" : "") + "</div>" : '<div class="msg bot" data-i="' + i + '">' + md(t.content) + (t.meta ? '<div class="meta">' + esc(t.meta) + "</div>" : "") + "</div>"; });
     if (C.busy && (!C.turns.length || C.turns[C.turns.length - 1].role === "user")) h += '<div class="msg bot" id="live"><span class="thinking">Thinking...</span></div>';
     if (C.error) h += '<div class="warnbox">' + esc(C.error) + "</div>";
     log.innerHTML = h;
     log.scrollTop = log.scrollHeight;
-    const st = document.getElementById("ask-state"), ok = ASK.state === "ready";
-    if (st) st.innerHTML = ok ? tag("Connected to Claude", "good") : ASK.state === "connecting" ? tag("Connecting", "neutral") : tag("Not available here", "bad");
-    const off = document.getElementById("ask-off");
-    if (off) off.hidden = ok || ASK.state === "connecting";
+    const ok = ASK.state === "ready", badgeHtml = ok ? tag("Connected to Claude", "good") : ASK.state === "connecting" ? tag("Connecting", "neutral") : tag("Not available here", "bad");
+    document.querySelectorAll(".ask-state").forEach((e) => { e.innerHTML = badgeHtml; });
+    const off = document.getElementById("ask-off"); if (off) off.hidden = ok || ASK.state === "connecting";
     ["ask-send", "ask-input"].forEach((id) => { const e = document.getElementById(id); if (e) e.disabled = !ok || C.busy; });
     const stop = document.getElementById("ask-stop"); if (stop) stop.hidden = !C.busy;
-    const sug = document.getElementById("ask-suggest"); if (sug) sug.hidden = C.turns.length > 0;
-    document.querySelectorAll("[data-ask]").forEach((b) => { b.disabled = !ok || C.busy; });
+    const sug = document.getElementById("ask-suggest");
+    if (sug) { sug.hidden = C.turns.length > 0; sug.innerHTML = suggestions().map((q) => '<button class="chip" data-ask="' + esc(q) + '">' + esc(q) + "</button>").join(""); }
+    const cx = document.getElementById("ask-ctx"); if (cx) cx.textContent = "Claude sees: " + ctxLabel() + ", data of " + dLong(D.asOf);
+    const dl = document.getElementById("drawer-ctx"); if (dl) dl.textContent = ctxLabel();
+    document.querySelectorAll("[data-ask],[data-askopen]").forEach((b) => { b.disabled = !ok || C.busy; });
   }
 
   async function askSend(text) {
     const C = S.chat;
     text = (text || "").trim();
     if (!text || C.busy || !ASK.fn) return;
-    C.error = ""; C.turns.push({ role: "user", content: text }); C.busy = true;
+    C.error = ""; C.turns.push({ role: "user", content: text, where: ctxLabel() }); C.busy = true;
     const inp = document.getElementById("ask-input"); if (inp) inp.value = "";
     askRefresh();
     const history = C.turns.slice(-12).map((t) => ({ role: t.role, content: t.content }));
     while (history.length && history[0].role !== "user") history.shift();
-    const input = [{ role: "user", content: RULES + claudeContext() }].concat(history);
+    history[history.length - 1].content = "[Asked while viewing: " + ctxLabel() + "]\n" + text;
+    const input = [{ role: "user", content: RULES + claudeContext() + "\n\n" + viewContext() }].concat(history);
     const ctl = new AbortController(); C.ctl = ctl;
     let slot = null;
     try {
@@ -573,25 +629,66 @@
     } finally { C.busy = false; C.ctl = null; askRefresh(); }
   }
 
+  /* Side panel available on every page; the floating button opens it with the page as context. */
+  function drawerShell() {
+    if (document.getElementById("drawer")) return;
+    const fab = document.createElement("button");
+    fab.id = "fab"; fab.className = "fab"; fab.type = "button"; fab.setAttribute("aria-controls", "drawer");
+    fab.innerHTML = '<span class="dot"></span>Ask Claude';
+    const dr = document.createElement("aside");
+    dr.id = "drawer"; dr.className = "drawer"; dr.setAttribute("aria-label", "Ask Claude"); dr.hidden = true;
+    dr.innerHTML = '<div class="drawer-head"><div style="min-width:0"><div style="font-family:var(--display);font-weight:700;font-size:20px">Ask Claude</div><div class="mono" id="drawer-ctx" style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div></div><span class="ask-state"></span><button class="btn sm" id="drawer-close" type="button" aria-label="Close the assistant">Close</button></div><div class="drawer-body"></div>';
+    document.body.appendChild(fab); document.body.appendChild(dr);
+    fab.addEventListener("click", () => openDrawer());
+    dr.querySelector("#drawer-close").addEventListener("click", closeDrawer);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.drawer) closeDrawer(); });
+  }
+  function openDrawer(q) {
+    connectClaude(); drawerShell();
+    S.drawer = true;
+    document.body.classList.add("drawer-open");
+    const dr = document.getElementById("drawer");
+    dr.querySelector(".drawer-body").appendChild(chatWidget());
+    dr.hidden = false; requestAnimationFrame(() => dr.classList.add("open"));
+    document.getElementById("fab").hidden = true;
+    askRefresh();
+    if (q && ASK.state === "connecting") S.queued = q;
+    else if (q) askSend(q);
+    else { const i = document.getElementById("ask-input"); if (i && !i.disabled) i.focus(); }
+  }
+  function closeDrawer() {
+    S.drawer = false;
+    document.body.classList.remove("drawer-open");
+    const dr = document.getElementById("drawer");
+    if (dr) { dr.classList.remove("open"); setTimeout(() => { if (!S.drawer) dr.hidden = true; }, 220); }
+    const f = document.getElementById("fab"); if (f) f.hidden = current() === "ask";
+  }
+  function placeChat(v) {
+    drawerShell();
+    const fab = document.getElementById("fab"), dr = document.getElementById("drawer");
+    if (v === "ask") {
+      S.drawer = false; document.body.classList.remove("drawer-open"); dr.classList.remove("open"); dr.hidden = true; fab.hidden = true;
+      document.getElementById("ask-slot").appendChild(chatWidget());
+    } else {
+      fab.hidden = !!S.drawer;
+      if (S.drawer) dr.querySelector(".drawer-body").appendChild(chatWidget());
+    }
+    askRefresh();
+  }
+  function askPanel(k) {
+    const c = D.crops[k], qs = suggestions();
+    return panel("ASK CLAUDE ABOUT " + esc(c.label.toUpperCase()), '<div style="font-size:15px;color:var(--frost-2);line-height:1.55">Claude reads this page and today\'s data, then answers in the side panel.</div><div class="chips" style="margin-top:12px">' +
+      qs.map((q) => '<button class="chip" data-askopen="' + esc(q) + '">' + esc(q) + "</button>").join("") + '<button class="chip" data-askopen="">Ask your own question</button></div>', "Runs on your Claude plan when this page is opened in Claude. Not investment advice.");
+  }
+
   function viewAsk() {
     connectClaude();
     const seen = CROPS.map((k) => { const c = D.crops[k], f = c.fair; return '<div style="display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--line)">' + glyph(c.glyph, 22) + '<div style="min-width:0"><div style="font-weight:600">' + esc(c.label) + '</div><div class="mono" style="font-size:14px;color:var(--frost-2);line-height:1.6">Risk index ' + sg(c.latest.z) + ", supply " + pct(c.latest.dp, 2) + "<br>Price " + fmtPrice(k, c.lastPrice.close) + (f ? ", fair value " + fmtPrice(k, f.now.fair) : "") + "</div></div></div>"; }).join("");
-    const html = '<div class="main c65"><div class="col"><section class="glass" style="padding:18px 20px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><span style="font-family:var(--display);font-weight:700;font-size:24px">Ask Claude about today\'s signals</span><span id="ask-state"></span></div>' +
-      '<div class="warnbox" id="ask-off" hidden style="margin-bottom:12px">The assistant works when this page is opened inside Claude (claude.ai or the Claude app) while you are signed in. It then uses your own Claude plan: no API key and no extra cost.</div>' +
-      '<div class="chat-log" id="chat-log" aria-live="polite"></div>' +
-      '<div class="chips" id="ask-suggest" style="margin-top:10px">' + SUGGEST.map((q) => '<button class="chip" data-ask="' + esc(q) + '">' + esc(q) + "</button>").join("") + "</div>" +
-      '<form class="composer" id="ask-form"><textarea id="ask-input" rows="2" placeholder="Ask about maize, coffee or cocoa..." aria-label="Your question"></textarea><button class="btn primary" id="ask-send" type="submit">Send</button><button class="btn" id="ask-stop" type="button" hidden>Stop</button></form>' +
-      '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px"><span class="source" style="margin:0">Claude can be wrong. Research and education, not investment advice.</span><button class="btn" id="ask-clear" type="button" style="min-height:36px;padding:0 14px;font-size:14px">Clear conversation</button></div></section></div>' +
-      '<div class="col">' + panel("WHAT CLAUDE SEES", '<div style="font-size:15px;color:var(--frost-2);line-height:1.55;margin-bottom:6px">With each question, the page sends Claude this data snapshot (' + dLong(D.asOf) + ") and your conversation:</div>" + seen +
+    const html = '<div class="main c65"><div class="col"><section class="glass" style="padding:18px 20px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><span style="font-family:var(--display);font-weight:700;font-size:24px">Ask Claude about today\'s signals</span><span class="ask-state"></span></div><div id="ask-slot"></div></section></div>' +
+      '<div class="col">' + panel("WHAT CLAUDE SEES", '<div style="font-size:15px;color:var(--frost-2);line-height:1.55;margin-bottom:6px">With each question, the page sends Claude this data snapshot (' + dLong(D.asOf) + "), the page you are on and your conversation:</div>" + seen +
         '<div style="font-size:14px;color:var(--muted);line-height:1.55;border-top:1px solid var(--line);padding-top:10px">Plus the countries and weather factors behind each reading, price changes, the measured price reaction, today\'s daily notes, El Ni&ntilde;o and the track record. No live news, stocks or positioning.</div>') +
-      panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">Free to use inside Claude: answers run on your own Claude plan, so the page needs no API key. The first question asks you to allow it. The page keeps the conversation only while it is open.</div>') + "</div></div>";
-    return { html: html, after: () => {
-      askRefresh();
-      document.getElementById("ask-form").addEventListener("submit", (e) => { e.preventDefault(); askSend(document.getElementById("ask-input").value); });
-      document.getElementById("ask-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(e.target.value); } });
-      document.getElementById("ask-stop").addEventListener("click", () => { if (S.chat.ctl) S.chat.ctl.abort(); });
-      document.getElementById("ask-clear").addEventListener("click", () => { if (S.chat.ctl) S.chat.ctl.abort(); S.chat.turns = []; S.chat.error = ""; askRefresh(); });
-    } };
+      panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">The "Ask Claude" button on every page opens the same conversation in a side panel, with that page as context. Inside Claude, answers run on your own Claude plan, so the page needs no API key. The first question asks you to allow it. The page keeps the conversation only while it is open.</div>') + "</div></div>";
+    return { html: html, after: null };
   }
 
   const RENDER = { stress: viewStress, commodity: viewCommodity, fair: viewFair, replay: viewReplay, note: viewNote, method: viewMethod, ask: viewAsk };
@@ -605,6 +702,7 @@
     const out = RENDER[v]();
     document.getElementById("view").innerHTML = out.html;
     if (out.after) out.after();
+    placeChat(v);
     if (changed) {
       const tgt = S.goto && document.getElementById(S.goto);
       if (tgt) tgt.scrollIntoView({ block: "start" });
@@ -614,14 +712,16 @@
     if (window.innerWidth < 700) { const on = document.querySelector(".tab.on"), tb = document.getElementById("tabs"); if (on && tb) tb.scrollLeft = on.offsetLeft - (tb.clientWidth - on.offsetWidth) / 2; }
   }
 
+  connectClaude();
   document.getElementById("brand").innerHTML = D.marks.small + "<span>Harvest<b>Radar</b></span>";
   document.getElementById("status").textContent = "DATA AS OF " + D.weekLabel;
   document.addEventListener("click", (e) => {
     const nav = e.target.closest("a[data-goto],a[data-back]");
     if (nav) { if (nav.dataset.goto) S.goto = nav.dataset.goto; if (nav.dataset.back) S.restore = true; }
-    const t = e.target.closest("[data-crop],[data-shap],[data-episode],[data-note],#email-btn,[data-crop-link],[data-range],[data-scen],#calc-reset,#calc-undo,[data-ask]");
+    const t = e.target.closest("[data-crop],[data-shap],[data-episode],[data-note],#email-btn,[data-crop-link],[data-range],[data-scen],#calc-reset,#calc-undo,[data-ask],[data-askopen]");
     if (!t) return;
     if (t.dataset.ask) { askSend(t.dataset.ask); return; }
+    if (t.dataset.askopen !== undefined) { openDrawer(t.dataset.askopen || null); return; }
     if (t.dataset.range) { S.range = t.dataset.range; render(); return; }
     if (t.dataset.scen) {
       const k = S.crop, f = D.crops[k].fair, st = S.calc[k] || (S.calc[k] = calcDefaults(k));

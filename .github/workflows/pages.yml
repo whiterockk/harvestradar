@@ -1,0 +1,49 @@
+# Publish the web edition on GitHub Pages from the snapshot in data/demo, on every push to main.
+# The daily update (daily.yml) publishes it too, with fresh data.
+name: Publish web edition
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", "data/demo/**", "scripts/build_web.py", "src/harvestradar/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.lock
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock
+          pip install -e . --no-deps
+      - name: Build the web edition
+        run: |
+          python scripts/build_web.py
+          mkdir -p _site
+          cp dist/web/index.html _site/index.html
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

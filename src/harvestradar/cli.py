@@ -10,7 +10,7 @@ regions_app = typer.Typer(help="Producing regions and weights.", no_args_is_help
 features_app = typer.Typer(help="Stress variables and model features.", no_args_is_help=True)
 model_app = typer.Typer(help="Yield model, validation, SHAP.", no_args_is_help=True)
 index_app = typer.Typer(help="Risk index, episodes, backtest.", no_args_is_help=True)
-report_app = typer.Typer(help="Weekly notes and email export.", no_args_is_help=True)
+report_app = typer.Typer(help="Daily notes and email export.", no_args_is_help=True)
 demo_app = typer.Typer(help="Demo snapshot for the offline app.", no_args_is_help=True)
 for name, sub in [("data", data_app), ("regions", regions_app), ("features", features_app),
                   ("model", model_app), ("index", index_app), ("report", report_app), ("demo", demo_app)]:
@@ -139,6 +139,18 @@ def demo_export() -> None:
     from harvestradar.demo.export import export_demo
 
     export_demo(_cfg())
+
+
+@app.command("update")
+def update(date: str = typer.Option(None, help="Data as of YYYY-MM-DD (default: previous working day, UTC)"),
+           deterministic_notes: bool = typer.Option(False, help="Skip the LLM, write the notes from the template"),
+           skip_weather: bool = typer.Option(False, help="Do not call NASA POWER (tests)")) -> None:
+    """Daily incremental update: new data only, then index, fair value, notes and data/demo."""
+    import datetime as dt
+
+    from harvestradar.update import run_update
+
+    run_update(_cfg(), dt.date.fromisoformat(date) if date else None, deterministic_notes, skip_weather)
 
 
 @app.command("all")

@@ -298,12 +298,21 @@ def write_note(cfg: Settings, p: dict, deterministic: bool = False) -> dict:
 
 
 def build_notes(cfg: Settings, days: int | None = None, deterministic: bool = False,
-                only: list[str] | None = None) -> pd.DataFrame:
-    """only: regenerate these commodities and keep the other notes already in notes.parquet."""
+                only: list[str] | None = None, new_only: bool = False) -> pd.DataFrame:
+    """only: regenerate these commodities and keep the other notes already in notes.parquet.
+    new_only: write the days that have no note yet and keep the others of the window (daily job)."""
     risk = pd.read_parquet(PROCESSED / "risk_index_daily.parquet")
     oni = pd.read_parquet(PROCESSED / "oni.parquet")
     n = int(days or cfg.llm["days"])
     wk_list = list(pd.bdate_range(end=pd.Timestamp(cfg.as_of_end), periods=n))[::-1]
+    path = PROCESSED / "notes.parquet"
+    kept = pd.DataFrame()
+    if new_only and path.exists():
+        old = pd.read_parquet(path)
+        old["week"] = pd.to_datetime(old["week"])
+        kept = old[old.week.isin(wk_list)]
+        have = set(kept.week)
+        wk_list = [w for w in wk_list if w not in have]
     rows = []
     for week in wk_list:
         for key in cfg.commodities:
@@ -324,6 +333,8 @@ def build_notes(cfg: Settings, days: int | None = None, deterministic: bool = Fa
                   f"checks {res['numbers_ok']}/{res['context_ok']}/{res['claims_ok']}"
                   + (f" | {res['failures']}" if res["failures"] else ""))
     df = pd.DataFrame(rows)
+    if len(kept):
+        df = pd.concat([kept, df], ignore_index=True)
     if only and (PROCESSED / "notes.parquet").exists():
         old = pd.read_parquet(PROCESSED / "notes.parquet")
         df = pd.concat([old[~old.commodity.isin(only)], df], ignore_index=True)

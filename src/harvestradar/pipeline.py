@@ -160,7 +160,28 @@ def train_models(cfg: Settings) -> None:
     print("[model] pooled end-of-season:", json.dumps(ev["pooled"].get("end", {}), indent=1)[:800])
 
 
-def build_index(cfg: Settings) -> None:
+def predict_weekly(cfg: Settings) -> None:
+    """Daily job: predictions for the new Fridays with the stored vintage models (no retraining).
+    Earlier rows are kept as they were published; training happens once a year (train_models)."""
+    import joblib
+
+    panel = _panel(cfg)
+    panel.to_parquet(PROCESSED / "model_panel.parquet", index=False)
+    old = pd.read_parquet(PROCESSED / "predictions_weekly.parquet")
+    new = panel[panel.as_of > old.as_of.max()]
+    if new.empty:
+        print("[model] no new week to predict")
+        return
+    parts = []
+    for y, g in new.groupby(new.as_of.dt.year):
+        model = joblib.load(MODELS_STORE / f"yield_model_{y}.joblib")
+        parts.append(pd.concat([g, model.predict(g).assign(vintage=y)], axis=1))
+    preds = pd.concat([old] + parts, ignore_index=True)
+    preds.to_parquet(PROCESSED / "predictions_weekly.parquet", index=False)
+    print(f"[model] predicted {sum(len(p) for p in parts)} new rows up to {new.as_of.max():%Y-%m-%d}")
+
+
+def build_index(cfg: Settings, reuse_climatology: bool = False) -> None:
     from harvestradar.signal.backtest import run_backtest
     from harvestradar.signal.events import build_events
     from harvestradar.signal.risk_index import build_risk_index
@@ -178,9 +199,14 @@ def build_index(cfg: Settings) -> None:
 
     panel = pd.read_parquet(PROCESSED / "model_panel.parquet")
     ix = cfg.index
-    clim = hindcast_climatology(cfg, panel, load, fao, sorted(preds.vintage.unique().tolist()),
-                                int(ix["standardize_years"]), int(ix["calendar_window_weeks"]), float(ix["sigma_floor"]))
-    clim.to_parquet(PROCESSED / "model_climatology.parquet", index=False)
+    vintages = sorted(preds.vintage.unique().tolist())
+    cpath = PROCESSED / "model_climatology.parquet"
+    if reuse_climatology and cpath.exists() and set(vintages) <= set(pd.read_parquet(cpath).vintage.unique()):
+        clim = pd.read_parquet(cpath)  # hindcasts of past seasons: unchanged until a new vintage appears
+    else:
+        clim = hindcast_climatology(cfg, panel, load, fao, vintages, int(ix["standardize_years"]),
+                                    int(ix["calendar_window_weeks"]), float(ix["sigma_floor"]))
+        clim.to_parquet(cpath, index=False)
     risk = build_risk_index(cfg, preds, targets, fao, clim)
     risk = risk[risk.date >= pd.Timestamp(cfg.index_start)].reset_index(drop=True)
     risk.to_parquet(PROCESSED / "risk_index.parquet", index=False)
@@ -222,6 +248,13 @@ def build_daily(cfg: Settings) -> None:
         parts.append(pd.concat([g, model.predict(g).assign(vintage=y)], axis=1))
     preds = pd.concat(parts, ignore_index=True)
     preds.to_parquet(PROCESSED / "predictions_daily.parquet", index=False)
+    # SHAP of the latest day, with that year's model (the Commodity page shows it)
+    from harvestradar.models.explain import shap_by_prediction
+
+    last = f[f.as_of == f.as_of.max()]
+    model = joblib.load(MODELS_STORE / f"yield_model_{last.as_of.max().year}.joblib")
+    shap = pd.concat([last[["commodity", "country_iso3", "season", "as_of"]], shap_by_prediction(model, last)], axis=1)
+    shap.to_parquet(PROCESSED / "shap_latest.parquet", index=False)
     clim = pd.read_parquet(PROCESSED / "model_climatology.parquet")
     risk = build_risk_index(cfg, preds, targets, fao, clim)
     risk.to_parquet(PROCESSED / "risk_index_daily.parquet", index=False)

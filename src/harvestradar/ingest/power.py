@@ -84,6 +84,54 @@ def fetch_cells(cells: pd.DataFrame, start: str, end: str, workers: int = 4, ref
     return done
 
 
+def update_cells(cells: pd.DataFrame, end: str, first: str, overlap_days: int = 10, workers: int = 4) -> int:
+    """Append the days since each cell's last complete day (minus an overlap) up to `end`. Cells never fetched
+    get their full history from `first`. Trailing days that NASA has not filled yet (all missing) are dropped,
+    so the next run asks for them again."""
+    POWER_DIR.mkdir(parents=True, exist_ok=True)
+    end_ts = pd.Timestamp(end)
+    jobs = []
+    for row in cells.drop_duplicates("cell_id").itertuples():
+        p = POWER_DIR / f"{row.cell_id}.parquet"
+        if p.exists():
+            last = pd.read_parquet(p, columns=["date", "tmax_c"]).dropna().date.max()
+            start = min(last - pd.Timedelta(days=overlap_days), end_ts)
+        else:
+            start = pd.Timestamp(first)
+        if start <= end_ts:
+            jobs.append((row, start))
+    done = failed = 0
+    with requests.Session() as s, ThreadPoolExecutor(workers) as ex:
+        futs = {ex.submit(_fetch_one, r.lat, r.lon, st.strftime("%Y-%m-%d"), end_ts.strftime("%Y-%m-%d"), s): (r, st)
+                for r, st in jobs}
+        for f in as_completed(futs):
+            r, st = futs[f]
+            try:
+                new = f.result()
+            except Exception as e:  # noqa: BLE001
+                failed += 1
+                print(f"[power] {r.cell_id}: {e}")
+                continue
+            p = POWER_DIR / f"{r.cell_id}.parquet"
+            old = pd.read_parquet(p) if p.exists() else new.iloc[0:0]
+            d = pd.concat([old[old.date < st], new], ignore_index=True).sort_values("date").reset_index(drop=True)
+            vals = [c for c in RENAME.values() if c in d.columns]
+            filled = d[vals].notna().any(axis=1)
+            if filled.any():
+                d = d.loc[: filled[filled].index[-1]]
+            d.to_parquet(p, index=False)
+            done += 1
+            if done % 250 == 0:
+                print(f"[power] {done}/{len(jobs)} cells updated")
+    print(f"[power] {done} cells updated to {end}, {failed} failed")
+    record_group("data/raw/power", "NASA POWER daily point API (MERRA-2)", URL,
+                 "NASA open data, free of charge", len(list(POWER_DIR.glob("*.parquet"))),
+                 note=f"incremental update to {end}, parameters {','.join(PARAMS)}")
+    if failed > 0.05 * max(1, len(jobs)):
+        raise RuntimeError(f"NASA POWER: {failed} of {len(jobs)} cells failed")
+    return done
+
+
 def load_cells(cell_ids: list[str]) -> pd.DataFrame:
     frames = []
     for cid in cell_ids:

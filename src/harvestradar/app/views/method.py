@@ -155,7 +155,7 @@ def render() -> None:
             f'<b>Data</b>: NASA POWER (MERRA-2), MapSPAM 2020 (IFPRI, CC BY 4.0), geoBoundaries (CC BY 4.0), '
             f'FAOSTAT (CC BY 4.0), NOAA CPC ONI, futures closes via yfinance (Yahoo terms), Natural Earth.<br>'
             f'<b>Imagery</b>: NASA Blue Marble Next Generation (public domain), graded for Radar Night.<br>'
-            f'<b>Model</b>: LightGBM, SHAP, scikit-learn, statsmodels; weekly note by {H.escape(meta["llm"]["display_name"])} '
+            f'<b>Model</b>: LightGBM, SHAP, scikit-learn, statsmodels; daily note by {H.escape(meta["llm"]["display_name"])} '
             f'({H.escape(meta["llm"]["model_id"])}, Hugging Face, Apache 2.0), run locally.<br>'
             f'<b>Software</b>: Streamlit, Plotly, pandas, GeoPandas. Fonts: Space Grotesk, Inter, JetBrains Mono (SIL OFL).'
             f'</div><div class="hr-source">Research output, not investment advice. Full list in docs/data_sources.md.</div></div>',

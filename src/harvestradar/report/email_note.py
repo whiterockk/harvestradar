@@ -1,4 +1,4 @@
-"""Weekly note as an email: a self-contained HTML email (inline CSS, table layout, 640 px, dark theme)
+"""Daily note as an email: a self-contained HTML email (inline CSS, table layout, 640 px, dark theme)
 plus a plain-text alternative, written as .eml and .html. Offline: nothing is sent.
 
 Every figure is taken from the note's own payload (slots and readings), never recomputed.

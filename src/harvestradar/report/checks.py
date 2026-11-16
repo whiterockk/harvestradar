@@ -1,4 +1,4 @@
-"""Guard rails for the weekly note.
+"""Guard rails for the daily note.
 
 numbers: the model types no digit; after the software inserts the figures, every number in the note
          exists in the payload (rounding tolerance).

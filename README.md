@@ -84,13 +84,32 @@ App guidelines: [docs/app_guidelines.md](docs/app_guidelines.md). Prompts used w
 ## Credits
 
 Data: NASA POWER, MapSPAM 2020 (IFPRI), geoBoundaries, FAOSTAT, NOAA CPC, Yahoo Finance (yfinance),
-Natural Earth. Imagery: NASA Blue Marble. Model: LightGBM, SHAP; weekly note by Qwen2.5-1.5B-Instruct
+Natural Earth. Imagery: NASA Blue Marble. Model: LightGBM, SHAP; daily note by Qwen2.5-1.5B-Instruct
 (Hugging Face, Apache 2.0). App: Streamlit, Plotly. Fonts: Space Grotesk, Inter, JetBrains Mono (SIL OFL).
 Advanced AI Algorithms, ESSEC Business School.
+
+## Automatic daily update (GitHub Actions)
+
+`.github/workflows/daily.yml` runs `harvestradar update` every working day at 05:17 UTC and publishes the
+web edition on GitHub Pages. The update fetches only what is new: NASA POWER weather since each grid cell's
+last complete day (with a 10-day overlap, NASA revises recent values), futures closes and the El Nino index.
+It then rebuilds the features, predicts the new weeks with the stored vintage models (a full training only
+when the vintage of the year is missing, once a year), the weekly and daily index, events and backtest, the
+price reaction and the climate fair value, writes the notes of the new days (local Qwen model, fixed template
+as fallback) and exports `data/demo`. Weather data reach NASA POWER with a lag of a few days; prices are the
+previous close.
+
+The heavy data (weather since 1981, about 650 MB, processed tables and models) are kept in the Actions cache.
+If the cache is empty, the workflow restores the snapshot stored in the git ref `refs/data/state` (plain
+clones do not download it) and fetches the missing days.
+
+Run it by hand: Actions tab, "Daily update", "Run workflow" (option: notes from the fixed template). Locally:
+`harvestradar update` (or `--date 2026-11-13`, `--deterministic-notes`, `--skip-weather`).
 
 ## Web edition (no Python needed)
 
 `python scripts/build_web.py` writes `dist/web/index.html`: one self-contained page (about 4 MB) with the seven
 pages (the six of the app plus Ask Claude), the same data snapshot and the same map code, for viewing in a browser or publishing as a page.
-Differences with the Streamlit app: the weekly email is shown in the page instead of downloaded, and fonts
+Differences with the Streamlit app: the daily note formatted as an email is shown in the page ("Show as email") instead of
+downloaded as an .eml file, and fonts
 load from Google Fonts.
