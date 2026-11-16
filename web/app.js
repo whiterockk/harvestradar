@@ -521,15 +521,18 @@
     if (!navigator.gpu) return null;
     try { return await navigator.gpu.requestAdapter(); } catch (e) { return null; }
   }
-  function loadEngine() {
-    if (LLM.engine) return Promise.resolve(LLM.engine);
-    if (LLM.loading) return LLM.loading;
+  const LIGHT = "Qwen2.5-0.5B-Instruct-q4f32_1-MLC";
+  const store = { get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode */ } } };
+  function loadEngine(force) {
+    if (LLM.engine && !force) return Promise.resolve(LLM.engine);
+    if (LLM.loading && !force) return LLM.loading;
     LLM.loading = (async () => {
+      if (force && LLM.engine) { try { await LLM.engine.unload(); } catch (e) { /* device already gone */ } LLM.engine = null; }
       const a = await gpuAdapter();
       if (!a) { LLM.state = "unsupported"; throw new Error("WebGPU is not available in this browser"); }
       const f16 = a.features && a.features.has("shader-f16"), test = new URLSearchParams(location.search).get("llm");
-      LLM.model = test === "small" ? (f16 ? "Qwen2.5-0.5B-Instruct-q4f16_1-MLC" : "Qwen2.5-0.5B-Instruct-q4f32_1-MLC")  // ?llm=small: quick checks
-        : f16 ? "Qwen2.5-1.5B-Instruct-q4f16_1-MLC" : "Qwen2.5-1.5B-Instruct-q4f32_1-MLC";
+      LLM.model = force || (test === "small" || store.get("hr-llm") === "light" ? LIGHT  // ?llm=small: quick checks
+        : f16 ? "Qwen2.5-1.5B-Instruct-q4f16_1-MLC" : "Qwen2.5-1.5B-Instruct-q4f32_1-MLC");
       LLM.state = "loading"; LLM.pct = 0; LLM.text = "Starting"; askRefresh();
       const webllm = await import(WEBLLM);
       LLM.engine = await webllm.CreateMLCEngine(LLM.model, { initProgressCallback: (r) => { LLM.pct = r.progress || 0; LLM.text = r.text || ""; showProgress(); } });
@@ -537,7 +540,7 @@
       return LLM.engine;
     })().catch((e) => {
       LLM.loading = null;
-      if (LLM.state !== "unsupported") { LLM.state = "failed"; LLM.error = String((e && e.message) || e).slice(0, 200); }
+      if (LLM.state !== "unsupported") { LLM.state = "failed"; LLM.error = String((e && e.message) || e).split("\n")[0].slice(0, 200); }
       askRefresh();
       throw e;
     });
@@ -598,7 +601,7 @@
     const st = document.getElementById("llm-status");
     if (st) {
       if (LLM.state === "loading") st.innerHTML = '<div style="margin-bottom:10px"><div style="height:6px;border-radius:3px;background:var(--line)"><div id="llm-bar" style="height:6px;border-radius:3px;background:var(--signal);width:0"></div></div><div class="ctx-line" id="llm-text" style="margin-top:6px"></div></div>';
-      else if (LLM.state === "idle") st.innerHTML = '<div class="ctx-line" style="margin:0 0 10px">The first question downloads the model (about 1 GB, once). It then runs on this computer.</div>';
+      else if (LLM.state === "idle") st.innerHTML = '<div class="ctx-line" style="margin:0 0 10px">The first question downloads the model (' + (store.get("hr-llm") === "light" ? "about 400 MB" : "about 1 GB") + ', once). It then runs on this computer.</div>';
       else st.innerHTML = "";
       if (LLM.state === "loading") showProgress();
     }
@@ -624,24 +627,54 @@
     askRefresh();
     let eng;
     try { eng = await loadEngine(); } catch (e) { C.busy = false; C.error = fallbackHtml(text); askRefresh(); return; }
-    const history = C.turns.slice(-7, -1).map((t) => ({ role: t.role, content: t.content.slice(0, 1200) }));
+    const history = [];
+    C.turns.slice(-7, -1).forEach((t) => {
+      if (!t.content) return;
+      const m = { role: t.role, content: t.content.slice(0, 1200) };
+      if (history.length && history[history.length - 1].role === m.role) history[history.length - 1] = m; else history.push(m);
+    });
     while (history.length && history[0].role !== "user") history.shift();
+    if (history.length && history[history.length - 1].role === "user") history.pop();
     const msgs = [{ role: "system", content: contextText(true) }].concat(history, [{ role: "user", content: text }]);
     const slot = { role: "assistant", content: "" };
     C.turns.push(slot); askRefresh();
-    try {
-      const stream = await eng.chat.completions.create({ messages: msgs, stream: true, temperature: 0.3, max_tokens: 450 });
+    const live = () => { const el = document.querySelector('#chat-log .msg.bot[data-i="' + (C.turns.length - 1) + '"]'), log = document.getElementById("chat-log"); if (el) { el.innerHTML = md(slot.content); if (log) log.scrollTop = log.scrollHeight; } };
+    const run = async (engine, messages, maxTokens) => {
+      const stream = await engine.chat.completions.create({ messages: messages, stream: true, temperature: 0.3, max_tokens: maxTokens });
       let last = 0;
       for await (const ch of stream) {
-        slot.content += (ch.choices[0] && ch.choices[0].delta && ch.choices[0].delta.content) || "";
+        slot.content += (ch.choices && ch.choices[0] && ch.choices[0].delta && ch.choices[0].delta.content) || "";
         const now = Date.now();
-        if (now - last > 80) { last = now; const live = document.querySelector('#chat-log .msg.bot[data-i="' + (C.turns.length - 1) + '"]'), log = document.getElementById("chat-log"); if (live) { live.innerHTML = md(slot.content); if (log) log.scrollTop = log.scrollHeight; } }
+        if (now - last > 80) { last = now; live(); }
+      }
+    };
+    try {
+      try {
+        await run(eng, msgs, 450);
+      } catch (e1) {
+        console.error("HarvestRadar assistant, first attempt:", e1);
+        if (C.stop || slot.content) throw e1;
+        // second attempt: shorter context, no history; on a graphics error, the more compatible f32 build
+        // second attempt: on a graphics error (the GPU ran out of memory or was reset), the light model
+        // (0.5B, about 400 MB), kept for the next visits; otherwise the same model with a shorter context
+        const msg1 = String((e1 && e1.message) || e1);
+        let engine = eng;
+        if (/device|lost|instance|mapAsync|gpu|buffer|memory|shader|pipeline/i.test(msg1) && LLM.model !== LIGHT) {
+          slot.meta = "This computer's graphics memory is short: switching to the light model.";
+          store.set("hr-llm", "light");
+          engine = await loadEngine(LIGHT);
+        }
+        slot.content = ""; slot.meta = LLM.model === LIGHT ? "Answered by the light model (0.5B)." : "";
+        await run(engine, [{ role: "system", content: contextText(false) }, { role: "user", content: text }], 350);
       }
       if (C.stop) slot.meta = "Stopped.";
-      if (!slot.content.trim()) { slot.content = "No answer came back. Try a shorter question."; }
+      if (!slot.content.trim()) slot.content = "No answer came back. Try a shorter question.";
     } catch (e) {
-      slot.meta = "Interrupted."; if (!slot.content) C.turns.pop();
-      C.error = "The model stopped with an error. Try again, or " + '<a href="' + esc(gptLink(text)) + '" target="_blank" rel="noopener noreferrer">ask ChatGPT in a new tab</a>.';
+      console.error("HarvestRadar assistant:", e);
+      if (!slot.content) C.turns.pop(); else slot.meta = "Interrupted.";
+      if (LLM.state === "loading") LLM.state = "failed";
+      const detail = String((e && e.message) || e).split("\n")[0].slice(0, 220);
+      C.error = "The model stopped with an error" + (detail ? ': <span class="mono" style="font-size:13px">' + esc(detail) + "</span>" : "") + '. Try again, or <a href="' + esc(gptLink(text)) + '" target="_blank" rel="noopener noreferrer">ask ChatGPT in a new tab</a>.';
     } finally { C.busy = false; C.stop = false; askRefresh(); }
   }
 
