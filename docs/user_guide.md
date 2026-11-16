@@ -53,12 +53,15 @@ root-zone soil moisture with the same dekad in 2001-2020.
   checks show as tags (blue: passed, red: failed).
 - **Method**: pipeline, out-of-sample evaluation, the honest record as a table with a verdict for each test
   (clear or small gain, caught, too late, missed, significant or not), credits.
-- **Ask ChatGPT** (web edition): a button on every page opens a side panel with suggested questions for that
-  page and a question box. "Ask ChatGPT" opens chatgpt.com in a new tab with the question and the figures of
-  the page already written (crop, index, supply gap, countries, weather factors, prices, fair value, the
-  pricing-tool scenario on the Fair value page). ChatGPT can be used without an account, within its own
-  limits; the answer stays in ChatGPT and this page stores nothing. "What ChatGPT receives" shows the exact
-  text. Research and education, not investment advice.
+- **Assistant**: a button on every page ("Ask the assistant") opens a side panel with suggested questions for
+  that page and a chat box; the Commodity page has "Ask about <crop>" and the pricing tool "Ask the assistant
+  about this scenario". The answer appears in the panel. It comes from a small open model (Qwen 2.5,
+  1.5 billion parameters) that runs in the browser with WebGPU (WebLLM): free, no account, the questions stay
+  on the computer. The first question downloads the model (about 1 GB, once; the browser keeps it). Browsers
+  without WebGPU (and the page published inside Claude, which cannot download the model) get a link to ask
+  ChatGPT in a new tab instead. In the Streamlit app, the Commodity page answers with the same local model as
+  the daily notes. "What the assistant receives" shows the exact text given to the model. The model can be
+  wrong: check the figures on the page. Not investment advice.
 
 ## 4. Opening an exact state (for the video)
 

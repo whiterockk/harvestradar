@@ -84,16 +84,16 @@ def chain_panel(key: str, asof) -> str:
                 f'background:rgba(11,15,20,.35)"><div class="hr-caps">{n} &middot; {title}</div><div class="hr-mono" '
                 f'style="font-size:24px;color:{T["frost"]};margin-top:6px">{big}</div><div style="font-size:14px;'
                 f'color:{T["frost_2"]};line-height:1.5;margin-top:4px">{sub}</div></div>')
-    arrow = f'<div style="align-self:center;color:{T["signal"]};font-size:20px">&rarr;</div>'
-    price = f'{imp["implied_pct"]:+.1f}%' if imp and imp["reliable"] else "no reliable link"
+    price = f'{imp["implied_pct"]:+.1f}%' if imp and imp["reliable"] else "n/a"
     steps = [step("1", "WEATHER", f"10 days to {dk.day} {dk:%b}", f"Most stressed producing regions: {H.escape(regions)}."),
              step("2", "HARVEST", f"{r['delta_prod_pct']:+.2f}%", "Expected world supply vs normal"
                   + (f", led by {H.escape(top['name'])} ({top['contrib_pct']:+.2f} points)." if top else ".")),
              step("3", "RISK INDEX", f"{r['risk_z']:+.2f}", "How unusual this supply gap is for the time of year (+2 = rare)."),
-             step("4", "PRICE", price, (f"Climate fair value {fmt(key, fv['fair'])}; last close {fmt(key, fv['close'])}."
+             step("4", "PRICE", price, ("No reliable link between world supply and the price. " if imp and not imp["reliable"] else "")
+                  + (f"Climate fair value {fmt(key, fv['fair'])}; last close {fmt(key, fv['close'])}."
                                         if fv else "Expected move over the marketing year."))]
     return C.panel(f"FROM WEATHER TO PRICE, {m['label'].upper()} TODAY",
-                   f'<div style="display:flex;flex-wrap:wrap;gap:8px">{arrow.join(steps)}</div>',
+                   f'<div style="display:flex;flex-wrap:wrap;gap:10px">{"".join(steps)}</div>',
                    "Every working day: new weather from NASA, harvest forecasts from the model, then the measured price reaction.")
 
 

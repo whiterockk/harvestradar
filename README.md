@@ -36,7 +36,7 @@ that leaves localhost. `make screenshots` captures every page at 1920 x 1080 (de
 | Replay | US drought 2012, Brazil frost 2021, cocoa 2023-2024: dekad stress film strip, first crossing of +2, index path, price | `events.json`, `stress_<crop>.parquet` |
 | Daily note | Inbox of the last five working days, the note with figure pills, the three checks, the data given to the model | `notes.parquet` |
 | Method | Pipeline in four steps, out-of-sample evaluation, the honest record with a verdict per test, credits | `model_eval.json`, `events.json`, `backtest.json` |
-| Ask ChatGPT (web edition) | Button on every page: opens ChatGPT in a new tab with the page's figures and the question (free, no account needed) | the page's data snapshot |
+| Assistant | Button on every page: questions answered in a side panel by a small open model running in the browser (Qwen 2.5 1.5B via WebLLM, free, no account); ChatGPT link if the browser lacks WebGPU | the page's data snapshot |
 
 URL state for filming: `?page=commodity&crop=maize&date=2026-11-13&dekad=2012-06-10&episode=us_drought_2012`,
 plus `&capture=1` to freeze animations and turn off hovers, `&play=1` to start the map playing, `&data=1` to
@@ -108,7 +108,7 @@ Run it by hand: Actions tab, "Daily update", "Run workflow" (option: notes from 
 ## Web edition (no Python needed)
 
 `python scripts/build_web.py` writes `dist/web/index.html`: one self-contained page (about 4 MB) with the seven
-pages (the six of the app plus Ask ChatGPT), the same data snapshot and the same map code, for viewing in a browser or publishing as a page.
-Differences with the Streamlit app: an "Ask ChatGPT" button on every page opens ChatGPT in a new tab
-with the page's figures and the question, and fonts
+pages (the six of the app plus the assistant), the same data snapshot and the same map code, for viewing in a browser or publishing as a page.
+Differences with the Streamlit app: the assistant runs in the browser (WebLLM) on every page, while the
+Streamlit app answers on the Commodity page with the local model of the daily notes; and fonts
 load from Google Fonts.

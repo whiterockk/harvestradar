@@ -3,9 +3,9 @@
   "use strict";
   const D = JSON.parse(document.getElementById("data").textContent);
   const CROPS = ["maize", "coffee", "cocoa"];
-  const VIEWS = { stress: "Stress map", commodity: "Commodity", fair: "Fair value", replay: "Replay", note: "Daily note", method: "Method", ask: "Ask ChatGPT" };
+  const VIEWS = { stress: "Stress map", commodity: "Commodity", fair: "Fair value", replay: "Replay", note: "Daily note", method: "Method", ask: "Assistant" };
   const S = { crop: "maize", episode: Object.keys(D.episodes)[0], note: null, shap: {}, range: "recent", calc: {}, hist: {}, pending: null, view: null, prev: null, scroll: {}, goto: null, restore: false,
-              chat: { turns: [], busy: false, ctl: null, error: "" } };
+              chat: { turns: [], busy: false, stop: false, error: "" } };
   let mapHandle = null;
 
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -141,7 +141,7 @@
       '<div class="source" style="margin-top:0">' + esc(c.label) + ": " + c.regionsN + " producing regions, " + Math.round(100 * c.coverage) + "% of world output (MapSPAM 2020). Stress combines heat, rainfall and soil moisture, compared with the same 10 days in " + D.meta.climBase[0] + "-" + D.meta.climBase[1] + ". Weather: NASA POWER.</div></div>" +
       '<div class="col">' + panel("MOST STRESSED REGIONS, WEIGHTED BY OUTPUT", rows, "10 days to " + dLong(mp.dekad) + ". Ranked by stress times the region's share of world output.") +
       '<section class="glass"><div class="caps">EL NI&Ntilde;O &middot; BACKGROUND</div><div style="font-family:var(--display);font-weight:700;font-size:22px;margin-top:8px">' + esc(o.strength.charAt(0).toUpperCase() + o.strength.slice(1)) + '</div><div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><span class="mono" style="font-size:30px;color:var(--signal)">' + sg(o.value) + ' &deg;C</span><div style="font-size:14px;color:var(--muted);margin-top:2px">Pacific sea temperature vs normal, ' + esc(o.period) + "</div></div>" + sparkline(o.series, 200, 48) + '</div><div class="source">NOAA Oceanic Ni&ntilde;o Index, published ' + dLong(o.available_at) + ". Shown for context: it is not part of the index.</div></section>" +
-      (n ? '<a class="glass" href="#note" style="display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--frost)"><span style="border-radius:10px;overflow:hidden;display:inline-flex;flex:none">' + D.marks.signal + '</span><div><div style="font-size:17px;font-weight:500">Today\'s note is ready</div><div style="font-size:14px;color:var(--muted)">' + n.checks.filter(Boolean).length + ' of 3 checks passed</div></div><span class="mono" style="margin-left:auto;font-size:13px;color:var(--signal)">OPEN &rarr;</span></a>' : "") +
+      (n ? '<a class="glass" href="#note" style="display:flex;align-items:center;gap:16px;text-decoration:none;color:var(--frost)"><span style="border-radius:10px;overflow:hidden;display:inline-flex;flex:none">' + D.marks.signal + '</span><div><div style="font-size:17px;font-weight:500">Today\'s note is ready</div><div style="font-size:14px;color:var(--muted)">' + n.checks.filter(Boolean).length + ' of 3 checks passed</div></div><span class="mono" style="margin-left:auto;font-size:13px;color:var(--signal)">OPEN</span></a>' : "") +
       "</div></div>";
     return { html: html, after: () => mountMap({ viewBox: D.map.viewBox, base: Object.assign({}, D.map.base, { href: BASE_IMG }), countries: mp.borders, regions: mp.regions, frames: f, start: mp.start, ringRadius: 230, labelPrefix: "STRESS VS NORMAL", labelWord: "", rangeLabel: rng, capture: false, autoplay: false, ariaLabel: c.label + " stress map" }) };
   }
@@ -153,7 +153,7 @@
       return panel("WHAT IT MEANS FOR THE PRICE", '<div style="font-size:17px;color:var(--frost-2);line-height:1.6">No reliable link between world supply gaps and the ' + esc(c.label.toLowerCase()) + " price since " + pi.years[0] + " (" + pi.n + " years). No price estimate is shown.</div>", "Marketing-year average futures price against the realised world supply gap, " + pi.years[0] + "-" + pi.years[1] + ".");
     }
     const per = -pi.slope_pct_per_pct, fv = c.fair && c.fair.now;
-    const fvLine = fv ? '<div style="font-size:16px;color:var(--frost-2);margin-top:12px;line-height:1.6;padding-top:12px;border-top:1px solid var(--line)">Climate fair value today: <span class="mono" style="color:var(--signal)">' + fmtPrice(k, fv.fair) + "</span>. The price (" + '<span class="mono">' + fmtPrice(k, fv.close) + "</span>) is " + gapWords(fv.gap_to_fair_pct) + '. <a href="#fair" data-goto="calc">Open the pricing tool &rarr;</a></div>' : "";
+    const fvLine = fv ? '<div style="font-size:16px;color:var(--frost-2);margin-top:12px;line-height:1.6;padding-top:12px;border-top:1px solid var(--line)">Climate fair value today: <span class="mono" style="color:var(--signal)">' + fmtPrice(k, fv.fair) + "</span>. The price (" + '<span class="mono">' + fmtPrice(k, fv.close) + "</span>) is " + gapWords(fv.gap_to_fair_pct) + '. <a href="#fair" data-goto="calc">Open the pricing tool</a></div>' : "";
     return panel("WHAT IT MEANS FOR THE PRICE", '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span class="mono" style="font-size:40px;color:var(--signal)">' + pct(pi.implied_pct) + '</span><span style="color:var(--frost-2)">expected move of the futures price over the marketing year</span></div>' +
       '<div style="font-size:16px;color:var(--frost-2);margin-top:8px;line-height:1.6">Likely between <span class="mono">' + pct(pi.low_pct) + '</span> and <span class="mono">' + pct(pi.high_pct) + "</span> (8 chances in 10). Since " + pi.years[0] + ", each 1% of world supply missing came with about <span class=\"mono\">" + pct(per) + "</span> on the " + esc(c.label.toLowerCase()) + " price.</div>" + fvLine,
       "Based on " + pi.n + " marketing years, " + pi.years[0] + "-" + pi.years[1] + "; the supply gap explains " + Math.round(100 * pi.r2) + "% of the yearly price changes. A rough guide, not a price forecast.");
@@ -195,13 +195,12 @@
     const c = D.crops[k], L = c.latest, f = c.fair, pi = (D.priceImpact.commodities || {})[k], top = L.contributors[0];
     const regions = c.map.top5.slice(0, 2).map((r) => r.name).join(" and ");
     const step = (n, title, big, sub, href) => '<a class="chain-step" href="' + href + '"><div class="caps">' + n + " &middot; " + title + '</div><div class="mono" style="font-size:24px;color:var(--frost);margin-top:6px">' + big + '</div><div style="font-size:14px;color:var(--frost-2);line-height:1.5;margin-top:4px">' + sub + "</div></a>";
-    const arrow = '<div class="chain-arrow" aria-hidden="true">&rarr;</div>';
-    const price = pi && pi.reliable ? pct(pi.implied_pct) : "no reliable link";
+    const price = pi && pi.reliable ? pct(pi.implied_pct) : "n/a";
     return '<section class="glass"><div class="caps" style="margin-bottom:12px">FROM WEATHER TO PRICE, ' + esc(c.label.toUpperCase()) + " TODAY</div><div class=\"chain\">" +
-      step("1", "WEATHER", "10 days to " + dLabel(c.map.dekad), "Most stressed producing regions: " + esc(regions) + ".", "#stress") + arrow +
-      step("2", "HARVEST", pct(L.dp, 2), "Expected world supply vs normal" + (top ? ", led by " + esc(top.name) + " (" + sg(top.contrib_pct) + " points)" : "") + ".", "#commodity") + arrow +
-      step("3", "RISK INDEX", sg(L.z), "How unusual this supply gap is for the time of year (+2 = rare).", "#commodity") + arrow +
-      step("4", "PRICE", price, (f ? "Climate fair value " + fmtPrice(k, f.now.fair) + "; last close " + fmtPrice(k, f.now.close) + "." : "Expected move over the marketing year."), "#fair") +
+      step("1", "WEATHER", "10 days to " + dLabel(c.map.dekad), "Most stressed producing regions: " + esc(regions) + ".", "#stress") +
+      step("2", "HARVEST", pct(L.dp, 2), "Expected world supply vs normal" + (top ? ", led by " + esc(top.name) + " (" + sg(top.contrib_pct) + " points)" : "") + ".", "#commodity") +
+      step("3", "RISK INDEX", sg(L.z), "How unusual this supply gap is for the time of year (+2 = rare).", "#commodity") +
+      step("4", "PRICE", price, (pi && !pi.reliable ? "No reliable link between world supply and the " + esc(c.label.toLowerCase()) + " price. " : "") + (f ? "Climate fair value " + fmtPrice(k, f.now.fair) + "; last close " + fmtPrice(k, f.now.close) + "." : "Expected move over the marketing year."), "#fair") +
       '</div><div class="source">Every working day: new weather from NASA, harvest forecasts from the model, then the price reaction measured on ' + (f ? f.flex.years[0] + "-" + f.flex.years[1] : "past years") + ".</div></section>";
   }
 
@@ -309,14 +308,14 @@
     const f = D.crops[k].fair, st = S.calc[k] || (S.calc[k] = calcDefaults(k)), fx = f.flex;
     const scen = [["Today", null], ["Normal season (index 0)", 0], ["Rare (index +2)", 2], ["Extreme (index +3)", 3], ["Good harvest (index -2)", -2]];
     const gmin = Math.floor(Math.min(-6, f.mu - 4 * f.sigma)), gmax = Math.ceil(Math.max(6, f.mu + 4 * f.sigma));
-    const back = S.prev && S.prev !== "fair" && VIEWS[S.prev] ? '<a href="#' + S.prev + '" data-back="1" style="display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;font-size:15px;color:var(--signal);text-decoration:none;min-height:32px">&larr; Back to ' + esc(VIEWS[S.prev]) + "</a>" : "";
+    const back = S.prev && S.prev !== "fair" && VIEWS[S.prev] ? '<a href="#' + S.prev + '" data-back="1" style="display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;font-size:15px;color:var(--signal);text-decoration:none;min-height:32px">Back to ' + esc(VIEWS[S.prev]) + "</a>" : "";
     return '<section class="glass calc" id="calc" style="scroll-margin-top:12px">' + back + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="caps">PRICING TOOL &middot; ' + esc(D.crops[k].display) + '</div><div style="display:flex;gap:8px"><button class="btn sm" id="calc-undo" type="button">Undo</button><button class="btn sm" id="calc-reset" type="button">Back to today</button></div></div>' +
       '<div style="font-size:15px;color:var(--frost-2);margin-top:8px;line-height:1.55">Move the expected world supply, or pick a scenario, to see the fair value it would justify.</div>' +
       '<div class="chips" style="margin-top:12px" role="group" aria-label="Scenario">' + scen.map(([l, z]) => { const v = z == null ? "today" : String(z); return '<button class="chip' + (st.scen === v ? " on" : "") + '" data-scen="' + v + '" aria-pressed="' + (st.scen === v) + '">' + l + "</button>"; }).join("") + "</div>" +
       '<label for="i-gap"><span>Expected world supply vs normal</span><output id="o-gap"></output></label><input type="range" id="i-gap" min="' + gmin + '" max="' + gmax + '" step="0.05" value="' + st.gap + '"><div class="hint" id="o-z"></div>' +
       '<label for="i-r"><span>Price reaction to 1% of world supply missing</span><output id="o-r"></output></label><input type="range" id="i-r" min="0" max="8" step="0.05" value="' + st.r + '"><div class="hint">Measured ' + fx.years[0] + "-" + fx.years[1] + ": " + (-fx.slope_pct_per_pct).toFixed(2) + "% (uncertainty " + fx.se.toFixed(2) + ")</div>" +
       '<label for="i-anchor"><span>Anchor price, ' + esc(D.crops[k].priceUnit) + '</span></label><input type="number" id="i-anchor" step="any" value="' + (+st.anchor.toFixed(2)) + '"><div class="hint">Default: average close of the last 12 months (' + fmtPrice(k, f.now.anchor) + ")</div>" +
-      '<div class="result"><div class="caps">FAIR VALUE IN THIS SCENARIO</div><div class="mono glow" id="o-fair" style="font-size:44px;color:var(--signal);margin-top:6px"></div><div id="o-range" style="font-size:15px;color:var(--frost-2);line-height:1.6"></div><div id="o-vs" style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px"></div><button class="btn sm" style="margin-top:12px" data-ask="Explain the scenario I set in the pricing tool and what would have to happen for it to play out.">Ask ChatGPT about this scenario</button></div>' +
+      '<div class="result"><div class="caps">FAIR VALUE IN THIS SCENARIO</div><div class="mono glow" id="o-fair" style="font-size:44px;color:var(--signal);margin-top:6px"></div><div id="o-range" style="font-size:15px;color:var(--frost-2);line-height:1.6"></div><div id="o-vs" style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px"></div><button class="btn sm" style="margin-top:12px" data-askopen="Explain the scenario I set in the pricing tool and what would have to happen for it to play out.">Ask the assistant about this scenario</button></div>' +
       '<div class="source">Fair value = anchor &times; exp(reaction &times; supply missing / 100). The 80% range comes from the uncertainty of the measured reaction. Research tool, not investment advice.</div></section>';
   }
   const snap = (st) => ({ gap: st.gap, r: st.r, anchor: st.anchor, scen: st.scen });
@@ -359,7 +358,7 @@
       '<div class="source">' + (S.range === "long" ? "Weekly (Fridays) since 2006" : "Every trading day, last 2 years") + ". Updated with every data run. The price reaction is measured on " + fx.years[0] + "-" + fx.years[1] + ", so values before " + (fx.years[1] + 1) + " are in-sample.</div></section>";
     const scatter = panel("HOW THE PRICE REACTION IS MEASURED", flexChart(k) + '<div style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:8px">One dot per marketing year: the realised world supply vs normal (FAOSTAT) and the change of the average futures price. The orange line is the fitted reaction: ' + (-fx.slope_pct_per_pct).toFixed(2) + "% on the price for each 1% of world supply missing.</div>",
       fx.n + " marketing years, " + fx.years[0] + "-" + fx.years[1] + ". Share of yearly price changes explained: " + Math.round(100 * fx.r2) + "%. Chance the link is pure luck: " + (fx.p_value < 0.01 ? "under 1%" : Math.round(100 * fx.p_value) + "%") + ".");
-    const back = S.prev && S.prev !== "fair" && VIEWS[S.prev] ? '<div style="margin-bottom:12px"><a class="chip" href="#' + S.prev + '" data-back="1" style="text-decoration:none;letter-spacing:.04em;text-transform:none;font-family:var(--body);font-size:15px">&larr; Back to ' + esc(VIEWS[S.prev]) + "</a></div>" : "";
+    const back = S.prev && S.prev !== "fair" && VIEWS[S.prev] ? '<div style="margin-bottom:12px"><a class="chip" href="#' + S.prev + '" data-back="1" style="text-decoration:none;letter-spacing:.04em;text-transform:none;font-family:var(--body);font-size:15px">Back to ' + esc(VIEWS[S.prev]) + "</a></div>" : "";
     const html = back + ticker() + warn + '<div class="main c65"><div class="col">' + cards + chart + comovePanel(k, false) + '</div><div class="col">' + calcPanel(k) + scatter + "</div></div>";
     return { html: html, after: () => { hookFairChart(); calcUpdate(); } };
   }
@@ -455,9 +454,9 @@
     return { html: html, after: null };
   }
 
-  /* ---------- Ask ChatGPT: opens chatgpt.com with the page's data and the question already written ---------- */
+  /* ---------- Assistant: answers in the page, from a small open model running in the browser ---------- */
   const NOTE_TEXT = (n) => n.template.replace(/\{([A-Z][A-Z0-9_]*)\}/g, (all, k) => (n.slots[k] ? n.slots[k].text : all));
-  /* What the viewer is looking at: added to every question, so ChatGPT answers about this page. */
+  /* What the viewer is looking at: added to every question, so the assistant answers about this page. */
   function viewContext() {
     const v = current(), k = S.crop, c = D.crops[k], L = ["## What the user is looking at now", "- Page: " + VIEWS[v] + (v === "ask" || v === "method" ? "" : ", crop: " + c.label) + "."];
     if (v === "commodity") {
@@ -493,11 +492,11 @@
   }
   const ctxLabel = () => { const v = current(); return v === "ask" || v === "method" ? "all three crops" : VIEWS[v] + " \u00b7 " + D.crops[S.crop].label; };
   const GPT_URL = "https://chatgpt.com/?q=";
-  const GPT_RULES = "I am reading HarvestRadar, a research dashboard on weather risk for maize, arabica coffee and cocoa futures. Use the HarvestRadar figures below as given and say plainly when something is not in them (stocks, positioning, news). The risk index compares the expected world harvest with normal for the time of year: 0 = normal, above +2 = rare; it is a supply signal, weakly linked to prices week to week. The climate fair value is the 12-month average price moved by the price reaction to the expected world supply gap. Give trade ideas as scenarios with entry logic, invalidation level and risks, not personalised advice. Be brief and concrete; answer in the language of my question.";
+  const RULES = "You are the HarvestRadar assistant, inside a research dashboard on weather risk for maize, arabica coffee and cocoa futures. Use only the HarvestRadar figures below for numbers, and say plainly when something is not in them (stocks, positioning, news). The risk index compares the expected world harvest with normal for the time of year: 0 = normal, above +2 = rare; it moves with the weather and is weakly linked to prices week to week. The climate fair value is the 12-month average price moved by the price reaction to the expected world supply gap. Give trade ideas as scenarios with entry logic, invalidation level and risks, never personalised advice. Answer in at most 150 words, in the language of the question.";
   function cropLine(k, full) {
     const c = D.crops[k], la = c.latest, f = c.fair;
     let s = "- " + c.label + " (" + c.priceName + ", " + c.priceUnit + "): risk index " + sg(la.z) + "; expected world supply " + pct(la.dp, 2) + " vs normal; last close " + fmtPrice(k, c.lastPrice.close) + " (" + dLong(c.lastPrice.date) + ")";
-    if (f) s += "; climate fair value " + fmtPrice(k, f.now.fair) + " (80% range " + fmtPrice(k, f.now.fair_lo) + " to " + fmtPrice(k, f.now.fair_hi) + "), price " + gapWords(f.now.gap_to_fair_pct) + "; price reaction " + (-f.flex.slope_pct_per_pct).toFixed(2) + "% per 1% of world supply missing (" + f.flex.years[0] + "-" + f.flex.years[1] + (f.now.reliable ? ")" : ", not statistically reliable)");
+    if (f) s += "; climate fair value " + fmtPrice(k, f.now.fair) + " (80% range " + fmtPrice(k, f.now.fair_lo) + " to " + fmtPrice(k, f.now.fair_hi) + "), price " + gapWords(f.now.gap_to_fair_pct) + "; price reaction " + (-f.flex.slope_pct_per_pct).toFixed(2) + "% per 1% of world supply missing" + (f.now.reliable ? "" : " (not statistically reliable)");
     s += ".";
     if (!full) return s;
     s += "\n  Countries behind the reading (points of world supply): " + la.contributors.slice(0, 4).map((x) => x.name + " " + sg(x.contrib_pct) + (x.window_open ? " (critical window open)" : "")).join(", ") + ".";
@@ -505,64 +504,145 @@
     if (sh) s += "\n  Weather factors behind the " + top.name + " forecast: " + sh.rows.slice(0, 3).map((r) => r[0] + " " + sg(r[1])).join(", ") + ".";
     const pw = c.pricesWeekly.c, n = pw.length;
     if (n > 14) s += "\n  Price change: 4 weeks " + pct(100 * (pw[n - 1] / pw[n - 5] - 1)) + ", 13 weeks " + pct(100 * (pw[n - 1] / pw[n - 14] - 1)) + ".";
-    if (f && f.comove) s += "\n  Correlation since 2006 of weekly index and price changes: " + f.comove.weekly_changes + " (" + f.comove.weekly_changes_in_windows + " in critical windows).";
     return s;
   }
-  function gptPrompt(q) {
+  function contextText(rich) {
     const v = current(), focus = v === "ask" || v === "method" ? null : S.crop;
-    const build = (rich) => GPT_RULES + "\n\nHarvestRadar data of " + dLong(D.asOf) + ":\n" + CROPS.map((k) => cropLine(k, rich && (focus === null || k === focus))).join("\n") +
-      "\n- El Nino index " + sg(D.oni.value) + " C (" + D.oni.strength + "), context only.\n\n" + viewContext() + "\n\nMy question: " + q;
-    let p = build(true);
-    if (encodeURIComponent(p).length > 7000) p = build(false);
-    if (encodeURIComponent(p).length > 7000) p = p.slice(0, 2400) + "\n\nMy question: " + q;
-    return p;
+    return RULES + "\n\nHarvestRadar data of " + dLong(D.asOf) + ":\n" + CROPS.map((k) => cropLine(k, rich && (focus === null || k === focus))).join("\n") +
+      "\n- El Nino index " + sg(D.oni.value) + " C (" + D.oni.strength + "), context only.\n\n" + viewContext();
   }
-  const gptLink = (q) => GPT_URL + encodeURIComponent(gptPrompt(q));
-  function openGpt(q) {
-    const a = document.createElement("a");
-    a.href = gptLink(q); a.target = "_blank"; a.rel = "noopener noreferrer";
-    document.body.appendChild(a); a.click(); a.remove();
+  const gptLink = (q) => { let p = contextText(true) + "\n\nMy question: " + q; if (encodeURIComponent(p).length > 7000) p = contextText(false) + "\n\nMy question: " + q; return GPT_URL + encodeURIComponent(p); };
+
+  /* The model runs in the viewer's browser (WebLLM on WebGPU): free, no account, nothing leaves the computer
+     except the model download (about 1 GB from Hugging Face, once, then kept by the browser). */
+  const WEBLLM = "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.87/+esm";
+  const LLM = { engine: null, loading: null, state: "idle", pct: 0, text: "", model: "", error: "" };
+  async function gpuAdapter() {
+    if (!navigator.gpu) return null;
+    try { return await navigator.gpu.requestAdapter(); } catch (e) { return null; }
+  }
+  function loadEngine() {
+    if (LLM.engine) return Promise.resolve(LLM.engine);
+    if (LLM.loading) return LLM.loading;
+    LLM.loading = (async () => {
+      const a = await gpuAdapter();
+      if (!a) { LLM.state = "unsupported"; throw new Error("WebGPU is not available in this browser"); }
+      const f16 = a.features && a.features.has("shader-f16"), test = new URLSearchParams(location.search).get("llm");
+      LLM.model = test === "small" ? (f16 ? "Qwen2.5-0.5B-Instruct-q4f16_1-MLC" : "Qwen2.5-0.5B-Instruct-q4f32_1-MLC")  // ?llm=small: quick checks
+        : f16 ? "Qwen2.5-1.5B-Instruct-q4f16_1-MLC" : "Qwen2.5-1.5B-Instruct-q4f32_1-MLC";
+      LLM.state = "loading"; LLM.pct = 0; LLM.text = "Starting"; askRefresh();
+      const webllm = await import(WEBLLM);
+      LLM.engine = await webllm.CreateMLCEngine(LLM.model, { initProgressCallback: (r) => { LLM.pct = r.progress || 0; LLM.text = r.text || ""; showProgress(); } });
+      LLM.state = "ready"; askRefresh();
+      return LLM.engine;
+    })().catch((e) => {
+      LLM.loading = null;
+      if (LLM.state !== "unsupported") { LLM.state = "failed"; LLM.error = String((e && e.message) || e).slice(0, 200); }
+      askRefresh();
+      throw e;
+    });
+    return LLM.loading;
+  }
+  function showProgress() {
+    const b = document.getElementById("llm-bar"), t = document.getElementById("llm-text");
+    if (b) b.style.width = Math.round(100 * LLM.pct) + "%";
+    if (t) t.textContent = "Loading the model on this computer: " + Math.round(100 * LLM.pct) + "%. The first time it downloads about 1 GB, then your browser keeps it.";
   }
 
-  /* One question box, moved between the Ask ChatGPT page and the side panel. */
+  function md(src) {
+    const inline = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+    const out = []; let list = null, para = [];
+    const flush = () => { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } if (list) { out.push("</" + list + ">"); list = null; } };
+    src.replace(/\s*—\s*/g, ", ").replace(/\r/g, "").split("\n").forEach((ln) => {
+      let m;
+      if ((m = /^\s*#{1,6}\s+(.*)$/.exec(ln))) { flush(); out.push("<h4>" + inline(m[1]) + "</h4>"); }
+      else if ((m = /^\s*[-*•]\s+(.*)$/.exec(ln)) || (m = /^\s*\d+[.)]\s+(.*)$/.exec(ln))) {
+        const kind = /^\s*\d/.test(ln) ? "ol" : "ul";
+        if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; }
+        if (list !== kind) { if (list) out.push("</" + list + ">"); out.push("<" + kind + ">"); list = kind; }
+        out.push("<li>" + inline(m[1]) + "</li>");
+      } else if (!ln.trim()) flush();
+      else { if (list) { out.push("</" + list + ">"); list = null; } para.push(ln); }
+    });
+    flush();
+    return out.join("");
+  }
+
+  /* One chat, moved between the Ask page and the side panel, so the conversation follows the viewer. */
   let chatEl = null;
   function chatWidget() {
     if (chatEl) return chatEl;
     chatEl = document.createElement("div");
     chatEl.className = "chat-widget";
-    chatEl.innerHTML = '<div style="font-size:15px;color:var(--frost-2);line-height:1.55">Write a question or pick one. ChatGPT opens in a new tab with the question and the HarvestRadar data of this page already filled in.</div>' +
-      '<div class="chips" id="ask-suggest" style="margin-top:12px"></div>' +
-      '<form class="composer" id="ask-form"><textarea id="ask-input" rows="3" placeholder="Ask about this page..." aria-label="Your question"></textarea></form>' +
-      '<div class="chips" style="margin-top:10px"><a class="btn primary" id="gpt-go" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;text-decoration:none">Ask ChatGPT</a><button class="btn" id="gpt-copy" type="button">Copy question and data</button></div>' +
-      '<div class="ctx-line" id="ask-ctx"></div><div class="ctx-line" id="gpt-copied" aria-live="polite"></div>' +
-      '<details style="margin-top:10px"><summary style="cursor:pointer;color:var(--frost-2);font-size:14px">What ChatGPT receives</summary><pre id="gpt-preview" class="mono" style="white-space:pre-wrap;font-size:13px;color:var(--muted);line-height:1.5;margin:8px 0 0"></pre></details>' +
-      '<div class="source">Free: ChatGPT can be used without an account, within its own limits. ChatGPT can be wrong. Research and education, not investment advice.</div>';
-    const inp = chatEl.querySelector("#ask-input"), go = chatEl.querySelector("#gpt-go");
-    inp.addEventListener("input", askRefresh);
-    inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (inp.value.trim()) go.click(); } });
-    go.addEventListener("click", (e) => { if (!inp.value.trim()) { e.preventDefault(); inp.focus(); } else go.href = gptLink(inp.value.trim()); });
-    chatEl.querySelector("#gpt-copy").addEventListener("click", async () => {
-      const t = gptPrompt(inp.value.trim() || "(write your question here)"), msg = chatEl.querySelector("#gpt-copied");
-      try { await navigator.clipboard.writeText(t); msg.textContent = "Copied: paste it into ChatGPT."; }
-      catch (err) { msg.textContent = "Copy is blocked here: select the text under What ChatGPT receives."; chatEl.querySelector("details").open = true; }
-    });
+    chatEl.innerHTML = '<div id="llm-status"></div><div class="chat-log" id="chat-log" aria-live="polite"></div><div class="chips" id="ask-suggest" style="margin-top:10px"></div>' +
+      '<form class="composer" id="ask-form"><textarea id="ask-input" rows="2" placeholder="Ask about this page..." aria-label="Your question"></textarea><button class="btn primary" id="ask-send" type="submit">Send</button><button class="btn" id="ask-stop" type="button" hidden>Stop</button></form>' +
+      '<div class="ctx-line" id="ask-ctx"></div>' +
+      '<details style="margin-top:8px"><summary style="cursor:pointer;color:var(--frost-2);font-size:14px">What the assistant receives</summary><pre id="gpt-preview" class="mono" style="white-space:pre-wrap;font-size:13px;color:var(--muted);line-height:1.5;margin:8px 0 0"></pre></details>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px"><span class="source" style="margin:0">Free, no account: a small open model (Qwen 2.5, 1.5B) runs in your browser. It can be wrong: check figures on the page. Not investment advice.</span><button class="btn sm" id="ask-clear" type="button">Clear</button></div>';
+    chatEl.querySelector("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); askSend(chatEl.querySelector("#ask-input").value); });
+    chatEl.querySelector("#ask-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); askSend(e.target.value); } });
+    chatEl.querySelector("#ask-stop").addEventListener("click", () => { S.chat.stop = true; if (LLM.engine) LLM.engine.interruptGenerate(); });
+    chatEl.querySelector("#ask-clear").addEventListener("click", () => { if (S.chat.busy) { S.chat.stop = true; if (LLM.engine) LLM.engine.interruptGenerate(); } S.chat.turns = []; S.chat.error = ""; askRefresh(); });
     return chatEl;
   }
   function askRefresh() {
-    const inp = document.getElementById("ask-input");
-    if (!inp) return;
-    const q = inp.value.trim();
-    document.getElementById("ask-suggest").innerHTML = suggestions().map((x) => '<button class="chip" data-ask="' + esc(x) + '">' + esc(x) + "</button>").join("");
-    const go = document.getElementById("gpt-go");
-    go.href = q ? gptLink(q) : "#"; go.setAttribute("aria-disabled", q ? "false" : "true"); go.style.opacity = q ? "1" : ".5";
-    document.getElementById("ask-ctx").textContent = "ChatGPT receives: " + ctxLabel() + ", data of " + dLong(D.asOf);
-    document.getElementById("gpt-preview").textContent = gptPrompt(q || "(your question)");
+    const log = document.getElementById("chat-log");
+    if (!log) return;
+    const C = S.chat;
+    let h = C.turns.length ? "" : '<div class="msg bot"><p>Ask anything about what you see: what it means for prices, trade ideas, scenarios or risks. The assistant reads this page (' + esc(ctxLabel()) + ") and the HarvestRadar data of " + dLong(D.asOf) + ".</p></div>";
+    C.turns.forEach((t, i) => { h += t.role === "user" ? '<div class="msg user">' + esc(t.content) + '<div class="meta">' + esc(t.where || "") + "</div></div>" : '<div class="msg bot" data-i="' + i + '">' + (t.content ? md(t.content) : '<span class="thinking">Writing...</span>') + (t.meta ? '<div class="meta">' + esc(t.meta) + "</div>" : "") + "</div>"; });
+    if (C.busy && C.turns.length && C.turns[C.turns.length - 1].role === "user") h += '<div class="msg bot"><span class="thinking">' + (LLM.state === "loading" ? "Loading the model..." : "Thinking...") + "</span></div>";
+    if (C.error) h += '<div class="warnbox">' + C.error + "</div>";
+    log.innerHTML = h;
+    log.scrollTop = log.scrollHeight;
+    const st = document.getElementById("llm-status");
+    if (st) {
+      if (LLM.state === "loading") st.innerHTML = '<div style="margin-bottom:10px"><div style="height:6px;border-radius:3px;background:var(--line)"><div id="llm-bar" style="height:6px;border-radius:3px;background:var(--signal);width:0"></div></div><div class="ctx-line" id="llm-text" style="margin-top:6px"></div></div>';
+      else if (LLM.state === "idle") st.innerHTML = '<div class="ctx-line" style="margin:0 0 10px">The first question downloads the model (about 1 GB, once). It then runs on this computer.</div>';
+      else st.innerHTML = "";
+      if (LLM.state === "loading") showProgress();
+    }
+    ["ask-send", "ask-input"].forEach((id) => { const e = document.getElementById(id); if (e) e.disabled = C.busy; });
+    const stop = document.getElementById("ask-stop"); if (stop) stop.hidden = !C.busy;
+    const sug = document.getElementById("ask-suggest");
+    if (sug) { sug.hidden = C.turns.length > 0; sug.innerHTML = suggestions().map((x) => '<button class="chip" data-ask="' + esc(x) + '">' + esc(x) + "</button>").join(""); }
+    const cx = document.getElementById("ask-ctx"); if (cx) cx.textContent = "The assistant sees: " + ctxLabel() + ", data of " + dLong(D.asOf);
+    const pv = document.getElementById("gpt-preview"); if (pv) pv.textContent = contextText(true);
     const dl = document.getElementById("drawer-ctx"); if (dl) dl.textContent = ctxLabel();
+    document.querySelectorAll("[data-ask]").forEach((b) => { b.disabled = C.busy; });
   }
-  function askWith(q) {
-    const inp = document.getElementById("ask-input");
-    if (inp) { inp.value = q; askRefresh(); }
-    openGpt(q);
+  function fallbackHtml(q) {
+    const why = LLM.state === "unsupported" ? "This browser cannot run the assistant: it needs WebGPU (a recent Chrome or Edge on a computer)." : "The model could not be loaded here" + (LLM.error ? " (" + esc(LLM.error) + ")" : "") + ".";
+    return why + ' You can still <a href="' + esc(gptLink(q)) + '" target="_blank" rel="noopener noreferrer">ask ChatGPT in a new tab</a>, with the same question and data.';
+  }
+  async function askSend(text) {
+    const C = S.chat;
+    text = (text || "").trim();
+    if (!text || C.busy) return;
+    C.error = ""; C.stop = false; C.turns.push({ role: "user", content: text, where: ctxLabel() }); C.busy = true;
+    const inp = document.getElementById("ask-input"); if (inp) inp.value = "";
+    askRefresh();
+    let eng;
+    try { eng = await loadEngine(); } catch (e) { C.busy = false; C.error = fallbackHtml(text); askRefresh(); return; }
+    const history = C.turns.slice(-7, -1).map((t) => ({ role: t.role, content: t.content.slice(0, 1200) }));
+    while (history.length && history[0].role !== "user") history.shift();
+    const msgs = [{ role: "system", content: contextText(true) }].concat(history, [{ role: "user", content: text }]);
+    const slot = { role: "assistant", content: "" };
+    C.turns.push(slot); askRefresh();
+    try {
+      const stream = await eng.chat.completions.create({ messages: msgs, stream: true, temperature: 0.3, max_tokens: 450 });
+      let last = 0;
+      for await (const ch of stream) {
+        slot.content += (ch.choices[0] && ch.choices[0].delta && ch.choices[0].delta.content) || "";
+        const now = Date.now();
+        if (now - last > 80) { last = now; const live = document.querySelector('#chat-log .msg.bot[data-i="' + (C.turns.length - 1) + '"]'), log = document.getElementById("chat-log"); if (live) { live.innerHTML = md(slot.content); if (log) log.scrollTop = log.scrollHeight; } }
+      }
+      if (C.stop) slot.meta = "Stopped.";
+      if (!slot.content.trim()) { slot.content = "No answer came back. Try a shorter question."; }
+    } catch (e) {
+      slot.meta = "Interrupted."; if (!slot.content) C.turns.pop();
+      C.error = "The model stopped with an error. Try again, or " + '<a href="' + esc(gptLink(text)) + '" target="_blank" rel="noopener noreferrer">ask ChatGPT in a new tab</a>.';
+    } finally { C.busy = false; C.stop = false; askRefresh(); }
   }
 
   /* Side panel available on every page; the floating button opens it with the page as context. */
@@ -570,16 +650,16 @@
     if (document.getElementById("drawer")) return;
     const fab = document.createElement("button");
     fab.id = "fab"; fab.className = "fab"; fab.type = "button"; fab.setAttribute("aria-controls", "drawer");
-    fab.innerHTML = '<span class="dot"></span>Ask ChatGPT';
+    fab.innerHTML = '<span class="dot"></span>Ask the assistant';
     const dr = document.createElement("aside");
-    dr.id = "drawer"; dr.className = "drawer"; dr.setAttribute("aria-label", "Ask ChatGPT"); dr.hidden = true;
-    dr.innerHTML = '<div class="drawer-head"><div style="min-width:0"><div style="font-family:var(--display);font-weight:700;font-size:20px">Ask ChatGPT</div><div class="mono" id="drawer-ctx" style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div></div><button class="btn sm" id="drawer-close" type="button" aria-label="Close the panel">Close</button></div><div class="drawer-body"></div>';
+    dr.id = "drawer"; dr.className = "drawer"; dr.setAttribute("aria-label", "Assistant"); dr.hidden = true;
+    dr.innerHTML = '<div class="drawer-head"><div style="min-width:0"><div style="font-family:var(--display);font-weight:700;font-size:20px">Ask the assistant</div><div class="mono" id="drawer-ctx" style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div></div><button class="btn sm" id="drawer-close" type="button" aria-label="Close the panel">Close</button></div><div class="drawer-body"></div>';
     document.body.appendChild(fab); document.body.appendChild(dr);
     fab.addEventListener("click", () => openDrawer());
     dr.querySelector("#drawer-close").addEventListener("click", closeDrawer);
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.drawer) closeDrawer(); });
   }
-  function openDrawer() {
+  function openDrawer(q) {
     drawerShell();
     S.drawer = true;
     document.body.classList.add("drawer-open");
@@ -588,7 +668,7 @@
     dr.hidden = false; requestAnimationFrame(() => dr.classList.add("open"));
     document.getElementById("fab").hidden = true;
     askRefresh();
-    const i = document.getElementById("ask-input"); if (i) i.focus();
+    if (q) askSend(q); else { const i = document.getElementById("ask-input"); if (i) i.focus(); }
   }
   function closeDrawer() {
     S.drawer = false;
@@ -611,13 +691,13 @@
   }
   function askPanel(k) {
     const c = D.crops[k], qs = suggestions();
-    return panel("ASK CHATGPT ABOUT " + esc(c.label.toUpperCase()), '<div style="font-size:15px;color:var(--frost-2);line-height:1.55">Opens ChatGPT in a new tab with this page\'s figures and your question.</div><div class="chips" style="margin-top:12px">' +
-      qs.map((q) => '<button class="chip" data-ask="' + esc(q) + '">' + esc(q) + "</button>").join("") + '<button class="chip" data-askopen="">Write your own question</button></div>', "Free, no account needed. Not investment advice.");
+    return panel("ASK ABOUT " + esc(c.label.toUpperCase()), '<div style="font-size:15px;color:var(--frost-2);line-height:1.55">The answer appears in the side panel. Free, no account: the assistant runs in your browser.</div><div class="chips" style="margin-top:12px">' +
+      qs.map((q) => '<button class="chip" data-askopen="' + esc(q) + '">' + esc(q) + "</button>").join("") + '<button class="chip" data-askopen="">Write your own question</button></div>', "It reads this page's figures. Not investment advice.");
   }
 
   function viewAsk() {
-    const html = '<div class="main c65"><div class="col"><section class="glass" style="padding:18px 20px"><div style="font-family:var(--display);font-weight:700;font-size:24px;margin-bottom:12px">Ask ChatGPT about today\'s signals</div><div id="ask-slot"></div></section></div>' +
-      '<div class="col">' + panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">The "Ask ChatGPT" button on every page opens this box in a side panel, with that page as context: the crop, the readings on screen and, on the Fair value page, the scenario you set. Your question and the HarvestRadar figures are sent to chatgpt.com in a new tab; the answer stays there. Nothing is stored by this page.</div>') + "</div></div>";
+    const html = '<div class="main c65"><div class="col"><section class="glass" style="padding:18px 20px"><div style="font-family:var(--display);font-weight:700;font-size:24px;margin-bottom:12px">Ask about today\'s signals</div><div id="ask-slot"></div></section></div>' +
+      '<div class="col">' + panel("HOW IT WORKS", '<div style="font-size:15px;color:var(--frost-2);line-height:1.65">The "Ask the assistant" button on every page opens this chat in a side panel, with that page as context: the crop, the readings on screen and, on the Fair value page, the scenario you set. The answers come from a small open model (Qwen 2.5, 1.5 billion parameters) that runs in your browser with WebGPU: free, no account, and your questions stay on your computer. The first question downloads the model (about 1 GB, once). Browsers without WebGPU get a link to ask ChatGPT instead.</div>') + "</div></div>";
     return { html: html, after: null };
   }
 
@@ -649,8 +729,8 @@
     if (nav) { if (nav.dataset.goto) S.goto = nav.dataset.goto; if (nav.dataset.back) S.restore = true; }
     const t = e.target.closest("[data-crop],[data-shap],[data-episode],[data-note],[data-crop-link],[data-range],[data-scen],#calc-reset,#calc-undo,[data-ask],[data-askopen]");
     if (!t) return;
-    if (t.dataset.ask) { askWith(t.dataset.ask); return; }
-    if (t.dataset.askopen !== undefined) { openDrawer(); return; }
+    if (t.dataset.ask) { askSend(t.dataset.ask); return; }
+    if (t.dataset.askopen !== undefined) { openDrawer(t.dataset.askopen || null); return; }
     if (t.dataset.range) { S.range = t.dataset.range; render(); return; }
     if (t.dataset.scen) {
       const k = S.crop, f = D.crops[k].fair, st = S.calc[k] || (S.calc[k] = calcDefaults(k));

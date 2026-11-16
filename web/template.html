@@ -20,6 +20,7 @@
   --glass-border: rgba(126,176,255,.15);
 }
 *, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { background: var(--night); }
 body { margin: 0; background: radial-gradient(1200px 700px at 30% 20%, var(--glow-bg) 0%, var(--night) 70%) fixed; background-color: var(--night);
   color: var(--frost); font-family: var(--body); font-size: 16px; -webkit-font-smoothing: antialiased; }
@@ -254,11 +255,10 @@ table.ev td:first-child { font-family: var(--body); }
   .hide-sm { display: none; }
 }
 .chat-widget .chip { text-align: left; }
-.chain { display: grid; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.chain { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
 .chain-step { display: block; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(11,15,20,.35); text-decoration: none; color: inherit; min-width: 0; }
 .chain-step:hover { border-color: rgba(255,181,71,.5); }
-.chain-arrow { align-self: center; text-align: center; color: var(--signal); font-size: 20px; }
-@container wrap (max-width: 1080px) { .chain { grid-template-columns: repeat(2, minmax(0, 1fr)); } .chain-arrow { display: none; } }
+@container wrap (max-width: 1080px) { .chain { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .chain { grid-template-columns: minmax(0, 1fr); } }
 @media (min-width: 1100px) { body.drawer-open .wrap { padding-right: calc(min(480px, 100vw) + 24px); max-width: none; } }
 @media (max-width: 700px) { .drawer-head .ask-state { display: none; } }

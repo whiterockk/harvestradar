@@ -158,7 +158,7 @@ def note_ready(passed: int, total: int, label: str) -> str:
             f'<span style="flex:none;border-radius:10px;overflow:hidden;display:inline-flex">{mark_on_signal(40)}</span>'
             f'<div><div style="font-size:17px;color:{T["frost"]};font-weight:500">{E(label)}</div>'
             f'<div style="font-size:14px;color:{T["muted"]}">{passed} of {total} checks passed</div></div>'
-            f'<div style="margin-left:auto" class="hr-mono"><span style="font-size:13px;color:{T["signal"]}">OPEN &rarr;</span></div></div>')
+            f'<div style="margin-left:auto" class="hr-mono"><span style="font-size:13px;color:{T["signal"]}">OPEN</span></div></div>')
 
 
 def bar_rows(rows: list[dict], unit: str = "pp", max_abs: float | None = None, label_w: int = 180) -> str:

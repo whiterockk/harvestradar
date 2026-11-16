@@ -3,6 +3,7 @@ who drives this week (contributors) and SHAP (which weather)."""
 
 from __future__ import annotations
 
+import html as H
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -10,7 +11,7 @@ import streamlit as st
 
 from harvestradar.app import components as C
 from harvestradar.app import data
-from harvestradar.app.chatgpt import chatgpt_url
+from harvestradar.app.assistant import answer_local, chatgpt_url, local_model_available
 from harvestradar.app.theme import T
 from harvestradar.app.views.common import ticker
 from harvestradar.app.views.fair_value import chain_panel, comove_panel, gap_words
@@ -99,6 +100,11 @@ def price_panel(key: str) -> str:
                    f'yearly price changes. A rough guide, not a price forecast.')
 
 
+@st.cache_data(show_spinner=False, max_entries=64)
+def _answer(question: str, key: str, asof) -> str:
+    return answer_local(question, key, "Commodity", asof)
+
+
 def render() -> None:
     key = st.session_state.crop
     m = data.meta()["commodities"][key]
@@ -139,13 +145,31 @@ def render() -> None:
         st.markdown(price_panel(key), unsafe_allow_html=True)
         with st.container(key="glass_gpt"):
             lab = m["label"].lower()
-            st.markdown(f'<div class="hr-caps">ASK CHATGPT ABOUT {m["label"].upper()}</div><div style="font-size:15px;'
-                        f'color:{T["frost_2"]};margin:6px 0 12px">Opens ChatGPT in a new tab with this page\'s figures and '
-                        f'the question. Free, no account needed. Not investment advice.</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="hr-caps">ASK ABOUT {m["label"].upper()}</div><div style="font-size:15px;'
+                        f'color:{T["frost_2"]};margin:6px 0 12px">The answer appears here, written by the local model from '
+                        f'this page\'s figures. Free, no account. It can be wrong: check the figures. Not investment '
+                        f'advice.</div>', unsafe_allow_html=True)
+            qkey = f"ask_q_{key}"
             for i, q in enumerate([f"What drives the {lab} risk index today, and how much does it matter for the price?",
                                    f"Build a {lab} trade idea from this page: direction, entry logic, invalidation and risks.",
                                    f"Which country or weather factor could change the {lab} reading most in the coming weeks?"]):
-                st.link_button(q, chatgpt_url(q, key, "Commodity", asof), use_container_width=True)
+                if st.button(q, key=f"askb_{key}_{i}", use_container_width=True):
+                    st.session_state[qkey] = q
+            with st.form(key=f"askf_{key}", clear_on_submit=True, border=False):
+                own = st.text_input("Your question", placeholder="Ask about this page...", label_visibility="collapsed")
+                if st.form_submit_button("Ask", use_container_width=True) and own.strip():
+                    st.session_state[qkey] = own.strip()
+            q = st.session_state.get(qkey)
+            if q:
+                st.markdown(f'<div class="hr-mono" style="font-size:13px;color:{T["muted"]};margin-top:6px">QUESTION</div>'
+                            f'<div style="color:{T["frost"]};margin-bottom:6px">{H.escape(q)}</div>', unsafe_allow_html=True)
+                if local_model_available():
+                    with st.spinner("The local model is writing the answer (about 20 to 60 seconds on a laptop)..."):
+                        ans = _answer(q, key, asof)
+                    st.markdown(ans)
+                else:
+                    st.markdown(f'The local model is not installed (pip install -r requirements-llm.lock). '
+                                f'[Ask ChatGPT in a new tab]({chatgpt_url(q, key, "Commodity", asof)}) instead.')
         contribs = r["contributors"]
         rows = [{"label": c["name"], "value": c["contrib_pct"], "raises_risk": c["contrib_pct"] < 0,
                  "note": f"{c['season']} harvest: {c['pred_anom_pct']:+.1f}% vs normal"
