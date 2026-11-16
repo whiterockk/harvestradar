@@ -142,7 +142,7 @@ def demo_export() -> None:
 
 
 @app.command("update")
-def update(date: str = typer.Option(None, help="Data as of YYYY-MM-DD (default: previous working day, UTC)"),
+def update(date: str = typer.Option(None, help="Data as of YYYY-MM-DD (default: today if a working day, UTC)"),
            deterministic_notes: bool = typer.Option(False, help="Skip the LLM, write the notes from the template"),
            skip_weather: bool = typer.Option(False, help="Do not call NASA POWER (tests)")) -> None:
     """Daily incremental update: new data only, then index, fair value, notes and data/demo."""

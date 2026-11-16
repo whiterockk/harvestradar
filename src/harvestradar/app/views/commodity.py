@@ -10,9 +10,10 @@ import streamlit as st
 
 from harvestradar.app import components as C
 from harvestradar.app import data
+from harvestradar.app.chatgpt import chatgpt_url
 from harvestradar.app.theme import T
 from harvestradar.app.views.common import ticker
-from harvestradar.app.views.fair_value import comove_panel, gap_words
+from harvestradar.app.views.fair_value import chain_panel, comove_panel, gap_words
 
 SHAP_LABELS = {
     "shap_hdd_z": "Heat (degree days)", "shap_tmax_z": "Daytime heat", "shap_sm_pre_z": "Soil moisture before window",
@@ -123,18 +124,28 @@ def render() -> None:
             st.markdown(C.stat_card(m["price_label"], fmt_price(key, float(last_px.close)),
                                     f"{unit}, nearest contract, close on {last_px.date.day} {last_px.date:%B %Y}."),
                         unsafe_allow_html=True)
+        st.markdown(chain_panel(key, asof), unsafe_allow_html=True)
         with st.container(key="glass_chart"):
             st.markdown('<div style="font-family:Space Grotesk,sans-serif;font-weight:700;font-size:20px">'
                         'Risk index and futures price, last 64 weeks</div>', unsafe_allow_html=True)
             st.plotly_chart(index_chart(key, asof), use_container_width=True, config={"displayModeBar": False},
                             key=f"chart_{key}", theme=None)
             st.markdown(f'<div style="font-size:15px;color:{T["frost_2"]};line-height:1.6">How to read it: the orange '
-                        f'line rises when the model expects less {m["label"].lower()} than usual for this time of year. '
+                        f'line rises when this season\'s weather points to less {m["label"].lower()} than usual for this time of year. '
                         f'The shaded band is the {m["main_country_name"]} critical window, when weather matters most '
                         f'for the harvest. The white line is the price, for comparison.</div>', unsafe_allow_html=True)
         st.markdown(comove_panel(key), unsafe_allow_html=True)
     with right:
         st.markdown(price_panel(key), unsafe_allow_html=True)
+        with st.container(key="glass_gpt"):
+            lab = m["label"].lower()
+            st.markdown(f'<div class="hr-caps">ASK CHATGPT ABOUT {m["label"].upper()}</div><div style="font-size:15px;'
+                        f'color:{T["frost_2"]};margin:6px 0 12px">Opens ChatGPT in a new tab with this page\'s figures and '
+                        f'the question. Free, no account needed. Not investment advice.</div>', unsafe_allow_html=True)
+            for i, q in enumerate([f"What drives the {lab} risk index today, and how much does it matter for the price?",
+                                   f"Build a {lab} trade idea from this page: direction, entry logic, invalidation and risks.",
+                                   f"Which country or weather factor could change the {lab} reading most in the coming weeks?"]):
+                st.link_button(q, chatgpt_url(q, key, "Commodity", asof), use_container_width=True)
         contribs = r["contributors"]
         rows = [{"label": c["name"], "value": c["contrib_pct"], "raises_risk": c["contrib_pct"] < 0,
                  "note": f"{c['season']} harvest: {c['pred_anom_pct']:+.1f}% vs normal"

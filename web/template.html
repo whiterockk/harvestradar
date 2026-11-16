@@ -94,7 +94,7 @@ button { font: inherit; color: inherit; }
 .chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 10px; border: 1px solid var(--line-strong);
   background: rgba(19,28,39,.7); font-family: var(--mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--frost-2); }
 .chip.amber { border-color: rgba(255,181,71,.7); color: var(--frost); box-shadow: 0 0 18px rgba(255,181,71,.18); }
-button.chip { cursor: pointer; letter-spacing: .04em; text-transform: none; font-family: var(--body); font-size: 15px; }
+button.chip { text-align: left; cursor: pointer; letter-spacing: .04em; text-transform: none; font-family: var(--body); font-size: 15px; }
 button.chip.on { color: var(--signal); background: rgba(255,181,71,.12); border-color: rgba(255,181,71,.55); }
 .pill { font-family: var(--mono); color: var(--signal); background: rgba(255,181,71,.10); border: 1px solid rgba(255,181,71,.55); border-radius: 7px; padding: 1px 7px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .badge { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: rgba(19,28,39,.7); font-size: 15px; color: var(--frost-2); }
@@ -254,6 +254,12 @@ table.ev td:first-child { font-family: var(--body); }
   .hide-sm { display: none; }
 }
 .chat-widget .chip { text-align: left; }
+.chain { display: grid; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr) 22px minmax(0, 1fr); gap: 8px; align-items: stretch; }
+.chain-step { display: block; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(11,15,20,.35); text-decoration: none; color: inherit; min-width: 0; }
+.chain-step:hover { border-color: rgba(255,181,71,.5); }
+.chain-arrow { align-self: center; text-align: center; color: var(--signal); font-size: 20px; }
+@container wrap (max-width: 1080px) { .chain { grid-template-columns: repeat(2, minmax(0, 1fr)); } .chain-arrow { display: none; } }
+@media (max-width: 700px) { .chain { grid-template-columns: minmax(0, 1fr); } }
 @media (min-width: 1100px) { body.drawer-open .wrap { padding-right: calc(min(480px, 100vw) + 24px); max-width: none; } }
 @media (max-width: 700px) { .drawer-head .ask-state { display: none; } }
 h1.ttl { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 3vw, 40px); letter-spacing: -0.02em; margin: 6px 0 16px 0; text-wrap: balance; }

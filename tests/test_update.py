@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from harvestradar.ingest import power
-from harvestradar.update import previous_business_day
+from harvestradar.update import latest_business_day
 
 COLS = ["tmax_c", "tmin_c", "precip_mm", "sm_root", "sm_top"]
 
@@ -42,6 +42,15 @@ def test_update_cells_appends_new_days_and_drops_unfilled_tail(tmp_path, monkeyp
     assert d.date.min() == pd.Timestamp("2026-01-01")
 
 
-def test_previous_business_day():
-    assert previous_business_day(dt.date(2026, 11, 16)) == dt.date(2026, 11, 13)  # Monday -> Friday
-    assert previous_business_day(dt.date(2026, 11, 18)) == dt.date(2026, 11, 17)
+def test_latest_business_day():
+    assert latest_business_day(dt.date(2026, 11, 16)) == dt.date(2026, 11, 16)  # Monday
+    assert latest_business_day(dt.date(2026, 11, 15)) == dt.date(2026, 11, 13)  # Sunday -> Friday
+
+
+def test_prices_keep_only_settled_closes():
+    import pandas as pd
+
+    from harvestradar.ingest.prices import settled_until
+
+    assert settled_until(pd.Timestamp("2026-11-16 09:30", tz="UTC")) == pd.Timestamp("2026-11-16")
+    assert settled_until(pd.Timestamp("2026-11-16 21:30", tz="UTC")) == pd.Timestamp("2026-11-17")

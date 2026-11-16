@@ -1,5 +1,5 @@
 """Daily note page: inbox of notes, the selected note with figure pills (from its own payload), the three
-checks, the data given to the model, and the email export."""
+checks and the data given to the model."""
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ from harvestradar.app import data
 from harvestradar.app.theme import T
 from harvestradar.app.views.common import go
 from harvestradar.report.checks import SLOT_RE, split_figure
-from harvestradar.report.email_note import eml_bytes
 
 ORDER = {"maize": 0, "coffee": 1, "cocoa": 2}
 
@@ -117,14 +116,10 @@ def render() -> None:
             st.markdown(f'<div style="display:flex;flex-wrap:wrap;align-items:center">{checks}'
                         f'<span class="hr-mono" style="font-size:13px;color:{T["muted"]};margin-left:6px">{who}'
                         f'. Every figure is inserted by the software, with its source.</span></div>', unsafe_allow_html=True)
-            b1, b2, _ = st.columns([0.2, 0.24, 0.56])
+            b1, _ = st.columns([0.2, 0.8])
             with b1:
                 st.button("Open the map", key="open_map", on_click=go, args=("stress",),
                           kwargs={"crop": key}, use_container_width=True)
-            with b2:
-                content, fname = eml_bytes(row.to_dict())
-                st.download_button("Download as email (.eml)", data=content, file_name=fname, mime="message/rfc822",
-                                   key="download_eml", use_container_width=True)
         with st.expander("Data given to the model", expanded=st.session_state.get("q_data") == "1"):
             figs = [(k, s) for k, s in p["slots"].items() if s["kind"] == "figure"]
             cards = "".join(

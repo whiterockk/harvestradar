@@ -1,14 +1,13 @@
 # Daily update of HarvestRadar, every working day.
 # New data only (NASA POWER weather, futures closes, El Nino), then index, climate fair value, daily notes,
 # and the web edition published on GitHub Pages. The heavy data (weather since 1981, models) lives in the
-# Actions cache; if the cache is empty, it is restored from the git ref refs/data/state (a snapshot that
-# plain clones do not download) and the missing days are fetched again.
+# Actions cache; if the cache is empty, it is restored from the "data-state" release (created on the first
+# run from the data-state branch, which is then deleted) and the missing days are fetched again.
 name: Daily update
 
 on:
-  # The schedule is switched on once the data snapshot (refs/data/state) is on GitHub:
-  # schedule:
-  #   - cron: "17 5 * * 1-5"   # 05:17 UTC (06:17 or 07:17 in Paris), Monday to Friday
+  schedule:
+    - cron: "17 5 * * 1-5"   # 05:17 UTC (06:17 or 07:17 in Paris), Monday to Friday
   workflow_dispatch:
     inputs:
       deterministic_notes:
@@ -17,7 +16,7 @@ on:
         default: false
 
 permissions:
-  contents: read
+  contents: write   # first run: turn the data-state branch into a release
   pages: write
   id-token: write
 
@@ -64,12 +63,20 @@ jobs:
           key: state-v1-${{ github.run_id }}
           restore-keys: state-v1-
 
-      - name: Restore data state (git ref refs/data/state, if the cache is empty)
+      - name: Restore data state (release, or the data-state branch the first time)
         if: steps.state.outputs.cache-matched-key == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git fetch --depth=1 origin +refs/data/state:refs/data/state
-          git checkout refs/data/state -- $STATE_PATHS
-          git reset -q
+          if gh release view data-state >/dev/null 2>&1; then
+            gh release download data-state --pattern 'state.tar.zst' --dir /tmp
+            tar --zstd -xf /tmp/state.tar.zst && rm /tmp/state.tar.zst
+          else
+            git fetch --depth=1 origin data-state:refs/remotes/origin/data-state
+            git checkout origin/data-state -- $STATE_PATHS
+            git reset -q
+            echo "STATE_FROM_BRANCH=1" >> "$GITHUB_ENV"
+          fi
 
       - name: Restore the AI model (cache)
         uses: actions/cache@v4
@@ -92,6 +99,16 @@ jobs:
             data/processed
             models_store
           key: state-v1-${{ github.run_id }}
+
+      - name: Move the data snapshot from the branch to a release (first run only)
+        if: success() && env.STATE_FROM_BRANCH == '1'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tar --zstd -cf /tmp/state.tar.zst $STATE_PATHS
+          gh release create data-state /tmp/state.tar.zst --prerelease --title "Data state for the daily update" \
+            --notes "Weather since 1981 (NASA POWER), processed tables and models. Restored by the daily workflow when its cache is empty."
+          git push origin --delete data-state
 
       - name: Build the web edition
         run: |

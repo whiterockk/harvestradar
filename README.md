@@ -34,9 +34,9 @@ that leaves localhost. `make screenshots` captures every page at 1920 x 1080 (de
 | Commodity | Harvest-risk index, expected world supply vs normal, futures price, what it means for the price (implied move and range), index vs price over 64 weeks with the critical windows of the main producer, which countries drive today's reading, which weather drives each country's forecast (SHAP) | `risk_index.parquet`, `prices_<crop>.parquet`, `shap_latest.parquet`, `config/commodities.yaml` |
 | Fair value | Futures price vs climate fair value (12-month average moved by the price reaction implied by the expected world supply), 80 % range, pricing tool with scenarios (index 0, +2, +3, -2), how the price reaction is measured, why the index and the price do not move together | `fair_value_daily.parquet`, `price_impact.json` |
 | Replay | US drought 2012, Brazil frost 2021, cocoa 2023-2024: dekad stress film strip, first crossing of +2, index path, price | `events.json`, `stress_<crop>.parquet` |
-| Daily note | Inbox of the last five working days, the note with figure pills, the three checks, the data given to the model, **Download as email** | `notes.parquet` |
+| Daily note | Inbox of the last five working days, the note with figure pills, the three checks, the data given to the model | `notes.parquet` |
 | Method | Pipeline in four steps, out-of-sample evaluation, the honest record with a verdict per test, credits | `model_eval.json`, `events.json`, `backtest.json` |
-| Ask Claude (web edition) | Chat about today's signals, run on the viewer's own Claude plan when the page is opened in Claude | the page's data snapshot |
+| Ask ChatGPT (web edition) | Button on every page: opens ChatGPT in a new tab with the page's figures and the question (free, no account needed) | the page's data snapshot |
 
 URL state for filming: `?page=commodity&crop=maize&date=2026-11-13&dekad=2012-06-10&episode=us_drought_2012`,
 plus `&capture=1` to freeze animations and turn off hovers, `&play=1` to start the map playing, `&data=1` to
@@ -51,7 +51,6 @@ make train     # rolling-origin LightGBM vintages, baselines, evaluation, SHAP
 make index     # risk index (weekly history and every working day), episodes, backtest, price reaction
 make notes     # daily notes (needs: pip install -r requirements-llm.lock, downloads Qwen2.5-1.5B once)
 make export    # writes data/demo (< 50 MB)
-make email     # writes reports/notes/<week>_<crop>.eml and .html
 ```
 
 **One manual step**: MapSPAM 2020 sits behind a Harvard Dataverse guestbook. Download
@@ -100,8 +99,8 @@ as fallback) and exports `data/demo`. Weather data reach NASA POWER with a lag o
 previous close.
 
 The heavy data (weather since 1981, about 650 MB, processed tables and models) are kept in the Actions cache.
-If the cache is empty, the workflow restores the snapshot stored in the git ref `refs/data/state` (plain
-clones do not download it) and fetches the missing days.
+If the cache is empty, the workflow restores the snapshot attached to the `data-state` release (created on
+the first run from the `data-state` branch, which the workflow then deletes) and fetches the missing days.
 
 Run it by hand: Actions tab, "Daily update", "Run workflow" (option: notes from the fixed template). Locally:
 `harvestradar update` (or `--date 2026-11-13`, `--deterministic-notes`, `--skip-weather`).
@@ -109,7 +108,7 @@ Run it by hand: Actions tab, "Daily update", "Run workflow" (option: notes from 
 ## Web edition (no Python needed)
 
 `python scripts/build_web.py` writes `dist/web/index.html`: one self-contained page (about 4 MB) with the seven
-pages (the six of the app plus Ask Claude), the same data snapshot and the same map code, for viewing in a browser or publishing as a page.
-Differences with the Streamlit app: the daily note formatted as an email is shown in the page ("Show as email") instead of
-downloaded as an .eml file, and fonts
+pages (the six of the app plus Ask ChatGPT), the same data snapshot and the same map code, for viewing in a browser or publishing as a page.
+Differences with the Streamlit app: an "Ask ChatGPT" button on every page opens ChatGPT in a new tab
+with the page's figures and the question, and fonts
 load from Google Fonts.

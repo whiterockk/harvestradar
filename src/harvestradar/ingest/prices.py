@@ -35,12 +35,20 @@ def detect_rolls(df: pd.DataFrame, k: float = 4.0) -> pd.Series:
     return big.fillna(False)
 
 
+def settled_until(now: pd.Timestamp | None = None) -> pd.Timestamp:
+    """First day without a settled close: today before 21:00 UTC (CBOT and ICE settle by then), tomorrow after."""
+    now = now or pd.Timestamp.now(tz="UTC")
+    day = now.tz_localize(None).normalize() if now.tzinfo else now.normalize()
+    return day + pd.Timedelta(days=1) if now.hour >= 21 else day
+
+
 def fetch_prices(cfg: Settings) -> dict[str, pd.DataFrame]:
     out = {}
     end = (pd.Timestamp(cfg.as_of_end) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
     for key, c in cfg.commodities.items():
         df = load_futures(c.ticker, "2000-01-01", end)
         df = df[df["date"] <= pd.Timestamp(cfg.as_of_end)]
+        df = df[df["date"] < settled_until()]  # today's bar is not a close until the exchanges have settled
         df["ticker"] = c.ticker
         df["ret_1d"] = np.log(df["close"]).diff()
         df["roll_flag"] = detect_rolls(df)

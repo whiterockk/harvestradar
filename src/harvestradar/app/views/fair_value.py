@@ -57,15 +57,44 @@ def comove_panel(key: str) -> str:
              f'{tile(cm["weekly_changes"], "Week-to-week changes of the index and of the price")}'
              f'{tile(cm["weekly_changes_in_windows"], "Same, only in critical weather windows (" + str(cm["weeks_in_windows"]) + " weeks)")}'
              f'{tile(cm["index_vs_next_13_weeks"], "Index level vs the price change over the next 13 weeks")}</div>')
-    text = (f'<div style="font-size:15px;color:{T["frost_2"]};line-height:1.65;margin-top:12px">The index measures how '
-            f'much {m["label"].lower()} the world should harvest compared with normal for the time of year. It is not a '
-            f'price model. Prices also move with demand, stocks, the dollar, fund positions, other origins and the '
-            f'official crop reports, and traders often price a weather scare before it shows up in harvest forecasts. '
-            f'So the two lines can diverge for weeks. Read the index for the supply side, then use the climate fair '
-            f'value to turn it into a price.</div>')
+    text = (f'<div style="font-size:15px;color:{T["frost_2"]};line-height:1.65;margin-top:12px">The index moves with the '
+            f'weather: every day it reads heat, rain and soil moisture where {m["label"].lower()} grows, turns them into a '
+            f'harvest forecast for each producing country and adds them up into the world supply gap. The price only '
+            f'follows when that gap matters for the market: prices also move with demand, stocks, the dollar, fund '
+            f'positions, other origins and the official crop reports, and traders often price a weather scare before it '
+            f'reaches the harvest forecasts. So the two lines can diverge for weeks. The climate fair value is the last '
+            f'step: the price that the weather-driven supply gap justifies.</div>')
     return C.panel("WHY THE INDEX AND THE PRICE DO NOT MOVE TOGETHER", tiles + text,
                    f'Correlations, weekly data since {cm["from"][:4]} ({cm["weeks"]} weeks). 0 means no link, 1 means '
                    f'the two move as one.')
+
+
+def chain_panel(key: str, asof) -> str:
+    """From weather to price: the four steps behind every reading, with today's values."""
+    m = data.meta()["commodities"][key]
+    r = data.latest_risk(key, asof)
+    pi = data.jsonfile("price_impact.json")
+    imp, fv = pi.get("commodities", {}).get(key), pi.get("fair_value", {}).get(key)
+    dk = data.stress(key).dekad_end.max()
+    regions = " and ".join(data.top_regions(key, dk, 2).adm1_name.tolist())
+    top = r["contributors"][0] if r["contributors"] else None
+
+    def step(n, title, big, sub):
+        return (f'<div style="flex:1;min-width:150px;padding:12px 14px;border:1px solid {T["line"]};border-radius:12px;'
+                f'background:rgba(11,15,20,.35)"><div class="hr-caps">{n} &middot; {title}</div><div class="hr-mono" '
+                f'style="font-size:24px;color:{T["frost"]};margin-top:6px">{big}</div><div style="font-size:14px;'
+                f'color:{T["frost_2"]};line-height:1.5;margin-top:4px">{sub}</div></div>')
+    arrow = f'<div style="align-self:center;color:{T["signal"]};font-size:20px">&rarr;</div>'
+    price = f'{imp["implied_pct"]:+.1f}%' if imp and imp["reliable"] else "no reliable link"
+    steps = [step("1", "WEATHER", f"10 days to {dk.day} {dk:%b}", f"Most stressed producing regions: {H.escape(regions)}."),
+             step("2", "HARVEST", f"{r['delta_prod_pct']:+.2f}%", "Expected world supply vs normal"
+                  + (f", led by {H.escape(top['name'])} ({top['contrib_pct']:+.2f} points)." if top else ".")),
+             step("3", "RISK INDEX", f"{r['risk_z']:+.2f}", "How unusual this supply gap is for the time of year (+2 = rare)."),
+             step("4", "PRICE", price, (f"Climate fair value {fmt(key, fv['fair'])}; last close {fmt(key, fv['close'])}."
+                                        if fv else "Expected move over the marketing year."))]
+    return C.panel(f"FROM WEATHER TO PRICE, {m['label'].upper()} TODAY",
+                   f'<div style="display:flex;flex-wrap:wrap;gap:8px">{arrow.join(steps)}</div>',
+                   "Every working day: new weather from NASA, harvest forecasts from the model, then the measured price reaction.")
 
 
 def fair_chart(key: str, fv: pd.DataFrame, long: bool) -> go.Figure:

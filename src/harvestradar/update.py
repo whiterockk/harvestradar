@@ -18,9 +18,11 @@ from harvestradar.config import Settings
 from harvestradar.paths import MODELS_STORE, PROCESSED
 
 
-def previous_business_day(today: dt.date | None = None) -> dt.date:
+def latest_business_day(today: dt.date | None = None) -> dt.date:
+    """The note's day: today on a working day (UTC), else the last working day. Prices stay the last settled close."""
     today = today or dt.datetime.now(dt.timezone.utc).date()
-    return (pd.Timestamp(today) - pd.offsets.BDay(1)).date()
+    ts = pd.Timestamp(today)
+    return (ts if ts.day_of_week < 5 else ts - pd.offsets.BDay(1)).date()
 
 
 def run_update(cfg: Settings, end: dt.date | None = None, deterministic_notes: bool = False,
@@ -32,7 +34,7 @@ def run_update(cfg: Settings, end: dt.date | None = None, deterministic_notes: b
     from harvestradar.pipeline import build_daily, build_features, build_index, predict_weekly, train_models
     from harvestradar.report.weekly_note import build_notes
 
-    end = end or previous_business_day()
+    end = end or latest_business_day()
     os.environ["HARVESTRADAR_AS_OF_END"] = end.isoformat()
     t0 = time.time()
 

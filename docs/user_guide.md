@@ -29,7 +29,9 @@ root-zone soil moisture with the same dekad in 2001-2020.
   arrows step one dekad, `x1 / x2.5` changes speed. Rings mark the three regions with the highest
   stress x share of world supply. The right column ranks the top five for the latest dekad, shows El Nino as
   context only, and links to the Friday note.
-- **Commodity**: the index (amber, left scale) against the futures price (white, right scale), the main
+- **Commodity**: "From weather to price" shows the four steps behind today's reading: the weather in the
+  producing regions, the expected world harvest vs normal, the risk index and the price (expected move and
+  climate fair value). Below it, the index (amber, left scale) against the futures price (white, right scale), the main
   producer's critical windows shaded and named from `config/commodities.yaml`. "What it means for the price"
   turns the expected world supply gap into the move of the futures price that such a gap has come with since
   2002 (a rough guide with an 80 % range; for arabica no reliable link was found, so none is shown). "Who drives this week" gives each country's contribution
@@ -51,25 +53,14 @@ root-zone soil moisture with the same dekad in 2001-2020.
   checks show as tags (blue: passed, red: failed).
 - **Method**: pipeline, out-of-sample evaluation, the honest record as a table with a verdict for each test
   (clear or small gain, caught, too late, missed, significant or not), credits.
-- **Ask Claude** (web edition only): a chat about today's signals. With each question the page sends Claude
-  the data snapshot shown on the page (index, contributors, SHAP factors, prices, fair value, price reaction,
-  correlations, today's notes, El Nino, track record) and the conversation. It runs on the viewer's own Claude
-  plan when the page is opened in Claude (claude.ai or the Claude app): no API key, nothing to pay on top.
-  Elsewhere the tab says it is not available. Answers are research and education, not investment advice.
+- **Ask ChatGPT** (web edition): a button on every page opens a side panel with suggested questions for that
+  page and a question box. "Ask ChatGPT" opens chatgpt.com in a new tab with the question and the figures of
+  the page already written (crop, index, supply gap, countries, weather factors, prices, fair value, the
+  pricing-tool scenario on the Fair value page). ChatGPT can be used without an account, within its own
+  limits; the answer stays in ChatGPT and this page stores nothing. "What ChatGPT receives" shows the exact
+  text. Research and education, not investment advice.
 
-## 4. Exporting the daily note as an email
-
-On the Daily note page, **Download as email** saves a `.eml` file (open it with any mail client). From the
-command line, for the three commodities of the latest week:
-
-```bash
-harvestradar report email --week latest
-```
-
-This writes `reports/notes/<week>_<crop>.eml` and `.html`. The email is self-contained (inline CSS, logo
-embedded), so it renders offline. Nothing is sent: there is no SMTP and no stored credential.
-
-## 5. Opening an exact state (for the video)
+## 4. Opening an exact state (for the video)
 
 | Parameter | Values |
 |---|---|
@@ -83,12 +74,12 @@ embedded), so it renders offline. Nothing is sent: there is no SMTP and no store
 
 `make screenshots` captures all pages with Playwright at 1920 x 1080, device scale factor 2.
 
-## 6. Refreshing the data
+## 5. Refreshing the data
 
 See the README ("Rebuild everything"). The date of the weekly update is `dates.as_of_end` in
 `config/settings.yaml`; set it to the latest working day and run `make all`.
 
-## 7. Limits
+## 6. Limits
 
 The index is an analysis tool: weather is public and fast, so part of the signal can already be in prices.
 Windows are fixed calendar approximations, weights are static (MapSPAM 2020), and NASA POWER is coarse
