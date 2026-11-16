@@ -124,6 +124,13 @@ def scenario_value(anchor: float, reaction: float, gap: float, se: float) -> tup
     return anchor * e(reaction), lo, hi
 
 
+def _reset(key: str) -> None:
+    """Back to today's values: scenario, supply gap, price reaction and anchor."""
+    for k in [k for k in st.session_state if k.startswith((f"fv_gap_{key}_", f"fv_r_{key}", f"fv_a_{key}"))]:
+        del st.session_state[k]
+    st.session_state[f"fv_scen_{key}"] = "Today"
+
+
 def render() -> None:
     key = st.session_state.crop
     m = data.meta()["commodities"][key]
@@ -183,8 +190,13 @@ def render() -> None:
         lr = risk[(risk.commodity == key) & (risk.date <= st.session_state.asof)].dropna(subset=["risk_z"]).iloc[-1]
         mu, sigma = float(lr.mu_pct), float(lr.sigma_pct)
         with st.container(key="glass_calc"):
-            st.markdown(f'<div class="hr-caps">PRICING TOOL &middot; {H.escape(m["display"])}</div>'
-                        f'<div style="font-size:15px;color:{T["frost_2"]};margin:8px 0 12px">Pick a scenario or move the '
+            t1, t2 = st.columns([0.62, 0.38], vertical_alignment="center")
+            with t1:
+                st.markdown(f'<div class="hr-caps">PRICING TOOL &middot; {H.escape(m["display"])}</div>',
+                            unsafe_allow_html=True)
+            with t2:
+                st.button("Back to today", key=f"fv_reset_{key}", on_click=_reset, args=(key,), use_container_width=True)
+            st.markdown(f'<div style="font-size:15px;color:{T["frost_2"]};margin:0 0 12px">Pick a scenario or move the '
                         f'expected world supply to see the fair value it would justify.</div>', unsafe_allow_html=True)
             scen = st.segmented_control("Scenario", ["Today", "Index 0", "Index +2", "Index +3", "Index -2"],
                                         default="Today", key=f"fv_scen_{key}", label_visibility="collapsed")

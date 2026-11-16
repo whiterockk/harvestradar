@@ -4,7 +4,7 @@
   const D = JSON.parse(document.getElementById("data").textContent);
   const CROPS = ["maize", "coffee", "cocoa"];
   const VIEWS = { stress: "Stress map", commodity: "Commodity", fair: "Fair value", replay: "Replay", note: "Daily note", method: "Method", ask: "Ask Claude" };
-  const S = { crop: "maize", episode: Object.keys(D.episodes)[0], note: null, shap: {}, email: false, range: "recent", calc: {},
+  const S = { crop: "maize", episode: Object.keys(D.episodes)[0], note: null, shap: {}, email: false, range: "recent", calc: {}, hist: {}, pending: null, view: null, prev: null, scroll: {}, goto: null, restore: false,
               chat: { turns: [], busy: false, ctl: null, error: "" } };
   let mapHandle = null;
 
@@ -153,7 +153,7 @@
       return panel("WHAT IT MEANS FOR THE PRICE", '<div style="font-size:17px;color:var(--frost-2);line-height:1.6">No reliable link between world supply gaps and the ' + esc(c.label.toLowerCase()) + " price since " + pi.years[0] + " (" + pi.n + " years). No price estimate is shown.</div>", "Marketing-year average futures price against the realised world supply gap, " + pi.years[0] + "-" + pi.years[1] + ".");
     }
     const per = -pi.slope_pct_per_pct, fv = c.fair && c.fair.now;
-    const fvLine = fv ? '<div style="font-size:16px;color:var(--frost-2);margin-top:12px;line-height:1.6;padding-top:12px;border-top:1px solid var(--line)">Climate fair value today: <span class="mono" style="color:var(--signal)">' + fmtPrice(k, fv.fair) + "</span>. The price (" + '<span class="mono">' + fmtPrice(k, fv.close) + "</span>) is " + gapWords(fv.gap_to_fair_pct) + '. <a href="#fair">Open the pricing tool &rarr;</a></div>' : "";
+    const fvLine = fv ? '<div style="font-size:16px;color:var(--frost-2);margin-top:12px;line-height:1.6;padding-top:12px;border-top:1px solid var(--line)">Climate fair value today: <span class="mono" style="color:var(--signal)">' + fmtPrice(k, fv.fair) + "</span>. The price (" + '<span class="mono">' + fmtPrice(k, fv.close) + "</span>) is " + gapWords(fv.gap_to_fair_pct) + '. <a href="#fair" data-goto="calc">Open the pricing tool &rarr;</a></div>' : "";
     return panel("WHAT IT MEANS FOR THE PRICE", '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span class="mono" style="font-size:40px;color:var(--signal)">' + pct(pi.implied_pct) + '</span><span style="color:var(--frost-2)">expected move of the futures price over the marketing year</span></div>' +
       '<div style="font-size:16px;color:var(--frost-2);margin-top:8px;line-height:1.6">Likely between <span class="mono">' + pct(pi.low_pct) + '</span> and <span class="mono">' + pct(pi.high_pct) + "</span> (8 chances in 10). Since " + pi.years[0] + ", each 1% of world supply missing came with about <span class=\"mono\">" + pct(per) + "</span> on the " + esc(c.label.toLowerCase()) + " price.</div>" + fvLine,
       "Based on " + pi.n + " marketing years, " + pi.years[0] + "-" + pi.years[1] + "; the supply gap explains " + Math.round(100 * pi.r2) + "% of the yearly price changes. A rough guide, not a price forecast.");
@@ -281,7 +281,7 @@
 
   function calcDefaults(k) {
     const f = D.crops[k].fair;
-    return { gap: f.now.supply_gap_pct, r: -f.flex.slope_pct_per_pct, anchor: f.now.anchor };
+    return { gap: f.now.supply_gap_pct, r: -f.flex.slope_pct_per_pct, anchor: f.now.anchor, scen: "today" };
   }
   function calcResult(k, st) {
     const f = D.crops[k].fair, se = f.flex.se, e = (r) => Math.exp((r * -st.gap) / 100), d0 = calcDefaults(k), nw = f.now;
@@ -293,19 +293,31 @@
     const f = D.crops[k].fair, st = S.calc[k] || (S.calc[k] = calcDefaults(k)), fx = f.flex;
     const scen = [["Today", null], ["Normal season (index 0)", 0], ["Rare (index +2)", 2], ["Extreme (index +3)", 3], ["Good harvest (index -2)", -2]];
     const gmin = Math.floor(Math.min(-6, f.mu - 4 * f.sigma)), gmax = Math.ceil(Math.max(6, f.mu + 4 * f.sigma));
-    return '<section class="glass calc" id="calc"><div class="caps">PRICING TOOL &middot; ' + esc(D.crops[k].display) + "</div>" +
+    const back = S.prev && S.prev !== "fair" && VIEWS[S.prev] ? '<a href="#' + S.prev + '" data-back="1" style="display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;font-size:15px;color:var(--signal);text-decoration:none;min-height:32px">&larr; Back to ' + esc(VIEWS[S.prev]) + "</a>" : "";
+    return '<section class="glass calc" id="calc" style="scroll-margin-top:12px">' + back + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="caps">PRICING TOOL &middot; ' + esc(D.crops[k].display) + '</div><div style="display:flex;gap:8px"><button class="btn sm" id="calc-undo" type="button">Undo</button><button class="btn sm" id="calc-reset" type="button">Back to today</button></div></div>' +
       '<div style="font-size:15px;color:var(--frost-2);margin-top:8px;line-height:1.55">Move the expected world supply, or pick a scenario, to see the fair value it would justify.</div>' +
-      '<div class="chips" style="margin-top:12px" role="group" aria-label="Scenario">' + scen.map(([l, z]) => '<button class="chip" data-scen="' + (z == null ? "today" : z) + '">' + l + "</button>").join("") + "</div>" +
+      '<div class="chips" style="margin-top:12px" role="group" aria-label="Scenario">' + scen.map(([l, z]) => { const v = z == null ? "today" : String(z); return '<button class="chip' + (st.scen === v ? " on" : "") + '" data-scen="' + v + '" aria-pressed="' + (st.scen === v) + '">' + l + "</button>"; }).join("") + "</div>" +
       '<label for="i-gap"><span>Expected world supply vs normal</span><output id="o-gap"></output></label><input type="range" id="i-gap" min="' + gmin + '" max="' + gmax + '" step="0.05" value="' + st.gap + '"><div class="hint" id="o-z"></div>' +
       '<label for="i-r"><span>Price reaction to 1% of world supply missing</span><output id="o-r"></output></label><input type="range" id="i-r" min="0" max="8" step="0.05" value="' + st.r + '"><div class="hint">Measured ' + fx.years[0] + "-" + fx.years[1] + ": " + (-fx.slope_pct_per_pct).toFixed(2) + "% (uncertainty " + fx.se.toFixed(2) + ")</div>" +
       '<label for="i-anchor"><span>Anchor price, ' + esc(D.crops[k].priceUnit) + '</span></label><input type="number" id="i-anchor" step="any" value="' + (+st.anchor.toFixed(2)) + '"><div class="hint">Default: average close of the last 12 months (' + fmtPrice(k, f.now.anchor) + ")</div>" +
       '<div class="result"><div class="caps">FAIR VALUE IN THIS SCENARIO</div><div class="mono glow" id="o-fair" style="font-size:44px;color:var(--signal);margin-top:6px"></div><div id="o-range" style="font-size:15px;color:var(--frost-2);line-height:1.6"></div><div id="o-vs" style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:6px"></div></div>' +
-      '<div style="margin-top:14px"><button class="btn" id="calc-reset">Reset to today</button></div>' +
       '<div class="source">Fair value = anchor &times; exp(reaction &times; supply missing / 100). The 80% range comes from the uncertainty of the measured reaction. Research tool, not investment advice.</div></section>';
+  }
+  const snap = (st) => ({ gap: st.gap, r: st.r, anchor: st.anchor, scen: st.scen });
+  function calcPush(k, prev) { const h = S.hist[k] || (S.hist[k] = []); h.push(prev); if (h.length > 50) h.shift(); }
+  function calcSync() {
+    const k = S.crop, st = S.calc[k], el = (id) => document.getElementById(id);
+    if (!el("i-gap")) return;
+    el("i-gap").value = st.gap; el("i-r").value = st.r;
+    if (document.activeElement !== el("i-anchor")) el("i-anchor").value = +(+st.anchor).toFixed(2);
+    calcUpdate();
   }
   function calcUpdate() {
     const k = S.crop, st = S.calc[k], el = (id) => document.getElementById(id);
     if (!el("o-fair")) return;
+    document.querySelectorAll("[data-scen]").forEach((b) => { const on = b.dataset.scen === st.scen; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    const d0 = calcDefaults(k), atToday = st.gap === d0.gap && st.r === d0.r && st.anchor === d0.anchor;
+    el("calc-undo").disabled = !(S.hist[k] || []).length; el("calc-reset").disabled = atToday;
     const r = calcResult(k, st), c = D.crops[k];
     el("o-gap").textContent = pct(st.gap, 2); el("o-r").textContent = st.r.toFixed(2) + "%";
     el("o-z").textContent = "Same as a risk index of " + sg(r.z) + " today";
@@ -331,7 +343,8 @@
       '<div class="source">' + (S.range === "long" ? "Weekly (Fridays) since 2006" : "Every trading day, last 2 years") + ". Updated with every data run. The price reaction is measured on " + fx.years[0] + "-" + fx.years[1] + ", so values before " + (fx.years[1] + 1) + " are in-sample.</div></section>";
     const scatter = panel("HOW THE PRICE REACTION IS MEASURED", flexChart(k) + '<div style="font-size:15px;color:var(--frost-2);line-height:1.6;margin-top:8px">One dot per marketing year: the realised world supply vs normal (FAOSTAT) and the change of the average futures price. The orange line is the fitted reaction: ' + (-fx.slope_pct_per_pct).toFixed(2) + "% on the price for each 1% of world supply missing.</div>",
       fx.n + " marketing years, " + fx.years[0] + "-" + fx.years[1] + ". Share of yearly price changes explained: " + Math.round(100 * fx.r2) + "%. Chance the link is pure luck: " + (fx.p_value < 0.01 ? "under 1%" : Math.round(100 * fx.p_value) + "%") + ".");
-    const html = ticker() + warn + '<div class="main c65"><div class="col">' + cards + chart + comovePanel(k, false) + '</div><div class="col">' + calcPanel(k) + scatter + "</div></div>";
+    const back = S.prev && S.prev !== "fair" && VIEWS[S.prev] ? '<div style="margin-bottom:12px"><a class="chip" href="#' + S.prev + '" data-back="1" style="text-decoration:none;letter-spacing:.04em;text-transform:none;font-family:var(--body);font-size:15px">&larr; Back to ' + esc(VIEWS[S.prev]) + "</a></div>" : "";
+    const html = back + ticker() + warn + '<div class="main c65"><div class="col">' + cards + chart + comovePanel(k, false) + '</div><div class="col">' + calcPanel(k) + scatter + "</div></div>";
     return { html: html, after: () => { hookFairChart(); calcUpdate(); } };
   }
 
@@ -585,28 +598,41 @@
   function current() { const v = location.hash.slice(1); return RENDER[v] ? v : "stress"; }
   function render() {
     const v = current();
+    const changed = v !== S.view;
+    if (changed) { if (S.view) S.scroll[S.view] = window.scrollY; S.prev = S.view; S.view = v; }
     if (mapHandle && mapHandle.stop) { mapHandle.stop(); mapHandle = null; }
     document.getElementById("tabs").innerHTML = Object.entries(VIEWS).map(([k, l]) => '<a class="tab' + (k === v ? " on" : "") + '" href="#' + k + '"' + (k === v ? ' aria-current="page"' : "") + ">" + l + "</a>").join("");
     const out = RENDER[v]();
     document.getElementById("view").innerHTML = out.html;
     if (out.after) out.after();
+    if (changed) {
+      const tgt = S.goto && document.getElementById(S.goto);
+      if (tgt) tgt.scrollIntoView({ block: "start" });
+      else window.scrollTo(0, S.restore ? S.scroll[v] || 0 : 0);
+      S.goto = null; S.restore = false;
+    }
     if (window.innerWidth < 700) { const on = document.querySelector(".tab.on"), tb = document.getElementById("tabs"); if (on && tb) tb.scrollLeft = on.offsetLeft - (tb.clientWidth - on.offsetWidth) / 2; }
   }
 
   document.getElementById("brand").innerHTML = D.marks.small + "<span>Harvest<b>Radar</b></span>";
   document.getElementById("status").textContent = "DATA AS OF " + D.weekLabel;
   document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-crop],[data-shap],[data-episode],[data-note],#email-btn,[data-crop-link],[data-range],[data-scen],#calc-reset,[data-ask]");
+    const nav = e.target.closest("a[data-goto],a[data-back]");
+    if (nav) { if (nav.dataset.goto) S.goto = nav.dataset.goto; if (nav.dataset.back) S.restore = true; }
+    const t = e.target.closest("[data-crop],[data-shap],[data-episode],[data-note],#email-btn,[data-crop-link],[data-range],[data-scen],#calc-reset,#calc-undo,[data-ask]");
     if (!t) return;
     if (t.dataset.ask) { askSend(t.dataset.ask); return; }
     if (t.dataset.range) { S.range = t.dataset.range; render(); return; }
     if (t.dataset.scen) {
-      const f = D.crops[S.crop].fair, st = S.calc[S.crop] || (S.calc[S.crop] = calcDefaults(S.crop));
-      st.gap = t.dataset.scen === "today" ? f.now.supply_gap_pct : f.mu - +t.dataset.scen * f.sigma;
-      const g = document.getElementById("i-gap"); if (g) g.value = st.gap;
-      calcUpdate(); return;
+      const k = S.crop, f = D.crops[k].fair, st = S.calc[k] || (S.calc[k] = calcDefaults(k));
+      if (st.scen === t.dataset.scen) return;
+      calcPush(k, snap(st));
+      if (t.dataset.scen === "today") Object.assign(st, calcDefaults(k));
+      else { st.gap = f.mu - +t.dataset.scen * f.sigma; st.scen = t.dataset.scen; }
+      calcSync(); return;
     }
-    if (t.id === "calc-reset") { S.calc[S.crop] = calcDefaults(S.crop); render(); return; }
+    if (t.id === "calc-reset") { const k = S.crop; calcPush(k, snap(S.calc[k])); S.calc[k] = calcDefaults(k); calcSync(); return; }
+    if (t.id === "calc-undo") { const k = S.crop, h = S.hist[k] || []; if (h.length) { S.calc[k] = h.pop(); calcSync(); } return; }
     if (t.dataset.crop) { S.crop = t.dataset.crop; render(); }
     else if (t.dataset.shap) { S.shap[S.crop] = t.dataset.shap; render(); }
     else if (t.dataset.episode) { S.episode = t.dataset.episode; render(); }
@@ -619,8 +645,13 @@
     if (!st || !["i-gap", "i-r", "i-anchor"].includes(id)) return;
     const v = parseFloat(e.target.value);
     if (!isFinite(v)) return;
-    if (id === "i-gap") st.gap = v; else if (id === "i-r") st.r = v; else if (v > 0) st.anchor = v;
+    if (!S.pending) S.pending = snap(st);
+    if (id === "i-gap") { st.gap = v; st.scen = null; } else if (id === "i-r") st.r = v; else if (v > 0) st.anchor = v;
     calcUpdate();
+  });
+  document.addEventListener("change", (e) => {
+    if (!["i-gap", "i-r", "i-anchor"].includes(e.target.id) || !S.pending) return;
+    calcPush(S.crop, S.pending); S.pending = null; calcUpdate();
   });
   window.addEventListener("hashchange", render);
   let rw = window.innerWidth;
