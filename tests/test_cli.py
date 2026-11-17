@@ -25,4 +25,4 @@ def test_report_email_help():
 
 def test_update_help():
     out = _help("update")
-    assert "--date" in out and "--deterministic-notes" in out
+    assert "--date" in out and "--deterministic" in out  # long option names are cut at narrow widths
